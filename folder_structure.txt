@@ -1,0 +1,18 @@
+Folder PATH listing for volume OS
+Volume serial number is 08DA-DCC1
+C:.
++---client
+¦   +---public
+¦   +---src
+¦       +---assets
+¦       +---components
+¦       ¦   +---login
+¦       +---pages
++---server
+    +---src
+        +---config
+        +---controllers
+        +---middleware
+        +---models
+        +---routes
+        +---utils

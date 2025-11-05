@@ -1,12 +1,27 @@
 import { Sequelize } from "sequelize";
 import dotenv from "dotenv";
+import masterStu from '../models/masterStu.js';
+import supervisor from "../models/Supervisor.js";
 
-dotenv.config(); // Must be here before using process.env
+dotenv.config();
 
-const sequelize = new Sequelize("aiu_pg_progress", "root", "root", {
-  host: "mysql",   // must match your service name
-  dialect: "mysql",
-  port: 3306,      // container default port (mapped to 3307 externally)
-});
+const sequelize = new Sequelize(
+  process.env.DB_NAME,
+  process.env.DB_USER,
+  process.env.DB_PASSWORD,
+  {
+    host: process.env.DB_HOST,
+    dialect: "mysql",
+    port: process.env.DB_PORT,
+    logging: false,
+  }
+);
 
+supervisor.init(sequelize, Sequelize.DataTypes);
+masterStu.init(sequelize, Sequelize.DataTypes);
+
+export { sequelize, 
+  masterStu, 
+  supervisor };
+  
 export default sequelize;
