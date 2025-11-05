@@ -14,33 +14,26 @@ import {
 } from 'lucide-react';
 import { useState } from 'react';
 
-const DashboardLayout = () => {
+const DashboardLayout = ({ onLogout }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-const token = localStorage.getItem("token");
-if (!token) {
-  return <navigate to="/login" />;
-}
-
 
   const navItems = [
-    { path: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
-    { path: '/uploads', icon: Upload, label: 'Uploads' },
-    { path: '/thesis-submission', icon: FileText, label: 'Thesis Submission' },
-    { path: '/progress-updates', icon: TrendingUp, label: 'Progress Updates' },
-    { path: '/feedback', icon: MessageSquare, label: 'Feedback' },
-    { path: '/analytics', icon: BarChart3, label: 'Analytics' },
+    { path: '/student/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
+    { path: '/student/uploads', icon: Upload, label: 'Uploads' },
+    { path: '/student/thesis-submission', icon: FileText, label: 'Thesis Submission' },
+    { path: '/student/progress-updates', icon: TrendingUp, label: 'Progress Updates' },
+    { path: '/student/feedback', icon: MessageSquare, label: 'Feedback' },
+    { path: '/student/analytics', icon: BarChart3, label: 'Analytics' },
   ];
 
   const handleLogout = () => {
-  // Remove user info from localStorage
   localStorage.removeItem("token");
   localStorage.removeItem("role");
-
-  // Redirect to login page
-  navigate("/login");
+  onLogout();
+  navigate("/login", { replace: true });
 };
 
   return (
@@ -73,7 +66,7 @@ if (!token) {
           <nav className="space-y-1">
             {navItems.map((item) => {
               const Icon = item.icon;
-              const isActive = location.pathname === item.path;
+              const isActive = location.pathname === item.path || location.pathname === item.path + '/';
               return (
                 <Link
                   key={item.path}

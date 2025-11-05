@@ -20,7 +20,6 @@ import SupervisorDashboard from "./pages/supervisor/Dashboard";
 import StudentList from "./pages/supervisor/StudentList";
 import ReviewSubmissions from "./pages/supervisor/ReviewSubmissions";
 
-// A wrapper component to allow logout using useNavigate
 function AppWrapper() {
   const navigate = useNavigate();
 
@@ -34,8 +33,10 @@ function AppWrapper() {
     if (token && storedRole) {
       setIsAuthenticated(true);
       setRole(storedRole);
+    } else {
+      navigate("/login"); // redirect to login if not authenticated
     }
-  }, []);
+  }, [navigate]);
 
   // Callback from Login.jsx
   const handleLogin = (userRole) => {
@@ -84,13 +85,14 @@ function AppWrapper() {
             )
           }
         >
-          <Route index element={<Navigate to="dashboard" />} />
+          <Route index element={<Navigate to="/student/dashboard" replace />} />
           <Route path="dashboard" element={<Dashboard />} />
           <Route path="uploads" element={<Uploads />} />
           <Route path="thesis-submission" element={<ThesisSubmission />} />
           <Route path="progress-updates" element={<ProgressUpdates />} />
           <Route path="feedback" element={<Feedback />} />
           <Route path="analytics" element={<Analytics />} />
+        
         </Route>
 
         {/* Supervisor Routes */}
