@@ -1,109 +1,164 @@
-import { ReactNode, useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { LayoutDashboard, FileCheck, Users, Menu, X, LogOut, Bell, User } from 'lucide-react';
+// src/layouts/SupervisorLayout.jsx
 
-interface SupervisorLayoutProps {
-  children: ReactNode;
-}
+import { useState } from 'react';
+import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
+import {
+  LayoutDashboard,
+  Users,
+  FileText,
+  Menu,
+  X,
+  LogOut,
+  User,
+  Bell,
+} from 'lucide-react';
 
-export default function SupervisorLayout({ children }: SupervisorLayoutProps) {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
+const SupervisorLayout = ({ onLogout }) => {
   const location = useLocation();
+  const navigate = useNavigate();
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  const navigation = [
-    { name: 'Dashboard', href: '/supervisor/dashboard', icon: LayoutDashboard },
-    { name: 'Review Submissions', href: '/supervisor/review-submissions', icon: FileCheck },
-    { name: 'Student List', href: '/supervisor/students', icon: Users },
+  const navItems = [
+    { path: '/supervisor/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
+    { path: '/supervisor/students', icon: Users, label: 'My Students' },
+    { path: '/supervisor/reviews', icon: FileText, label: 'Reviews' },
   ];
 
-  const isActive = (path: string) => location.pathname === path;
+
+  const handleLogout = () => {
+    localStorage.removeItem('token');
+    localStorage.removeItem('role');
+    onLogout?.();
+    navigate('/login', { replace: true });
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div
-        className={`fixed inset-0 bg-black bg-opacity-50 z-40 lg:hidden transition-opacity ${
-          sidebarOpen ? 'opacity-100' : 'opacity-0 pointer-events-none'
-        }`}
-        onClick={() => setSidebarOpen(false)}
-      />
+      {/* ====================== Sidebar ====================== */}
+      <aside
+        className={`fixed top-0 left-0 z-40 w-64 h-screen transition-transform ${
+          sidebarOpen ? 'translate-x-0' : '-translate-x-full'
+        } lg:translate-x-0 bg-white border-r border-gray-200`}
+      >
+        <div className="h-full px-3 py-4 overflow-y-auto">
+          {/* Logo Section */}
+          <div className="flex items-center justify-between mb-8 px-2">
+            <div className="flex items-center gap-2">
+              <div className="w-8 h-8 bg-blue-600 rounded-lg flex items-center justify-center">
+                <FileText className="w-5 h-5 text-white" />
+              </div>
+              <span className="text-xl font-bold text-gray-800">PG Monitor</span>
+            </div>
+            <button
+              onClick={() => setSidebarOpen(false)}
+              className="lg:hidden"
+              aria-label="Close sidebar"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
 
-      <aside className={`fixed top-0 left-0 z-50 h-screen w-64 bg-white shadow-lg transform transition-transform duration-300 lg:translate-x-0 ${
-        sidebarOpen ? 'translate-x-0' : '-translate-x-full'
-      }`}>
-        <div className="flex items-center justify-between p-6 border-b border-gray-200">
-          <h1 className="text-xl font-bold text-gray-800">Supervisor Portal</h1>
-          <button
-            onClick={() => setSidebarOpen(false)}
-            className="lg:hidden text-gray-600 hover:text-gray-800"
-          >
-            <X size={24} />
-          </button>
-        </div>
+          {/* Navigation */}
+          <nav className="space-y-1">
+            {navItems.map((item) => {
+              const Icon = item.icon;
+              const isActive =
+                location.pathname === item.path || location.pathname === item.path + '/';
+              return (
+                <Link
+                  key={item.path}
+                  to={item.path}
+                  onClick={() => setSidebarOpen(false)}
+                  className={`flex items-center gap-3 px-3 py-2.5 rounded-lg transition-colors ${
+                    isActive
+                      ? 'bg-blue-50 text-blue-600'
+                      : 'text-gray-700 hover:bg-gray-50'
+                  }`}
+                >
+                  <Icon className="w-5 h-5" />
+                  <span className="font-medium">{item.label}</span>
+                </Link>
+              );
+            })}
+          </nav>
 
-        <nav className="p-4 space-y-2">
-          {navigation.map((item) => {
-            const Icon = item.icon;
-            const active = isActive(item.href);
-            return (
-              <Link
-                key={item.name}
-                to={item.href}
-                className={`flex items-center gap-3 px-4 py-3 rounded-lg transition-all ${
-                  active
-                    ? 'bg-blue-50 text-blue-700 font-semibold'
-                    : 'text-gray-700 hover:bg-gray-100'
-                }`}
-              >
-                <Icon size={20} />
-                <span>{item.name}</span>
-              </Link>
-            );
-          })}
-        </nav>
-
-        <div className="absolute bottom-0 left-0 right-0 p-4 border-t border-gray-200">
-          <button className="flex items-center gap-3 px-4 py-3 w-full text-gray-700 hover:bg-gray-100 rounded-lg transition-all">
-            <LogOut size={20} />
-            <span>Logout</span>
-          </button>
+          {/* Logout Button */}
+          <div className="absolute bottom-4 left-3 right-3">
+            <button
+              onClick={handleLogout}
+              className="flex items-center gap-3 px-3 py-2.5 w-full rounded-lg text-gray-700 hover:bg-red-50 hover:text-red-600 transition-colors"
+            >
+              <LogOut className="w-5 h-5" />
+              <span className="font-medium">Logout</span>
+            </button>
+          </div>
         </div>
       </aside>
 
-      <div className="lg:pl-64">
-        <header className="sticky top-0 z-30 bg-white shadow-sm">
-          <div className="flex items-center justify-between px-6 py-4">
-            <button
-              onClick={() => setSidebarOpen(true)}
-              className="lg:hidden text-gray-600 hover:text-gray-800"
-            >
-              <Menu size={24} />
-            </button>
-
-            <div className="flex-1 lg:flex-none" />
-
-            <div className="flex items-center gap-4">
-              <button className="relative p-2 text-gray-600 hover:text-gray-800 hover:bg-gray-100 rounded-lg transition-all">
-                <Bell size={20} />
-                <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full" />
+      {/* ====================== Main Content ====================== */}
+      <div className="lg:ml-64">
+        {/* ===== Header ===== */}
+        <header className="bg-white border-b border-gray-200 sticky top-0 z-30">
+          <div className="px-4 sm:px-6 lg:px-8 py-4">
+            <div className="flex items-center justify-between">
+              {/* Mobile menu button */}
+              <button
+                onClick={() => setSidebarOpen(true)}
+                className="lg:hidden"
+                aria-label="Open sidebar"
+              >
+                <Menu className="w-6 h-6" />
               </button>
 
-              <div className="flex items-center gap-3 px-3 py-2 rounded-lg hover:bg-gray-100 transition-all cursor-pointer">
-                <div className="w-8 h-8 bg-blue-600 rounded-full flex items-center justify-center">
-                  <User size={18} className="text-white" />
-                </div>
-                <div className="hidden sm:block">
-                  <p className="text-sm font-semibold text-gray-800">Dr. Sarah Johnson</p>
-                  <p className="text-xs text-gray-500">Supervisor</p>
+              {/* Title */}
+              <div className="flex-1 lg:flex-none">
+                <h1 className="text-xl font-semibold text-gray-800">
+                  Supervisor Dashboard
+                </h1>
+              </div>
+
+              {/* User section */}
+              <div className="flex items-center gap-4">
+                {/* Notifications */}
+                <button
+                  className="relative p-2 text-gray-600 hover:bg-gray-100 rounded-lg"
+                  aria-label="Notifications"
+                >
+                  <Bell className="w-5 h-5" />
+                  <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+                </button>
+
+                {/* User info */}
+                <div className="flex items-center gap-3 pl-4 border-l border-gray-200">
+                  <div className="w-9 h-9 bg-blue-600 rounded-full flex items-center justify-center">
+                    <User className="w-5 h-5 text-white" />
+                  </div>
+                  <div className="hidden sm:block">
+                    <p className="text-sm font-medium text-gray-800">Dr NPC</p>
+                    <p className="text-xs text-gray-500">Supervisor</p>
+                  </div>
                 </div>
               </div>
             </div>
           </div>
         </header>
 
-        <main className="p-6">
-          {children}
+        {/* ===== Page Content ===== */}
+        <main className="p-4 sm:p-6 lg:p-8">
+          {/* 👇 Nested pages will render here (e.g., My Students, Reviews, Analytics) */}
+          <Outlet />
         </main>
       </div>
+
+      {/* Overlay for mobile sidebar */}
+      {sidebarOpen && (
+        <div
+          className="fixed inset-0 bg-black bg-opacity-50 z-30 lg:hidden"
+          onClick={() => setSidebarOpen(false)}
+        ></div>
+      )}
     </div>
   );
-}
+};
+
+export default SupervisorLayout;

@@ -1,5 +1,3 @@
-import React from 'react';
-
 export default function Card({ children, className = '', hover = false }) {
   const hoverClasses = hover ? 'hover:shadow-lg transition-shadow duration-200' : '';
 

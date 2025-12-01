@@ -1,9 +1,8 @@
-import React from "react";
 import { Users, FileCheck, CheckCircle, FileText } from "lucide-react";
-import Card from "../../components/ui/Card";
+import Card from "../../pages/supervisor/ui/Card";
 import { dashboardStats, students } from "../../data/supervisorData";
 
-export default function Dashboard() {
+export default function SupervisorDashboard() {
   const stats = [
     {
       title: "Total Students",

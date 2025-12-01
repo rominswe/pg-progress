@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { Outlet, Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard,
@@ -12,14 +13,12 @@ import {
   User,
   Bell
 } from 'lucide-react';
-import { useState } from 'react';
 
-const DashboardLayout = ({ onLogout }) => {
+const StudentLayout = ({ onLogout }) => {
   const location = useLocation();
   const navigate = useNavigate();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-
-
+  
   const navItems = [
     { path: '/student/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
     { path: '/student/uploads', icon: Upload, label: 'Uploads' },
@@ -38,7 +37,7 @@ const DashboardLayout = ({ onLogout }) => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      {/* Sidebar */}
+      {/* ====================== Sidebar ====================== */}
       <aside
         className={`fixed top-0 left-0 z-40 w-64 h-screen transition-transform ${
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
@@ -98,7 +97,7 @@ const DashboardLayout = ({ onLogout }) => {
         </div>
       </aside>
 
-      {/* Main Content */}
+      {/* ====================== Main Content ====================== */}
       <div className="lg:ml-64">
         <header className="bg-white border-b border-gray-200 sticky top-0 z-30">
           <div className="px-4 sm:px-6 lg:px-8 py-4">
@@ -121,6 +120,7 @@ const DashboardLayout = ({ onLogout }) => {
 
               {/* User section */}
               <div className="flex items-center gap-4">
+                {/* Notifications */}
                 <button
                   className="relative p-2 text-gray-600 hover:bg-gray-100 rounded-lg"
                   aria-label="Notifications"
@@ -128,14 +128,15 @@ const DashboardLayout = ({ onLogout }) => {
                   <Bell className="w-5 h-5" />
                   <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
                 </button>
-
+                
+                {/* User info */}
                 <div className="flex items-center gap-3 pl-4 border-l border-gray-200">
                   <div className="w-9 h-9 bg-blue-600 rounded-full flex items-center justify-center">
                     <User className="w-5 h-5 text-white" />
                   </div>
                   <div className="hidden sm:block">
-                    <p className="text-sm font-medium text-gray-800">John Doe</p>
-                    <p className="text-xs text-gray-500">Student ID: PG2024001</p>
+                    <p className="text-sm font-medium text-gray-800">NPC 2</p>
+                    <p className="text-xs text-gray-500">Student ID</p>
                   </div>
                 </div>
               </div>
@@ -143,8 +144,9 @@ const DashboardLayout = ({ onLogout }) => {
           </div>
         </header>
 
-        {/* Page content */}
+        {/* ===== Page Content ===== */}
         <main className="p-4 sm:p-6 lg:p-8">
+          {/* 👇 Nested pages will render here */}
           <Outlet />
         </main>
       </div>
@@ -160,4 +162,4 @@ const DashboardLayout = ({ onLogout }) => {
   );
 };
 
-export default DashboardLayout;
+export default StudentLayout;

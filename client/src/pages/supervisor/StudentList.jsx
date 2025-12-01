@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Search, Mail, TrendingUp, Calendar } from 'lucide-react';
-import Card from '../../components/ui/Card';
+import Card from '../../pages/supervisor/ui/Card';
 import { students } from '../../data/supervisorData';
 
 export default function StudentList() {

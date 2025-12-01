@@ -1,51 +1,80 @@
+import React, { useState, useEffect } from 'react';
 import { CheckCircle, Circle, Clock } from 'lucide-react';
 
-const ThesisSubmission = () => {
-  const milestones = [
-    {
-      title: 'Research Proposal',
-      status: 'completed',
-      date: '2024-09-15',
-      description: 'Initial research proposal submitted and approved',
-    },
-    {
-      title: 'Literature Review',
-      status: 'completed',
-      date: '2024-10-20',
-      description: 'Comprehensive literature review completed',
-    },
-    {
-      title: 'Methodology Chapter',
-      status: 'completed',
-      date: '2025-08-15',
-      description: 'Research methodology documented and approved',
-    },
-    {
-      title: 'Data Collection',
-      status: 'in-progress',
-      date: 'In Progress',
-      description: 'Currently collecting and processing research data',
-    },
-    {
-      title: 'Results & Analysis',
-      status: 'pending',
-      date: 'Not Started',
-      description: 'Analysis of collected data',
-    },
-    {
-      title: 'Discussion Chapter',
-      status: 'pending',
-      date: 'Not Started',
-      description: 'Interpretation and discussion of findings',
-    },
-    {
-      title: 'Final Thesis',
-      status: 'pending',
-      date: 'Not Started',
-      description: 'Complete thesis compilation and submission',
-    },
-  ];
+// ✅ This component is responsible for displaying thesis progress milestones only.
+// It should not handle layout or navigation — those are managed by StudentLayout.
 
+const ThesisSubmission = () => {
+  const [milestones, setMilestones] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  // ✅ Fetch thesis milestones from backend (replace dummy data later)
+  useEffect(() => {
+    const fetchMilestones = async () => {
+      try {
+        // Example (replace with your actual endpoint later):
+        // const res = await fetch('/api/student/milestones');
+        // const data = await res.json();
+        // setMilestones(data);
+
+        // Temporary placeholder data
+        const dummyData = [
+          {
+            title: 'Research Proposal',
+            status: 'completed',
+            date: '2024-09-15',
+            description: 'Initial research proposal submitted and approved',
+          },
+          {
+            title: 'Literature Review',
+            status: 'completed',
+            date: '2024-10-20',
+            description: 'Comprehensive literature review completed',
+          },
+          {
+            title: 'Methodology Chapter',
+            status: 'completed',
+            date: '2025-08-15',
+            description: 'Research methodology documented and approved',
+          },
+          {
+            title: 'Data Collection',
+            status: 'in-progress',
+            date: 'In Progress',
+            description: 'Currently collecting and processing research data',
+          },
+          {
+            title: 'Results & Analysis',
+            status: 'pending',
+            date: 'Not Started',
+            description: 'Analysis of collected data',
+          },
+          {
+            title: 'Discussion Chapter',
+            status: 'pending',
+            date: 'Not Started',
+            description: 'Interpretation and discussion of findings',
+          },
+          {
+            title: 'Final Thesis',
+            status: 'pending',
+            date: 'Not Started',
+            description: 'Complete thesis compilation and submission',
+          },
+        ];
+
+        setMilestones(dummyData);
+      } catch (error) {
+        console.error('Error fetching milestones:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchMilestones();
+  }, []);
+
+  // ✅ Helper functions for colors and progress
   const getStatusColor = (status) => {
     switch (status) {
       case 'completed':
@@ -62,14 +91,17 @@ const ThesisSubmission = () => {
     return Math.round((completed / milestones.length) * 100);
   };
 
+  if (loading) return <p className="text-center mt-4">Loading thesis milestones...</p>;
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-6 p-6">
+      {/* Page Title */}
       <div>
         <h2 className="text-2xl font-bold text-gray-800">Thesis Submission</h2>
         <p className="text-gray-500 mt-1">Track your thesis milestones and submission progress</p>
       </div>
 
-      {/* Overall Progress Section */}
+      {/* ✅ Overall Progress Section */}
       <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
         <div className="flex items-center justify-between mb-6">
           <div>
@@ -91,6 +123,7 @@ const ThesisSubmission = () => {
           ></div>
         </div>
 
+        {/* ✅ Milestone Stats Summary */}
         <div className="grid grid-cols-3 gap-4 mt-6">
           <div className="text-center p-4 bg-green-50 rounded-lg">
             <p className="text-2xl font-bold text-green-600">
@@ -113,7 +146,7 @@ const ThesisSubmission = () => {
         </div>
       </div>
 
-      {/* Milestones Section */}
+      {/* ✅ Thesis Milestones Section */}
       <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
         <h3 className="text-lg font-semibold text-gray-800 mb-6">Thesis Milestones</h3>
 
@@ -168,9 +201,13 @@ const ThesisSubmission = () => {
                     </span>
                   </div>
 
+                  {/* ✅ Future Backend Hook: Milestone Actions */}
                   {milestone.status === 'in-progress' && (
                     <div className="mt-3 flex gap-2">
-                      <button className="text-sm px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium">
+                      <button
+                        onClick={() => alert('File upload form or submission modal goes here.')}
+                        className="text-sm px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 font-medium"
+                      >
                         Submit Work
                       </button>
                       <button className="text-sm px-4 py-2 border border-gray-300 text-gray-700 rounded-lg hover:bg-gray-50 font-medium">
@@ -185,7 +222,7 @@ const ThesisSubmission = () => {
         </div>
       </div>
 
-      {/* Submission Guidelines Section */}
+      {/* ✅ Submission Guidelines Section */}
       <div className="bg-blue-50 border border-blue-200 rounded-xl p-6">
         <h4 className="font-semibold text-blue-900 mb-2">Submission Guidelines</h4>
         <ul className="space-y-2 text-sm text-blue-800">

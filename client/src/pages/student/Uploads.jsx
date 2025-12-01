@@ -1,25 +1,44 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Upload, FileText, File, X, CheckCircle } from 'lucide-react';
+import axios from 'axios';
+import { API_BASE_URL } from '../../config';
 
 const Uploads = () => {
   const [dragActive, setDragActive] = useState(false);
   const [selectedFiles, setSelectedFiles] = useState([]);
+  const [uploadedDocuments, setUploadedDocuments] = useState([]); // fetched from backend later
 
-  const uploadedDocuments = [
-    { name: 'Chapter_3_Draft.pdf', type: 'Thesis Chapter', date: '2025-10-28', size: '2.4 MB', status: 'approved' },
-    { name: 'Research_Proposal.docx', type: 'Proposal', date: '2025-10-15', size: '1.8 MB', status: 'approved' },
-    { name: 'Progress_Report_Q3.pdf', type: 'Progress Report', date: '2025-10-10', size: '856 KB', status: 'pending' },
-    { name: 'Literature_Review.pdf', type: 'Literature Review', date: '2025-09-22', size: '3.2 MB', status: 'approved' },
-  ];
+  // ===============================
+  // 🔹 FETCH EXISTING DOCUMENTS (Backend Integration Placeholder)
+  // ===============================
+  useEffect(() => {
+    const fetchDocuments = async () => {
+      try {
+        // Example (uncomment when backend ready)
+        // const response = await axios.get(`${API_BASE_URL}/documents`);
+        // setUploadedDocuments(response.data);
+        // Dummy fallback for now:
+        setUploadedDocuments([
+          { name: 'Chapter_3_Draft.pdf', type: 'Thesis Chapter', date: '2025-10-28', size: '2.4 MB', status: 'approved' },
+          { name: 'Research_Proposal.docx', type: 'Proposal', date: '2025-10-15', size: '1.8 MB', status: 'approved' },
+          { name: 'Progress_Report_Q3.pdf', type: 'Progress Report', date: '2025-10-10', size: '856 KB', status: 'pending' },
+          { name: 'Literature_Review.pdf', type: 'Literature Review', date: '2025-09-22', size: '3.2 MB', status: 'approved' },
+        ]);
+      } catch (error) {
+        console.error('Error fetching uploaded documents:', error);
+      }
+    };
+    fetchDocuments();
+  }, []);
 
+  // ===============================
+  // 🔹 FILE UPLOAD HANDLING (Drag & Drop + File Input)
+  // ===============================
   const handleDrag = (e) => {
     e.preventDefault();
     e.stopPropagation();
-    if (e.type === "dragenter" || e.type === "dragover") {
-      setDragActive(true);
-    } else if (e.type === "dragleave") {
-      setDragActive(false);
-    }
+    if (e.type === 'dragenter' || e.type === 'dragover') setDragActive(true);
+    else if (e.type === 'dragleave') setDragActive(false);
   };
 
   const handleDrop = (e) => {
@@ -27,16 +46,16 @@ const Uploads = () => {
     e.stopPropagation();
     setDragActive(false);
 
-    if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+    if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
       const files = Array.from(e.dataTransfer.files);
-      setSelectedFiles([...selectedFiles, ...files]);
+      setSelectedFiles((prev) => [...prev, ...files]);
     }
   };
 
   const handleFileSelect = (e) => {
-    if (e.target.files && e.target.files[0]) {
+    if (e.target.files && e.target.files.length > 0) {
       const files = Array.from(e.target.files);
-      setSelectedFiles([...selectedFiles, ...files]);
+      setSelectedFiles((prev) => [...prev, ...files]);
     }
   };
 
@@ -44,16 +63,41 @@ const Uploads = () => {
     setSelectedFiles(selectedFiles.filter((_, i) => i !== index));
   };
 
+  // ===============================
+  // 🔹 FILE UPLOAD SUBMISSION (Backend Integration Placeholder)
+  // ===============================
+  const handleUpload = async () => {
+    if (selectedFiles.length === 0) return alert('Please select at least one file.');
+    try {
+      // const formData = new FormData();
+      // selectedFiles.forEach((file) => formData.append('files', file));
+      // await axios.post(`${API_BASE_URL}/upload`, formData);
+      alert('Files uploaded successfully! (Mock behavior)');
+      setSelectedFiles([]);
+    } catch (error) {
+      console.error('Error uploading files:', error);
+    }
+  };
+
   return (
     <div className="space-y-6">
+      {/* ==============================
+           🔹 Page Header
+      =============================== */}
       <div>
         <h2 className="text-2xl font-bold text-gray-800">Document Uploads</h2>
-        <p className="text-gray-500 mt-1">Upload your thesis documents, proposals, and progress reports</p>
+        <p className="text-gray-500 mt-1">
+          Upload your thesis documents, proposals, and progress reports
+        </p>
       </div>
 
+      {/* ==============================
+           🔹 Upload Section
+      =============================== */}
       <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
         <h3 className="text-lg font-semibold text-gray-800 mb-4">Upload New Documents</h3>
 
+        {/* Drag & Drop Upload Box */}
         <div
           className={`border-2 border-dashed rounded-xl p-8 text-center transition-colors ${
             dragActive ? 'border-blue-500 bg-blue-50' : 'border-gray-300 bg-gray-50'
@@ -83,17 +127,25 @@ const Uploads = () => {
           </label>
         </div>
 
+        {/* Selected Files List */}
         {selectedFiles.length > 0 && (
           <div className="mt-6">
-            <h4 className="text-sm font-semibold text-gray-700 mb-3">Selected Files ({selectedFiles.length})</h4>
+            <h4 className="text-sm font-semibold text-gray-700 mb-3">
+              Selected Files ({selectedFiles.length})
+            </h4>
             <div className="space-y-2">
               {selectedFiles.map((file, index) => (
-                <div key={index} className="flex items-center justify-between p-3 bg-gray-50 rounded-lg">
+                <div
+                  key={index}
+                  className="flex items-center justify-between p-3 bg-gray-50 rounded-lg"
+                >
                   <div className="flex items-center gap-3">
                     <File className="w-5 h-5 text-blue-600" />
                     <div>
                       <p className="text-sm font-medium text-gray-800">{file.name}</p>
-                      <p className="text-xs text-gray-500">{(file.size / 1024 / 1024).toFixed(2)} MB</p>
+                      <p className="text-xs text-gray-500">
+                        {(file.size / 1024 / 1024).toFixed(2)} MB
+                      </p>
                     </div>
                   </div>
                   <button
@@ -115,7 +167,10 @@ const Uploads = () => {
                 <option>Literature Review</option>
                 <option>Other</option>
               </select>
-              <button className="flex-1 px-6 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors">
+              <button
+                onClick={handleUpload}
+                className="flex-1 px-6 py-2 bg-blue-600 text-white rounded-lg font-medium hover:bg-blue-700 transition-colors"
+              >
                 Upload Selected Files
               </button>
               <button
@@ -129,6 +184,9 @@ const Uploads = () => {
         )}
       </div>
 
+      {/* ==============================
+           🔹 Previously Uploaded Documents
+      =============================== */}
       <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
         <h3 className="text-lg font-semibold text-gray-800 mb-4">Previously Uploaded Documents</h3>
 
@@ -157,11 +215,13 @@ const Uploads = () => {
                   <td className="py-3 px-4 text-sm text-gray-600">{doc.date}</td>
                   <td className="py-3 px-4 text-sm text-gray-600">{doc.size}</td>
                   <td className="py-3 px-4">
-                    <span className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
-                      doc.status === 'approved'
-                        ? 'bg-green-50 text-green-700'
-                        : 'bg-orange-50 text-orange-700'
-                    }`}>
+                    <span
+                      className={`inline-flex items-center gap-1 px-2 py-1 rounded-full text-xs font-medium ${
+                        doc.status === 'approved'
+                          ? 'bg-green-50 text-green-700'
+                          : 'bg-orange-50 text-orange-700'
+                      }`}
+                    >
                       {doc.status === 'approved' && <CheckCircle className="w-3 h-3" />}
                       {doc.status === 'approved' ? 'Approved' : 'Under Review'}
                     </span>

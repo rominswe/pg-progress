@@ -1,76 +1,78 @@
-import React from 'react';
+import { useState, useEffect } from 'react';
 import { FileText, MessageSquare, Clock, CheckCircle, TrendingUp, AlertCircle } from 'lucide-react';
+import axios from 'axios';
+import { API_BASE_URL } from '../../config';
 
 const Dashboard = () => {
-  const stats = [
-    {
-      title: 'Thesis Status',
-      value: 'In Progress',
-      icon: FileText,
-      color: 'bg-blue-500',
-      textColor: 'text-blue-600',
-      bgColor: 'bg-blue-50',
-    },
-    {
-      title: 'Supervisor Feedback',
-      value: '3 New',
-      icon: MessageSquare,
-      color: 'bg-green-500',
-      textColor: 'text-green-600',
-      bgColor: 'bg-green-50',
-    },
-    {
-      title: 'Pending Tasks',
-      value: '5 Tasks',
-      icon: Clock,
-      color: 'bg-orange-500',
-      textColor: 'text-orange-600',
-      bgColor: 'bg-orange-50',
-    },
-    {
-      title: 'Completed Milestones',
-      value: '7 / 12',
-      icon: CheckCircle,
-      color: 'bg-purple-500',
-      textColor: 'text-purple-600',
-      bgColor: 'bg-purple-50',
-    },
-  ];
+  // ================= STATE SETUP =================
+  const [stats, setStats] = useState([]);
+  const [recentActivities, setRecentActivities] = useState([]);
+  const [upcomingDeadlines, setUpcomingDeadlines] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const recentActivities = [
-    { action: 'Submitted Chapter 3 Draft', time: '2 hours ago', status: 'success' },
-    { action: 'Received feedback on Methodology', time: '1 day ago', status: 'info' },
-    { action: 'Uploaded Research Proposal', time: '3 days ago', status: 'success' },
-    { action: 'Meeting scheduled with supervisor', time: '5 days ago', status: 'warning' },
-  ];
+  // ================= FETCH DASHBOARD DATA =================
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      try {
+        setIsLoading(true);
 
-  const upcomingDeadlines = [
-    { task: 'Submit Chapter 4', date: '2025-11-15', priority: 'high' },
-    { task: 'Literature Review Update', date: '2025-11-20', priority: 'medium' },
-    { task: 'Progress Report', date: '2025-11-30', priority: 'medium' },
-    { task: 'Ethics Approval Renewal', date: '2025-12-05', priority: 'low' },
-  ];
+        // ✅ Example API endpoints — update based on your backend routes
+        const [statsRes, activitiesRes, deadlinesRes] = await Promise.all([
+          axios.get(`${API_BASE_URL}/student/stats`),
+          axios.get(`${API_BASE_URL}/student/activities`),
+          axios.get(`${API_BASE_URL}/student/deadlines`),
+        ]);
 
+        // ✅ Populate data
+        setStats(statsRes.data || []);
+        setRecentActivities(activitiesRes.data || []);
+        setUpcomingDeadlines(deadlinesRes.data || []);
+      } catch (error) {
+        console.error('Error fetching dashboard data:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchDashboardData();
+  }, []);
+
+  // ================= LOADING STATE =================
+  if (isLoading) {
+    return (
+      <div className="flex justify-center items-center h-64 text-gray-500">
+        Loading your dashboard...
+      </div>
+    );
+  }
+
+  // ================= MAIN RENDER =================
   return (
     <div className="space-y-6">
+      {/* Header Section */}
       <div>
-        <h2 className="text-2xl font-bold text-gray-800">Welcome back, John!</h2>
+        <h2 className="text-2xl font-bold text-gray-800">Welcome back!</h2>
         <p className="text-gray-500 mt-1">Here's your research progress overview</p>
       </div>
 
       {/* Stats Section */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {stats.map((stat, index) => {
-          const Icon = stat.icon;
+          const Icon = stat.icon || FileText;
           return (
-            <div key={index} className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
+            <div
+              key={index}
+              className="bg-white rounded-xl p-6 shadow-sm border border-gray-100"
+            >
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-sm text-gray-500 font-medium">{stat.title}</p>
-                  <p className={`text-2xl font-bold mt-2 ${stat.textColor}`}>{stat.value}</p>
+                  <p className={`text-2xl font-bold mt-2 text-blue-600`}>
+                    {stat.value}
+                  </p>
                 </div>
-                <div className={`w-12 h-12 rounded-lg ${stat.bgColor} flex items-center justify-center`}>
-                  <Icon className={`w-6 h-6 ${stat.textColor}`} />
+                <div className="w-12 h-12 rounded-lg bg-blue-50 flex items-center justify-center">
+                  <Icon className="w-6 h-6 text-blue-600" />
                 </div>
               </div>
             </div>
@@ -78,7 +80,7 @@ const Dashboard = () => {
         })}
       </div>
 
-      {/* Research Progress and Deadlines */}
+      {/* Research Progress + Deadlines */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Research Progress */}
         <div className="lg:col-span-2 bg-white rounded-xl p-6 shadow-sm border border-gray-100">
@@ -88,12 +90,13 @@ const Dashboard = () => {
           </div>
 
           <div className="space-y-4">
+            {/* 👇 Example progress bars — replace with backend data if available */}
             {[
-              { label: 'Thesis Writing', value: 70, color: 'bg-blue-600' },
-              { label: 'Data Collection', value: 85, color: 'bg-green-600' },
-              { label: 'Literature Review', value: 100, color: 'bg-green-600' },
-              { label: 'Data Analysis', value: 45, color: 'bg-orange-600' },
-              { label: 'Final Review', value: 15, color: 'bg-red-600' },
+              { label: 'Thesis Writing', value: 70 },
+              { label: 'Data Collection', value: 85 },
+              { label: 'Literature Review', value: 100 },
+              { label: 'Data Analysis', value: 45 },
+              { label: 'Final Review', value: 15 },
             ].map((progress, i) => (
               <div key={i}>
                 <div className="flex justify-between text-sm mb-2">
@@ -101,7 +104,10 @@ const Dashboard = () => {
                   <span className="text-gray-500">{progress.value}%</span>
                 </div>
                 <div className="w-full bg-gray-200 rounded-full h-2">
-                  <div className={`${progress.color} h-2 rounded-full`} style={{ width: `${progress.value}%` }}></div>
+                  <div
+                    className="bg-blue-600 h-2 rounded-full"
+                    style={{ width: `${progress.value}%` }}
+                  ></div>
                 </div>
               </div>
             ))}

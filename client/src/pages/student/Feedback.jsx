@@ -1,54 +1,70 @@
-import React from 'react';
+import { useState, useEffect } from 'react';
 import { MessageSquare, User, Clock, Star } from 'lucide-react';
+import axios from 'axios';
+import { API_BASE_URL } from '../../config';
 
 const Feedback = () => {
-  const feedbackItems = [
+  // ===============================
+  // 🔹 STATE MANAGEMENT
+  // ===============================
+  const USE_API = false;
+
+  const [feedbackItems, setFeedbackItems] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // Dummy data for UI testing
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  const dummyFeedbackData = [
     {
       id: 1,
-      supervisor: 'Dr. Sarah Johnson',
-      document: 'Chapter 3 - Methodology',
-      date: '2025-10-28',
-      time: '14:30',
-      rating: 4,
-      status: 'unread',
-      comment:
-        'Excellent work on the methodology section. Your research design is well-structured and clearly articulated. However, I suggest expanding the section on data validation methods. Also, consider adding more details about your sampling strategy and how you addressed potential biases.',
-      suggestions: [
-        'Add more detail to the data validation section',
-        'Include discussion on addressing potential biases',
-        'Consider adding a flowchart for the research process',
-      ],
+      supervisor: 'Dr. Sarah Lee',
+      message: 'Please refine your literature review section with recent 2023 studies.',
+      date: '2025-11-12',
     },
     {
       id: 2,
-      supervisor: 'Dr. Sarah Johnson',
-      document: 'Progress Report Q3',
-      date: '2025-10-20',
-      time: '10:15',
-      rating: 5,
-      status: 'read',
-      comment:
-        'Outstanding progress this quarter! Your data collection efforts have been thorough and systematic. The preliminary findings look promising. Keep up the excellent work!',
-      suggestions: ['Continue with current approach', 'Start drafting results chapter'],
+      supervisor: 'Prof. David Wong',
+      message: 'Good progress on methodology. Let’s meet next week to discuss data analysis.',
+      date: '2025-11-10',
     },
     {
       id: 3,
-      supervisor: 'Dr. Sarah Johnson',
-      document: 'Literature Review',
-      date: '2025-09-25',
-      time: '16:45',
-      rating: 4,
-      status: 'read',
-      comment:
-        'Comprehensive literature review with good coverage of relevant sources. The critical analysis demonstrates deep understanding of the field. Minor revisions needed in the theoretical framework section.',
-      suggestions: [
-        'Strengthen theoretical framework discussion',
-        'Add 2-3 more recent studies from 2025',
-        'Consider including more international perspectives',
-      ],
+      supervisor: 'Dr. Alice Tan',
+      message: 'Your writing has improved. Focus on consistency in citation formatting.',
+      date: '2025-11-08',
     },
   ];
 
+  // ===============================
+  // 🔹 FETCH DATA FROM BACKEND API
+  // ===============================
+  useEffect(() => {
+    if (!USE_API) {
+          // Using dummy data
+          setFeedbackItems(dummyFeedbackData);
+          setLoading(false);
+          return;
+        }
+        
+    const fetchFeedback = async () => {
+      try {
+        const response = await axios.get(`${API_BASE_URL}/student/feedback`);
+        setFeedbackItems(response.data); // adjust if data is nested (e.g., response.data.feedback)
+        setLoading(false);
+      } catch (err) {
+        console.error('Error fetching feedback:', err);
+        setError('Failed to load feedback data.');
+        setLoading(false);
+      }
+    };
+
+    fetchFeedback();
+  }, [USE_API, dummyFeedbackData]);
+
+  // ===============================
+  // 🔹 RENDER STARS FUNCTION
+  // ===============================
   const renderStars = (rating) => {
     return Array.from({ length: 5 }, (_, i) => (
       <Star
@@ -58,21 +74,43 @@ const Feedback = () => {
     ));
   };
 
+  // ===============================
+  // 🔹 CONDITIONAL UI STATES
+  // ===============================
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <p className="text-gray-500 text-lg">Loading feedback...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <p className="text-red-500 text-lg">{error}</p>
+      </div>
+    );
+  }
+
+  // ===============================
+  // 🔹 MAIN UI RENDER
+  // ===============================
   return (
     <div className="space-y-6">
-      {/* Header */}
+      {/* HEADER */}
       <div>
         <h2 className="text-2xl font-bold text-gray-800">Supervisor Feedback</h2>
         <p className="text-gray-500 mt-1">View feedback and comments from your supervisor</p>
       </div>
 
-      {/* Summary Cards */}
+      {/* SUMMARY CARDS */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-500 font-medium">Total Feedback</p>
-              <p className="text-3xl font-bold text-gray-800 mt-2">12</p>
+              <p className="text-3xl font-bold text-gray-800 mt-2">{feedbackItems.length}</p>
             </div>
             <div className="w-12 h-12 bg-blue-50 rounded-lg flex items-center justify-center">
               <MessageSquare className="w-6 h-6 text-blue-600" />
@@ -84,7 +122,9 @@ const Feedback = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-500 font-medium">Unread</p>
-              <p className="text-3xl font-bold text-orange-600 mt-2">3</p>
+              <p className="text-3xl font-bold text-orange-600 mt-2">
+                {feedbackItems.filter((item) => item.status === 'unread').length}
+              </p>
             </div>
             <div className="w-12 h-12 bg-orange-50 rounded-lg flex items-center justify-center">
               <Clock className="w-6 h-6 text-orange-600" />
@@ -96,7 +136,12 @@ const Feedback = () => {
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm text-gray-500 font-medium">Average Rating</p>
-              <p className="text-3xl font-bold text-green-600 mt-2">4.3</p>
+              <p className="text-3xl font-bold text-green-600 mt-2">
+                {(
+                  feedbackItems.reduce((sum, item) => sum + item.rating, 0) /
+                  (feedbackItems.length || 1)
+                ).toFixed(1)}
+              </p>
             </div>
             <div className="w-12 h-12 bg-green-50 rounded-lg flex items-center justify-center">
               <Star className="w-6 h-6 text-green-600" />
@@ -105,7 +150,7 @@ const Feedback = () => {
         </div>
       </div>
 
-      {/* Feedback List */}
+      {/* FEEDBACK LIST */}
       <div className="space-y-4">
         {feedbackItems.map((item) => (
           <div
@@ -114,7 +159,7 @@ const Feedback = () => {
               item.status === 'unread' ? 'border-blue-200 bg-blue-50/30' : 'border-gray-100'
             }`}
           >
-            {/* Header */}
+            {/* HEADER */}
             <div className="flex items-start justify-between mb-4">
               <div className="flex items-start gap-4">
                 <div className="w-12 h-12 bg-blue-600 rounded-full flex items-center justify-center">
@@ -141,12 +186,12 @@ const Feedback = () => {
               )}
             </div>
 
-            {/* Comment */}
+            {/* COMMENT */}
             <div className="bg-white rounded-lg p-4 mb-4 border border-gray-200">
               <p className="text-sm text-gray-700 leading-relaxed">{item.comment}</p>
             </div>
 
-            {/* Suggestions */}
+            {/* SUGGESTIONS */}
             {item.suggestions && item.suggestions.length > 0 && (
               <div className="bg-blue-50 rounded-lg p-4 border border-blue-100">
                 <p className="text-sm font-semibold text-blue-900 mb-2">Suggested Actions:</p>
@@ -161,7 +206,7 @@ const Feedback = () => {
               </div>
             )}
 
-            {/* Actions */}
+            {/* ACTION BUTTONS */}
             <div className="flex gap-3 mt-4">
               <button className="px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700 transition-colors">
                 Reply

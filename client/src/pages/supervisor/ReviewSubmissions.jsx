@@ -1,12 +1,56 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { FileText, CheckCircle, XCircle, Eye, Clock } from "lucide-react";
-import Card from "../../components/Card";
-import Button from "../../components/Button";
-import Modal from "../../components/Modal";
-import { submissions as initialSubmissions } from "../../data/supervisorData";
+import Card from "../../pages/supervisor/ui/Card";
+import Button from "../../pages/supervisor/ui/Button";
+import Modal from "../../pages/supervisor/ui/Modal";
 
 export default function ReviewSubmissions() {
-  const [submissions, setSubmissions] = useState(initialSubmissions);
+  // ✅ Hardcoded dummy submissions
+  const [submissions, setSubmissions] = useState([
+    {
+      id: "1",
+      studentName: "Michael Chen",
+      documentType: "Chapter 3 - Methodology",
+      submittedDate: "2024-11-08",
+      status: "pending",
+    },
+    {
+      id: "2",
+      studentName: "Ahmed Hassan",
+      documentType: "Literature Review",
+      submittedDate: "2024-11-09",
+      status: "pending",
+    },
+    {
+      id: "3",
+      studentName: "David Kim",
+      documentType: "Complete Draft Thesis",
+      submittedDate: "2024-11-10",
+      status: "pending",
+    },
+    {
+      id: "4",
+      studentName: "Sarah Williams",
+      documentType: "Research Proposal",
+      submittedDate: "2024-11-05",
+      status: "approved",
+    },
+    {
+      id: "5",
+      studentName: "Jennifer Taylor",
+      documentType: "Chapter 2 - Literature Review",
+      submittedDate: "2024-11-03",
+      status: "rejected",
+    },
+    {
+      id: "6",
+      studentName: "Emily Rodriguez",
+      documentType: "Progress Report",
+      submittedDate: "2024-11-01",
+      status: "approved",
+    },
+  ]);
+
   const [selectedSubmission, setSelectedSubmission] = useState(null);
   const [isEvaluationModalOpen, setIsEvaluationModalOpen] = useState(false);
   const [filterStatus, setFilterStatus] = useState("all");
@@ -18,9 +62,7 @@ export default function ReviewSubmissions() {
 
   const handleStatusUpdate = (id, status) => {
     setSubmissions(
-      submissions.map((sub) =>
-        sub.id === id ? { ...sub, status } : sub
-      )
+      submissions.map((sub) => (sub.id === id ? { ...sub, status } : sub))
     );
   };
 
@@ -70,12 +112,8 @@ export default function ReviewSubmissions() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-800">
-            Review Submissions
-          </h1>
-          <p className="text-gray-600 mt-1">
-            Manage and evaluate student submissions
-          </p>
+          <h1 className="text-3xl font-bold text-gray-800">Review Submissions</h1>
+          <p className="text-gray-600 mt-1">Manage and evaluate student submissions</p>
         </div>
       </div>
 
@@ -105,21 +143,11 @@ export default function ReviewSubmissions() {
           <table className="w-full">
             <thead>
               <tr className="border-b border-gray-200">
-                <th className="text-left py-3 px-4 font-semibold text-gray-700">
-                  Student Name
-                </th>
-                <th className="text-left py-3 px-4 font-semibold text-gray-700">
-                  Document Type
-                </th>
-                <th className="text-left py-3 px-4 font-semibold text-gray-700">
-                  Submitted Date
-                </th>
-                <th className="text-left py-3 px-4 font-semibold text-gray-700">
-                  Status
-                </th>
-                <th className="text-left py-3 px-4 font-semibold text-gray-700">
-                  Actions
-                </th>
+                <th className="text-left py-3 px-4 font-semibold text-gray-700">Student Name</th>
+                <th className="text-left py-3 px-4 font-semibold text-gray-700">Document Type</th>
+                <th className="text-left py-3 px-4 font-semibold text-gray-700">Submitted Date</th>
+                <th className="text-left py-3 px-4 font-semibold text-gray-700">Status</th>
+                <th className="text-left py-3 px-4 font-semibold text-gray-700">Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -128,28 +156,13 @@ export default function ReviewSubmissions() {
                   key={submission.id}
                   className="border-b border-gray-100 hover:bg-gray-50 transition-colors"
                 >
-                  <td className="py-4 px-4">
-                    <p className="font-medium text-gray-800">
-                      {submission.studentName}
-                    </p>
-                  </td>
-                  <td className="py-4 px-4">
-                    <div className="flex items-center gap-2">
-                      <FileText size={18} className="text-gray-400" />
-                      <span className="text-gray-700">
-                        {submission.documentType}
-                      </span>
-                    </div>
+                  <td className="py-4 px-4">{submission.studentName}</td>
+                  <td className="py-4 px-4 flex items-center gap-2">
+                    <FileText size={18} className="text-gray-400" />
+                    {submission.documentType}
                   </td>
                   <td className="py-4 px-4 text-gray-600">
-                    {new Date(submission.submittedDate).toLocaleDateString(
-                      "en-US",
-                      {
-                        year: "numeric",
-                        month: "short",
-                        day: "numeric",
-                      }
-                    )}
+                    {new Date(submission.submittedDate).toLocaleDateString()}
                   </td>
                   <td className="py-4 px-4">
                     <span
@@ -158,42 +171,36 @@ export default function ReviewSubmissions() {
                       )}`}
                     >
                       {getStatusIcon(submission.status)}
-                      {submission.status.charAt(0).toUpperCase() +
-                        submission.status.slice(1)}
+                      {submission.status.charAt(0).toUpperCase() + submission.status.slice(1)}
                     </span>
                   </td>
-                  <td className="py-4 px-4">
-                    <div className="flex items-center gap-2">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => alert("View document functionality")}
-                        className="flex items-center gap-1"
-                      >
-                        <Eye size={16} />
-                        View
-                      </Button>
-                      {submission.status === "pending" && (
-                        <>
-                          <Button
-                            size="sm"
-                            variant="success"
-                            onClick={() => openEvaluationModal(submission)}
-                          >
-                            Approve
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="danger"
-                            onClick={() =>
-                              handleStatusUpdate(submission.id, "rejected")
-                            }
-                          >
-                            Reject
-                          </Button>
-                        </>
-                      )}
-                    </div>
+                  <td className="py-4 px-4 flex gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => alert("View document")}
+                      className="flex items-center gap-1"
+                    >
+                      <Eye size={16} /> View
+                    </Button>
+                    {submission.status === "pending" && (
+                      <>
+                        <Button
+                          size="sm"
+                          variant="success"
+                          onClick={() => openEvaluationModal(submission)}
+                        >
+                          Approve
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="danger"
+                          onClick={() => handleStatusUpdate(submission.id, "rejected")}
+                        >
+                          Reject
+                        </Button>
+                      </>
+                    )}
                   </td>
                 </tr>
               ))}
@@ -210,9 +217,7 @@ export default function ReviewSubmissions() {
       >
         <form onSubmit={handleSubmitEvaluation} className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Student Name
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Student Name</label>
             <input
               type="text"
               value={selectedSubmission?.studentName || ""}
@@ -222,9 +227,7 @@ export default function ReviewSubmissions() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Document Type
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Document Type</label>
             <input
               type="text"
               value={selectedSubmission?.documentType || ""}
@@ -234,19 +237,14 @@ export default function ReviewSubmissions() {
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Score (0–100)
-            </label>
+            <label className="block text-sm font-medium text-gray-700 mb-2">Score (0–100)</label>
             <input
               type="number"
               min="0"
               max="100"
               value={evaluationForm.score}
               onChange={(e) =>
-                setEvaluationForm({
-                  ...evaluationForm,
-                  score: e.target.value,
-                })
+                setEvaluationForm({ ...evaluationForm, score: e.target.value })
               }
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               placeholder="Enter score"
@@ -261,10 +259,7 @@ export default function ReviewSubmissions() {
             <textarea
               value={evaluationForm.comments}
               onChange={(e) =>
-                setEvaluationForm({
-                  ...evaluationForm,
-                  comments: e.target.value,
-                })
+                setEvaluationForm({ ...evaluationForm, comments: e.target.value })
               }
               className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
               rows={6}
