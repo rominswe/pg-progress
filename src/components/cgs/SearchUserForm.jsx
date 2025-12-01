@@ -10,19 +10,17 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
-import { UserRole, DEPARTMENTS } from '@/data/mockUsers';
+import { mockUsers, DEPARTMENTS } from '@/data/mockUsers';
+// import { DEPARTMENTS } from '@/data/departments';
+// import { mockUsers } from '@/data/mockUsers';
+// import { DEPARTMENTS, mockUsers } from '@/data/mockUsers';
 
-interface SearchUserFormProps {
-  onSearch: (role: UserRole, idValue: string, departmentCode: string) => void;
-  isSearching: boolean;
-}
-
-export default function SearchUserForm({ onSearch, isSearching }: SearchUserFormProps) {
-  const [role, setRole] = useState<UserRole | ''>('');
+export default function SearchUserForm({ onSearch, isSearching }) {
+  const [role, setRole] = useState('');
   const [idValue, setIdValue] = useState('');
   const [departmentCode, setDepartmentCode] = useState('');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = (e) => {
     e.preventDefault();
     if (role) {
       onSearch(role, idValue.trim(), departmentCode);
@@ -40,7 +38,7 @@ export default function SearchUserForm({ onSearch, isSearching }: SearchUserForm
       <div className="grid gap-4 md:grid-cols-3">
         <div className="space-y-2">
           <Label htmlFor="role">Select Role</Label>
-          <Select value={role} onValueChange={(value) => setRole(value as UserRole)}>
+          <Select value={role} onValueChange={(value) => setRole(value)}>
             <SelectTrigger id="role" className="bg-background">
               <SelectValue placeholder="Select role..." />
             </SelectTrigger>

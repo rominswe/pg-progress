@@ -24,24 +24,12 @@ import { toast } from 'sonner';
 import { mockDocuments } from '@/data/mockUsers';
 import { CheckCircle, XCircle, Eye, FileText } from 'lucide-react';
 
-type DocumentStatus = 'Pending' | 'Approved' | 'Rejected';
-
-interface Document {
-  id: string;
-  title: string;
-  studentName: string;
-  department: string;
-  submittedDate: string;
-  status: DocumentStatus;
-  type: string;
-}
-
 export default function CGSVerifyDocuments() {
-  const [documents, setDocuments] = useState<Document[]>(mockDocuments as Document[]);
-  const [selectedDoc, setSelectedDoc] = useState<Document | null>(null);
-  const [actionType, setActionType] = useState<'approve' | 'reject' | null>(null);
+  const [documents, setDocuments] = useState(mockDocuments);
+  const [selectedDoc, setSelectedDoc] = useState(null);
+  const [actionType, setActionType] = useState(null);
 
-  const getStatusBadge = (status: DocumentStatus) => {
+  const getStatusBadge = (status) => {
     switch (status) {
       case 'Approved':
         return (
@@ -68,14 +56,14 @@ export default function CGSVerifyDocuments() {
     }
   };
 
-  const handleAction = (doc: Document, action: 'approve' | 'reject') => {
+  const handleAction = (doc, action) => {
     setSelectedDoc(doc);
     setActionType(action);
   };
 
   const confirmAction = () => {
     if (selectedDoc && actionType) {
-      const newStatus: DocumentStatus = actionType === 'approve' ? 'Approved' : 'Rejected';
+      const newStatus = actionType === 'approve' ? 'Approved' : 'Rejected';
       setDocuments((prev) =>
         prev.map((doc) =>
           doc.id === selectedDoc.id ? { ...doc, status: newStatus } : doc
@@ -214,9 +202,7 @@ export default function CGSVerifyDocuments() {
               {actionType === 'approve' ? 'Approve Document' : 'Reject Document'}
             </AlertDialogTitle>
             <AlertDialogDescription className="space-y-2">
-              <p>
-                Are you sure you want to {actionType} this document?
-              </p>
+              <p>Are you sure you want to {actionType} this document?</p>
               {selectedDoc && (
                 <p className="font-medium text-foreground">{selectedDoc.title}</p>
               )}

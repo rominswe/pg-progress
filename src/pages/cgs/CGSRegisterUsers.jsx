@@ -4,17 +4,17 @@ import { toast } from 'sonner';
 import SearchUserForm from '@/components/cgs/SearchUserForm';
 import UserDetailCard from '@/components/cgs/UserDetailCard';
 import ConfirmRegisterModal from '@/components/cgs/ConfirmRegisterModal';
-import { mockUsers, MockUser, UserRole } from '@/data/mockUsers';
+import { mockUsers } from '@/data/mockUsers';
 import { Search, UserX } from 'lucide-react';
 
 export default function CGSRegisterUsers() {
   const [users, setUsers] = useState(mockUsers);
-  const [searchResult, setSearchResult] = useState<MockUser | null>(null);
+  const [searchResult, setSearchResult] = useState(null);
   const [isSearching, setIsSearching] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
 
-  const handleSearch = (role: UserRole, idValue: string, departmentCode: string) => {
+  const handleSearch = (role, idValue, departmentCode) => {
     setIsSearching(true);
     setHasSearched(true);
 
@@ -50,11 +50,11 @@ export default function CGSRegisterUsers() {
     if (searchResult) {
       setUsers((prev) =>
         prev.map((user) =>
-          user.id === searchResult.id ? { ...user, status: 'Registered' as const } : user
+          user.id === searchResult.id ? { ...user, status: 'Registered' } : user
         )
       );
       setSearchResult((prev) =>
-        prev ? { ...prev, status: 'Registered' as const } : null
+        prev ? { ...prev, status: 'Registered' } : null
       );
       setShowConfirmModal(false);
       toast.success('User registered successfully!');
