@@ -25,7 +25,7 @@ export default function AdminLogin({ onLogin }) {
 
       if (res.ok) {
         localStorage.setItem("token", data.token);
-        localStorage.setItem("role", "admin");
+        localStorage.setItem("role", "cgs");
         navigate("/admin/dashboard");
       } else {
         alert(data.error || "Invalid Admin Credentials");
@@ -65,7 +65,7 @@ export default function AdminLogin({ onLogin }) {
           >
             <Lock className="w-10 h-10 text-blue-700 mx-auto md:mx-0 mb-3" />
             <h2 className="text-3xl font-extrabold text-gray-800">
-              CGS Admin Login
+              CGS Admin
             </h2>
             <p className="text-gray-500 mt-1">
               Authorized personnel access only

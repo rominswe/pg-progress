@@ -5,7 +5,7 @@ import {
   createStudinfo,
   updateStudinfo,
   deleteStudinfo,
-} from "../controllers/studinfoController.js";
+} from "../controllers/studentInfoController.js";
 
 const router = express.Router();
 

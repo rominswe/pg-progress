@@ -1,9 +1,9 @@
-import supervisoryMeeting from "../models/supervisoryMeeting.js";
+import {superVisoryMeeting} from "../config/config.js";
 
 // Get all meetings
 export const getAllMeetings = async (req, res) => {
   try {
-    const meetings = await supervisoryMeeting.findAll();
+    const meetings = await superVisoryMeeting.findAll();
     res.json(meetings);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -13,7 +13,7 @@ export const getAllMeetings = async (req, res) => {
 // Get single meeting by meeting_id
 export const getMeetingById = async (req, res) => {
   try {
-    const meeting = await supervisoryMeeting.findByPk(req.params.meeting_id);
+    const meeting = await superVisoryMeeting.findByPk(req.params.meeting_id);
     if (!meeting) return res.status(404).json({ message: "Meeting not found" });
     res.json(meeting);
   } catch (error) {
@@ -24,7 +24,7 @@ export const getMeetingById = async (req, res) => {
 // Create a new meeting
 export const createMeeting = async (req, res) => {
   try {
-    const newMeeting = await supervisoryMeeting.create(req.body);
+    const newMeeting = await superVisoryMeeting.create(req.body);
     res.status(201).json(newMeeting);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -34,7 +34,7 @@ export const createMeeting = async (req, res) => {
 // Update a meeting
 export const updateMeeting = async (req, res) => {
   try {
-    const meeting = await supervisoryMeeting.findByPk(req.params.meeting_id);
+    const meeting = await superVisoryMeeting.findByPk(req.params.meeting_id);
     if (!meeting) return res.status(404).json({ message: "Meeting not found" });
 
     await meeting.update(req.body);
@@ -47,7 +47,7 @@ export const updateMeeting = async (req, res) => {
 // Delete a meeting
 export const deleteMeeting = async (req, res) => {
   try {
-    const meeting = await supervisoryMeeting.findByPk(req.params.meeting_id);
+    const meeting = await superVisoryMeeting.findByPk(req.params.meeting_id);
     if (!meeting) return res.status(404).json({ message: "Meeting not found" });
 
     await meeting.destroy();

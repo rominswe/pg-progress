@@ -1,4 +1,4 @@
-import progress from "../models/progress.js";
+import {progress} from "../config/config.js";
 
 // Get all progress records
 export const getAllProgress = async (req, res) => {

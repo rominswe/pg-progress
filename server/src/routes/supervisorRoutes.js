@@ -11,9 +11,9 @@ const router = express.Router();
 
 // CRUD endpoints
 router.get("/", getAllSupervisors);
-router.get("/:supervisor_id", getSupervisorById);
+router.get("/:emp_id", getSupervisorById);
 router.post("/", createSupervisor);
-router.put("/:supervisor_id", updateSupervisor);
-router.delete("/:supervisor_id", deleteSupervisor);
+router.put("/:emp_id", updateSupervisor);
+router.delete("/:emp_id", deleteSupervisor);
 
 export default router;

@@ -1,4 +1,4 @@
-import { masterStu, supervisor } from "../config/db.js";
+import { masterStu, supervisor } from "../config/config.js";
 import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 

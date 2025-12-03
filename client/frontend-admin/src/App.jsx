@@ -10,7 +10,7 @@ import { Toaster } from "./components/ui/toaster";
 import { Toaster as Sonner } from "./components/ui/sonner";
 import { TooltipProvider } from "./components/ui/tooltip";
 import { isTokenExpired } from "./utils/jwt";
-import { refreshToken, logout } from "./services/authService";
+// import { refreshToken, logout } from "./services/authService";
 import ProtectedRoute from "./components/login/ProtectedRoute";
 
 // Login Components
@@ -29,11 +29,10 @@ const queryClient = new QueryClient();
 
 function AppWrapper() {
   const navigate = useNavigate();
+  const location = useLocation();
 
   // Persistent login
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [role, setRole] = useState(null);
-  const location = useLocation();
   const [loading, setLoading] = useState(true); // Block is render until check is done.
 
   useEffect(() => {
@@ -45,15 +44,20 @@ function AppWrapper() {
     } else {
       setIsAuthenticated(false);
       localStorage.removeItem("token");
-      localStorage.removeItem("role");
     }
     setLoading(false);
   }, []);
 
   useEffect(() => {
-  if (!loading && !isAuthenticated && location.pathname !== "/CGSIndex" ) {
-    navigate("/AdminLogin", { replace: true });
-  }
+    const publicRoutes = ["/cgsindex", "/adminlogin"];
+    if (!loading && !isAuthenticated && !publicRoutes.includes(location.pathname.toLowerCase())) {
+      navigate("/cgsindex", { replace: true });
+    }
+
+    if (isAuthenticated && location.pathname === "/adminlogin") {
+      navigate("/cgs/dashboard", { replace: true });
+    }
+
 }, [loading, isAuthenticated, navigate, location.pathname]);
   
   // Callback from Login.jsx
@@ -65,10 +69,8 @@ function AppWrapper() {
 
   // Logout function
   const handleLogout = () => {
-    localStorage.removeItem("token");
-    localStorage.removeItem("role",);
+    localStorage.clear();
     setIsAuthenticated(false);
-    setRole(null);
     navigate("/CGSIndex", {replace: true} ) // redirect after logout
   };
 
@@ -83,14 +85,14 @@ function AppWrapper() {
 
       <Routes>
       {/* ===== Landing Pages ===== */}
-      <Route path="/CGSIndex" element={<CGSIndex />} />
+      <Route path="/cgsindex" element={<CGSIndex />} />
 
       {/* ===== LOGIN PAGES ===== */}
-      <Route path="/AdminLogin" element={<AdminLogin onLogin={handleLogin} />} />
+      <Route path="/adminlogin" element={<AdminLogin onLogin={handleLogin} />} />
 
       {/* ===== CGS ===== */}
       <Route path="/cgs/*" element={
-        <ProtectedRoute isAuthenticated={isAuthenticated} userRole="cgs" allowedRole="cgs">
+        <ProtectedRoute isAuthenticated={isAuthenticated} >
           <CGSLayout onLogout={handleLogout} />
         </ProtectedRoute>
       }>
@@ -102,7 +104,7 @@ function AppWrapper() {
       </Route>
 
       {/* ===== FALLBACK ===== */}
-      <Route path="*" element={<Navigate to="/CGSIndex" replace />} />
+      <Route path="/cgs/*" element={<Navigate to="/cgsindex" replace />} />
     </Routes>
   );
 }

@@ -1,9 +1,5 @@
-import _sequelize from 'sequelize';
-const { Model, Sequelize } = _sequelize;
-
-export default class supervisoryMeeting extends Model {
-  static init(sequelize, DataTypes) {
-  return super.init({
+export default (sequelize, DataTypes) => {
+  return sequelize.define('supervisory_meetings', {
     meeting_id: {
       autoIncrement: true,
       type: DataTypes.INTEGER,
@@ -12,15 +8,27 @@ export default class supervisoryMeeting extends Model {
     },
     stu_id: {
       type: DataTypes.STRING(20),
-      allowNull: false
+      allowNull: false,
+      references: {
+        model: 'master_stu',
+        key: 'stu_id'
+      }
     },
     supervisor_id: {
       type: DataTypes.STRING(20),
-      allowNull: false
+      allowNull: false,
+      references: {
+        model: 'supervisor',
+        key: 'emp_id'
+      }
     },
     co_supervisor_id: {
       type: DataTypes.STRING(20),
-      allowNull: true
+      allowNull: true,
+      references: {
+        model: 'supervisor',
+        key: 'emp_id'
+      }
     },
     meeting_date: {
       type: DataTypes.DATEONLY,
@@ -85,7 +93,7 @@ export default class supervisoryMeeting extends Model {
     submission_date: {
       type: DataTypes.DATE,
       allowNull: false,
-      defaultValue: Sequelize.Sequelize.literal('CURRENT_TIMESTAMP')
+      defaultValue: DataTypes.NOW
     }
   }, {
     sequelize,
@@ -123,5 +131,5 @@ export default class supervisoryMeeting extends Model {
       },
     ]
   });
-  }
-}
+};
+

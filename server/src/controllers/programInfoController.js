@@ -1,4 +1,4 @@
-import programInfo from "../models/programInfo.js";
+import {programInfo} from "../config/config.js";
 
 // Get all programs
 export const getAllPrograms = async (req, res) => {

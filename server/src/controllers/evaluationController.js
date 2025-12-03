@@ -1,4 +1,4 @@
-import evaluation from "../models/evaluation.js";
+import {evaluation} from "../config/config.js";
 
 // Get all evaluations
 export const getAllEvaluations = async (req, res) => {

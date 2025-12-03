@@ -1,5 +1,5 @@
 import app from "./app.js";
-import {sequelize} from "./config/db.js";
+import { sequelize } from "./config/config.js";
 
 console.log("ENV TEST:", process.env.DB_USER, process.env.DB_PASS, process.env.DB_NAME);
 

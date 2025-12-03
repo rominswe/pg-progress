@@ -1,9 +1,5 @@
-import _sequelize from 'sequelize';
-const { Model, Sequelize } = _sequelize;
-
-export default class studinfo extends Model {
-  static init(sequelize, DataTypes) {
-  return super.init({
+export default (sequelize, DataTypes) => {
+  return sequelize.define('studinfo', {
     stu_id: {
       type: DataTypes.STRING(20),
       allowNull: false,
@@ -11,7 +7,11 @@ export default class studinfo extends Model {
     },
     Dep_Code: {
       type: DataTypes.STRING(100),
-      allowNull: false
+      allowNull: false,
+      references: {
+        model: 'tbldepartments',
+        key: 'Dep_Code'
+      }
     },
     Prog_Code: {
       type: DataTypes.STRING(100),
@@ -68,7 +68,7 @@ export default class studinfo extends Model {
     RegDate: {
       type: DataTypes.DATE,
       allowNull: false,
-      defaultValue: Sequelize.Sequelize.literal('CURRENT_TIMESTAMP')
+      defaultValue: DataTypes.NOW
     },
     role: {
       type: DataTypes.STRING(30),
@@ -105,6 +105,7 @@ export default class studinfo extends Model {
   }, {
     sequelize,
     tableName: 'studinfo',
+    hasTrigger: true,
     timestamps: false,
     indexes: [
       {
@@ -131,5 +132,5 @@ export default class studinfo extends Model {
       },
     ]
   });
-  }
-}
+};
+

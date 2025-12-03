@@ -1,9 +1,5 @@
-import _sequelize from 'sequelize';
-const { Model, Sequelize } = _sequelize;
-
-export default class progress extends Model {
-  static init(sequelize, DataTypes) {
-  return super.init({
+export default (sequelize, DataTypes) => {
+  return sequelize.define('progress', {
     progress_id: {
       autoIncrement: true,
       type: DataTypes.INTEGER,
@@ -12,11 +8,7 @@ export default class progress extends Model {
     },
     thesis_id: {
       type: DataTypes.INTEGER.UNSIGNED,
-      allowNull: false,
-      references: {
-        model: 'thesis',
-        key: 'thesis_id'
-      }
+      allowNull: false
     },
     milestone_type: {
       type: DataTypes.STRING(100),
@@ -41,7 +33,7 @@ export default class progress extends Model {
     date_updated: {
       type: DataTypes.DATE,
       allowNull: true,
-      defaultValue: Sequelize.Sequelize.literal('CURRENT_TIMESTAMP')
+      defaultValue: DataTypes.NOW
     }
   }, {
     sequelize,
@@ -65,5 +57,5 @@ export default class progress extends Model {
       },
     ]
   });
-  }
-}
+};
+

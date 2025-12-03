@@ -1,4 +1,4 @@
-import supervisor from "../models/Supervisor.js";
+import { supervisor } from "../config/config.js";
 
 // Get all supervisors
 export const getAllSupervisors = async (req, res) => {
@@ -13,7 +13,7 @@ export const getAllSupervisors = async (req, res) => {
 // Get single supervisor by supervisor_id
 export const getSupervisorById = async (req, res) => {
   try {
-    const singleSupervisor = await supervisor.findByPk(req.params.supervisor_id);
+    const singleSupervisor = await supervisor.findByPk(req.params.emp_id);
     if (!singleSupervisor) return res.status(404).json({ message: "Supervisor not found" });
     res.json(singleSupervisor);
   } catch (error) {
@@ -34,7 +34,7 @@ export const createSupervisor = async (req, res) => {
 // Update a supervisor
 export const updateSupervisor = async (req, res) => {
   try {
-    const singleSupervisor = await supervisor.findByPk(req.params.supervisor_id);
+    const singleSupervisor = await supervisor.findByPk(req.params.emp_id);
     if (!singleSupervisor) return res.status(404).json({ message: "Supervisor not found" });
 
     await singleSupervisor.update(req.body);
@@ -47,7 +47,7 @@ export const updateSupervisor = async (req, res) => {
 // Delete a supervisor
 export const deleteSupervisor = async (req, res) => {
   try {
-    const singleSupervisor = await supervisor.findByPk(req.params.supervisor_id);
+    const singleSupervisor = await supervisor.findByPk(req.params.emp_id);
     if (!singleSupervisor) return res.status(404).json({ message: "Supervisor not found" });
 
     await singleSupervisor.destroy();

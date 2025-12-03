@@ -1,7 +1,7 @@
-import masterStu from "../models/masterStu.js";
+import {masterStu} from "../config/config.js";
 
 // Get all students
-export const getAllStudents = async (req, res) => {
+export const getAllStudents = async (rep, res) => {
   try {
     const students = await masterStu.findAll();
     res.json(students);

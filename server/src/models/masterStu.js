@@ -1,17 +1,9 @@
-import _sequelize from 'sequelize';
-const { Model, Sequelize } = _sequelize;
-
-export default class masterStu extends Model {
-  static init(sequelize, DataTypes) {
-  return super.init({
+export default (sequelize, DataTypes) => {
+  return sequelize.define('master_stu', {
     stu_id: {
       type: DataTypes.STRING(20),
       allowNull: false,
-      primaryKey: true,
-      references: {
-        model: 'studinfo',
-        key: 'stu_id'
-      }
+      primaryKey: true
     },
     Name: {
       type: DataTypes.STRING(100),
@@ -35,11 +27,19 @@ export default class masterStu extends Model {
     },
     Dep_Code: {
       type: DataTypes.STRING(100),
-      allowNull: false
+      allowNull: false,
+      references: {
+        model: 'tbldepartments',
+        key: 'Dep_Code'
+      }
     },
     Prog_Code: {
       type: DataTypes.STRING(100),
-      allowNull: false
+      allowNull: false,
+      references: {
+        model: 'program_info',
+        key: 'Prog_Code'
+      }
     },
     Role: {
       type: DataTypes.STRING(10),
@@ -81,19 +81,35 @@ export default class masterStu extends Model {
     },
     Supervisor: {
       type: DataTypes.STRING(20),
-      allowNull: true
+      allowNull: true,
+      references: {
+        model: 'supervisor',
+        key: 'emp_id'
+      }
     },
     Co_Supervisor: {
       type: DataTypes.STRING(20),
-      allowNull: true
+      allowNull: true,
+      references: {
+        model: 'supervisor',
+        key: 'emp_id'
+      }
     },
     Co_S_Suv: {
       type: DataTypes.STRING(20),
-      allowNull: true
+      allowNull: true,
+      references: {
+        model: 'supervisor',
+        key: 'emp_id'
+      }
     },
     Co_T_Suv: {
       type: DataTypes.STRING(20),
-      allowNull: true
+      allowNull: true,
+      references: {
+        model: 'supervisor',
+        key: 'emp_id'
+      }
     },
     Defence_Examiner: {
       type: DataTypes.STRING(100),
@@ -131,13 +147,21 @@ export default class masterStu extends Model {
     Reg_Date: {
       type: DataTypes.DATE,
       allowNull: false,
-      defaultValue: Sequelize.Sequelize.literal('CURRENT_TIMESTAMP')
+      defaultValue: DataTypes.NOW
     }
   }, {
     sequelize,
     tableName: 'master_stu',
     timestamps: false,
     indexes: [
+      {
+        name: "PRIMARY",
+        unique: true,
+        using: "BTREE",
+        fields: [
+          { name: "stu_id" },
+        ]
+      },
       {
         name: "Dep_Code",
         using: "BTREE",
@@ -189,5 +213,5 @@ export default class masterStu extends Model {
       },
     ]
   });
-  }
-}
+};
+

@@ -1,9 +1,5 @@
-import _sequelize from 'sequelize';
-const { Model, Sequelize } = _sequelize;
-
-export default class role extends Model {
-  static init(sequelize, DataTypes) {
-  return super.init({
+export default (sequelize, DataTypes) => {
+  return sequelize.define('roles', {
     role_id: {
       type: DataTypes.STRING(100),
       allowNull: false,
@@ -16,11 +12,15 @@ export default class role extends Model {
     Creation_Date: {
       type: DataTypes.DATE,
       allowNull: false,
-      defaultValue: Sequelize.Sequelize.literal('CURRENT_TIMESTAMP')
+      defaultValue: DataTypes.NOW
     },
     Dep_Code: {
       type: DataTypes.STRING(100),
-      allowNull: false
+      allowNull: false,
+      references: {
+        model: 'tbldepartments',
+        key: 'Dep_Code'
+      }
     }
   }, {
     sequelize,
@@ -44,5 +44,5 @@ export default class role extends Model {
       },
     ]
   });
-  }
-}
+};
+

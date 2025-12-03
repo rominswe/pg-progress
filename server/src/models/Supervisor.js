@@ -1,13 +1,9 @@
-import _sequelize from 'sequelize';
-const { Model, Sequelize } = _sequelize;
-
-export default class supervisor extends Model {
-  static init(sequelize, DataTypes) {
-  return super.init({
+export default (sequelize, DataTypes) => {
+  return sequelize.define('supervisor', {
     emp_id: {
       type: DataTypes.STRING(20),
-      primaryKey: true,
-      allowNull: false
+      allowNull: false,
+      primaryKey: true
     },
     emp_email: {
       type: DataTypes.STRING(100),
@@ -28,7 +24,11 @@ export default class supervisor extends Model {
     },
     Dep_Code: {
       type: DataTypes.STRING(100),
-      allowNull: false
+      allowNull: false,
+      references: {
+        model: 'tbldepartments',
+        key: 'Dep_Code'
+      }
     },
     Designation: {
       type: DataTypes.STRING(50),
@@ -37,7 +37,11 @@ export default class supervisor extends Model {
     Role: {
       type: DataTypes.STRING(100),
       allowNull: true,
-      defaultValue: "Supervisor"
+      defaultValue: "Supervisor",
+      references: {
+        model: 'roles',
+        key: 'role_id'
+      }
     },
     Profession: {
       type: DataTypes.STRING(100),
@@ -88,13 +92,42 @@ export default class supervisor extends Model {
       type: DataTypes.INTEGER,
       allowNull: false,
       defaultValue: 0
-    },
+    }
   }, {
     sequelize,
     tableName: 'supervisor',
-    timestamps: true,
-    createdAt: 'Created_At',
-    updatedAt: 'Updated_At',
+    timestamps: false,
+    indexes: [
+      {
+        name: "PRIMARY",
+        unique: true,
+        using: "BTREE",
+        fields: [
+          { name: "emp_id" },
+        ]
+      },
+      {
+        name: "emp_email",
+        unique: true,
+        using: "BTREE",
+        fields: [
+          { name: "emp_email" },
+        ]
+      },
+      {
+        name: "Role",
+        using: "BTREE",
+        fields: [
+          { name: "Role" },
+        ]
+      },
+      {
+        name: "Dep_Code",
+        using: "BTREE",
+        fields: [
+          { name: "Dep_Code" },
+        ]
+      },
+    ]
   });
-  }
-}
+};

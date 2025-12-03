@@ -1,9 +1,5 @@
-import _sequelize from 'sequelize';
-const { Model, Sequelize } = _sequelize;
-
-export default class thesis extends Model {
-  static init(sequelize, DataTypes) {
-  return super.init({
+export default (sequelize, DataTypes) => {
+  return sequelize.define('thesis', {
     thesis_id: {
       autoIncrement: true,
       type: DataTypes.INTEGER.UNSIGNED,
@@ -64,5 +60,5 @@ export default class thesis extends Model {
       },
     ]
   });
-  }
-}
+};
+

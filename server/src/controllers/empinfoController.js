@@ -1,4 +1,4 @@
-import empinfo from "../models/empinfo.js";
+import {empinfo} from "../config/config.js";
 
 // Get all employees
 export const getAllEmployees = async (req, res) => {

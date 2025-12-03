@@ -1,9 +1,13 @@
 export default (sequelize, DataTypes) => {
-  return sequelize.define('empinfo', {
+  return sequelize.define('cgs_admin', {
+    cgs_id: {
+      type: DataTypes.STRING(20),
+      allowNull: true,
+      primaryKey: true
+    },
     emp_id: {
       type: DataTypes.STRING(20),
-      allowNull: false,
-      primaryKey: true
+      allowNull: false
     },
     FirstName: {
       type: DataTypes.STRING(150),
@@ -25,17 +29,9 @@ export default (sequelize, DataTypes) => {
       type: DataTypes.STRING(100),
       allowNull: false
     },
-    Dob: {
-      type: DataTypes.STRING(100),
-      allowNull: false
-    },
     Dep_Code: {
       type: DataTypes.STRING(100),
-      allowNull: false,
-      references: {
-        model: 'tbldepartments',
-        key: 'Dep_Code'
-      }
+      allowNull: false
     },
     Address: {
       type: DataTypes.STRING(255),
@@ -65,44 +61,17 @@ export default (sequelize, DataTypes) => {
     Country: {
       type: DataTypes.STRING(300),
       allowNull: true
-    },
-    Passport: {
-      type: DataTypes.STRING(30),
-      allowNull: true
-    },
-    Vcode: {
-      type: DataTypes.STRING(100),
-      allowNull: true
-    },
-    Isverified: {
-      type: DataTypes.INTEGER,
-      allowNull: true
     }
   }, {
     sequelize,
-    tableName: 'empinfo',
+    tableName: 'cgs_admin',
     timestamps: false,
     indexes: [
-      {
-        name: "PRIMARY",
-        unique: true,
-        using: "BTREE",
-        fields: [
-          { name: "emp_id" },
-        ]
-      },
       {
         name: "Dep_Code",
         using: "BTREE",
         fields: [
           { name: "Dep_Code" },
-        ]
-      },
-      {
-        name: "emp_id",
-        using: "BTREE",
-        fields: [
-          { name: "emp_id" },
         ]
       },
     ]

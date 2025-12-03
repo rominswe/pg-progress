@@ -1,6 +1,6 @@
-import thesis from "../models/thesis.js";
+import {thesis} from "../config/config.js";
 
-// Get all theses
+// Get all thesis
 export const getAllTheses = async (req, res) => {
   try {
     const theses = await thesis.findAll();
