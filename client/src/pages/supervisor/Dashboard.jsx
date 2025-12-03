@@ -117,7 +117,7 @@ export default function SupervisorDashboard() {
                 key={student.id}
                 className="flex items-start gap-3 pb-3 border-b border-gray-100 last:border-0"
               >
-                <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center flex-shrink-0">
+                <div className="w-8 h-8 bg-blue-100 rounded-full flex items-center justify-center shrink-0">
                   <Users size={16} className="text-blue-600" />
                 </div>
                 <div className="flex-1 min-w-0">

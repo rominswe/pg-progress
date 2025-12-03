@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { FileText, MessageSquare, Clock, CheckCircle, TrendingUp, AlertCircle } from 'lucide-react';
 import axios from 'axios';
-import { API_BASE_URL } from '../../config';
+import { API_BASE_URL } from '../../services/config';
 
 const Dashboard = () => {
   // ================= STATE SETUP =================

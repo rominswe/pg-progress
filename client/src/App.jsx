@@ -2,11 +2,24 @@
 import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate, useLocation } from "react-router-dom";
 import { useState, useEffect } from "react";
 
-// Login Page
-import Login from "./components/login/Login";
+// React Query
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+
+// UI utilities (Toaster, Sonner, Tooltip)
+import { Toaster } from "././pages/cgs/ui/toaster";
+import { Toaster as Sonner } from "././pages/cgs/ui/sonner";
+import { TooltipProvider } from "././pages/cgs/ui/tooltip";
+import { isTokenExpired } from "./utils/jwt";
+import { refreshToken, logout } from "./services/authService";
+import ProtectedRoute from "./components/login/ProtectedRoute";
+
+// Login Components
+import UserLogin from "./components/login/UserLogin";
+import AdminLogin  from "./components/login/AdminLogin";
+
 
 // Student pages
-import StudentLayout from "./components/StudentLayout";
+import StudentLayout from "./components/student/StudentLayout";
 import Dashboard from "./pages/student/Dashboard";
 import Uploads from "./pages/student/Uploads";
 import ThesisSubmission from "./pages/student/ThesisSubmission";
@@ -15,10 +28,20 @@ import Feedback from "./pages/student/Feedback";
 import Analytics from "./pages/student/Analytics";
 
 // Supervisor pages
-import SupervisorLayout from "./components/SupervisorLayout";
+import SupervisorLayout from "./components/supervisor/SupervisorLayout";
 import SupervisorDashboard from "./pages/supervisor/Dashboard";
 import StudentList from "./pages/supervisor/StudentList";
 import ReviewSubmissions from "./pages/supervisor/ReviewSubmissions";
+
+// CGS Admin pages
+import CGSLayout from "./components/cgs/CGSLayout";
+import CGSDashboard from "./pages/cgs/CGSDashboard";
+import CGSRegisterUsers from "./pages/cgs/CGSRegisterUsers";
+import CGSMonitoring from "./pages/cgs/CGSMonitoring";
+import CGSVerifyDocuments from "./pages/cgs/CGSVerifyDocuments";
+
+// QueryClient
+const queryClient = new QueryClient();
 
 function AppWrapper() {
   const navigate = useNavigate();
@@ -48,18 +71,30 @@ function AppWrapper() {
     navigate("/login", { replace: true });
   }
 }, [loading, isAuthenticated, navigate, location.pathname]);
-
- if (loading)
-  return (
-    <div className="flex items-center justify-center h-screen text-lg font-semibold">
-      Loading...
-    </div>
-  );
   
   // Callback from Login.jsx
   const handleLogin = (userRole) => {
     setIsAuthenticated(true);
     setRole(userRole);
+    localStorage.setItem("role", userRole);
+
+    // Redirect based on role
+    switch (userRole){
+      case 'student':
+        navigate("/student/dashboard");
+        break;
+      case 'supervisor':
+        navigate("/supervisor/dashboard");
+        break;
+      case 'examiner':
+        navigate("/examiner/dashboard");
+        break;
+      case 'cgs':
+        navigate("/cgs/dashboard");
+        break;
+      default:
+        navigate("/login");
+    }
   };
 
   // Logout function
@@ -71,77 +106,78 @@ function AppWrapper() {
     navigate("/login"); // redirect after logout
   };
 
+   if (loading)
   return (
-    <div className="min-h-screen bg-gray-100 flex flex-col items-center justify-start">
-      <h1 className="text-3xl font-bold my-4">AIU PG Progress System</h1>
+    <div className="flex items-center justify-center h-screen text-lg font-semibold">
+      Loading...
+    </div>
+  );
+  
+  return (
 
       <Routes>
-        {/* Login Route */}
-        <Route
-          path="/login"
-          element={
-            isAuthenticated ? (
-              role === "student" ? (
-                <Navigate to="/student/dashboard" />
-              ) : (
-                <Navigate to="/supervisor/dashboard" />
-              )
-            ) : (
-              <Login onLogin={handleLogin} />
-            )
-          }
-        />
+      {/* ===== LOGIN PAGES ===== */}
+      <Route path="/login" element={<UserLogin onLogin={handleLogin} />} />
+      <Route path="/adminlogin" element={<AdminLogin onLogin={handleLogin} />} />
 
-        {/* Student Routes */}
-        <Route
-          path="/student/*" // using * for the nested routes
-          element={
-            isAuthenticated && role === "student" ? (
-              <StudentLayout onLogout={handleLogout} />
-            ) : (
-              <Navigate to="/login" replace/>
-            )
-          }
-        >
-          <Route index element={<Navigate to="/student/dashboard" replace />} />
-          <Route path="dashboard" element={<Dashboard />} />
-          <Route path="uploads" element={<Uploads />} />
-          <Route path="thesis-submission" element={<ThesisSubmission />} />
-          <Route path="progress-updates" element={<ProgressUpdates />} />
-          <Route path="feedback" element={<Feedback />} />
-          <Route path="analytics" element={<Analytics />} />
-        
-        </Route>
+      {/* ===== STUDENT ===== */}
+      <Route path="/student/*" element={
+        <ProtectedRoute isAuthenticated={isAuthenticated} userRole={role} allowedRole="student">
+          <StudentLayout onLogout={handleLogout} />
+        </ProtectedRoute>
+      }>
+        <Route index element={<Navigate to="dashboard" replace />} />
+        <Route path="dashboard" element={<Dashboard />} />
+        <Route path="uploads" element={<Uploads />} />
+        <Route path="thesis-submission" element={<ThesisSubmission />} />
+        <Route path="progress-updates" element={<ProgressUpdates />} />
+        <Route path="feedback" element={<Feedback />} />
+        <Route path="analytics" element={<Analytics />} />
+      </Route>
 
-        {/* Supervisor Routes */}
-        <Route
-          path="/supervisor/*" // using * for the nested routes
-          element={
-            isAuthenticated && role === "supervisor" ? (
-              <SupervisorLayout onLogout={handleLogout} />
-            ) : (
-              <Navigate to="/login" replace/>
-            )
-          }
-        >
-          <Route index element={<Navigate to="/supervisor/dashboard" />} />
-          <Route path="dashboard" element={<SupervisorDashboard />} />
-          <Route path="students" element={<StudentList />} />
-          <Route path="review" element={<ReviewSubmissions />} />
-        </Route>
+      {/* ===== SUPERVISOR ===== */}
+      <Route path="/supervisor/*" element={
+        <ProtectedRoute isAuthenticated={isAuthenticated} userRole={role} allowedRole="supervisor">
+          <SupervisorLayout onLogout={handleLogout} />
+        </ProtectedRoute>
+      }>
+        <Route index element={<Navigate to="dashboard" replace />} />
+        <Route path="dashboard" element={<SupervisorDashboard />} />
+        <Route path="students" element={<StudentList />} />
+        <Route path="review" element={<ReviewSubmissions />} />
+      </Route>
 
-        {/* Catch-all */}
-        <Route path="*" element={<Navigate to="/login" replace />} />
-      </Routes>
-    </div>
+      {/* ===== CGS ===== */}
+      <Route path="/cgs/*" element={
+        <ProtectedRoute isAuthenticated={isAuthenticated} userRole={role} allowedRole="cgs">
+          <CGSLayout onLogout={handleLogout} />
+        </ProtectedRoute>
+      }>
+        <Route index element={<Navigate to="dashboard" replace />} />
+        <Route path="dashboard" element={<CGSDashboard />} />
+        <Route path="register" element={<CGSRegisterUsers />} />
+        <Route path="monitoring" element={<CGSMonitoring />} />
+        <Route path="documents" element={<CGSVerifyDocuments />} />
+      </Route>
+
+      {/* ===== FALLBACK ===== */}
+      <Route path="*" element={<Navigate to="/login" replace />} />
+    </Routes>
   );
 }
 
 // Export wrapper
 export default function App() {
   return (
+     <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        {/* Global Toasters (render once at app root) */}
+        <Toaster />
+        <Sonner />
     <Router>
       <AppWrapper />
     </Router>
+    </TooltipProvider>
+    </QueryClientProvider>
   );
 }
