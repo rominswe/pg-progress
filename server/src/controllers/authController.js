@@ -35,6 +35,7 @@ export const studentLogin = async (req, res) => {
 /* ================= SUPERVISOR LOGIN ================= */
 export const supervisorLogin = async (req, res) => {
   const { email, password } = req.body;
+  
   try {
     const user = await supervisor.findOne({ where: { emp_email: email } });
     if (!user) return res.status(401).json({ error: "User not found" });
@@ -63,11 +64,16 @@ export const supervisorLogin = async (req, res) => {
 /* ================= CGS LOGIN ================= */
 export const cgsLogin = async (req, res) => {
   const { email, password } = req.body;
+  
+
   try {
-    const user = await cgs_admin.findOne({ where: { emp_email: email } });
+    const user = await cgs_admin.findOne({ where: { EmailId: email } });
     if (!user) return res.status(401).json({ error: "User not found" });
 
+    console.log("Found user:", user);
+    
     const valid = password === user.Password;
+    console.log("Password valid?", valid);
     // const valid = await bcrypt.compare(password, user.Password);
     if (!valid) return res.status(401).json({ error: "Wrong password" });
 

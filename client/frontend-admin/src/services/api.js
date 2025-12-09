@@ -8,13 +8,32 @@ const api = axios.create({
   headers: { 'Content-Type': 'application/json' },
 });
 
+api.interceptors.request.use(config => {
+  const token = localStorage.getItem("token");
+  if (token) {
+    config.headers.Authorization = `Bearer ${token}`;
+  }
+  return config;
+});
+
 export const authService = {
-  login: async (credentials) => {
-    const res = await api.post("/auth/login", credentials);
-    localStorage.setItem("token", res.data.accessToken);
-    localStorage.setItem("refreshToken", res.data.refreshToken);
-    localStorage.setItem("role", res.data.role);
-    return res.data;
+  login: async (role, credentials) => {
+    const roleMap = {
+    student: "/masterstu/login",
+    supervisor: "/supervisors/login",
+    cgs: "/cgsadmin/login"
+    };
+
+    if (!roleMap[role]) {
+      throw new Error("Invalid role selected");
+    }
+    return api.post(roleMap[role], credentials).then(res => {
+      localStorage.setItem("token", res.data.accessToken);
+      localStorage.setItem("refreshToken", res.data.refreshToken);
+      localStorage.setItem("role", res.data.role);
+      return res.data;
+    });
+    
   },
 
   refreshToken: async () => {

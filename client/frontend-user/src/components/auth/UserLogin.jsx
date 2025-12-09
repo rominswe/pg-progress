@@ -12,14 +12,14 @@ export default function userLogin({ onLogin }) {
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
 
-    async function handleSubmit(e) {
+  async function handleSubmit(e) {
     e.preventDefault();
     setLoading(true);
 
     try {
       const data = await authService.login(role, { email, password});
       
-      console.log("Login response:", data);
+      
 
       if (data.accessToken) {
         localStorage.setItem("token", data.accessToken);
@@ -35,16 +35,10 @@ export default function userLogin({ onLogin }) {
       } else {
         alert(data.error || "Invalid credentials");
       }
-    } 
-    catch (err) {
+    } catch (err) {
   console.error("Login Error:", err.response?.data || err.message);
   alert(err.response?.data?.error || "Login failed");
-}
-    // catch (err) {
-    //   console.error("Login error:", err);
-    //   alert("An error occurred. Please try again.");
-    // } 
-    finally {
+}finally {
       setLoading(false); 
     }
   }

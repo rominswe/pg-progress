@@ -3,52 +3,40 @@ import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { UserCircle, CheckCircle, Lock } from "lucide-react"; // Added new icons
 import { API_BASE_URL } from "../../services/api";
+import { authService } from "../../services/api";
 
 export default function AdminLogin({ onLogin }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const role = "cgs"; 
   const navigate = useNavigate();
-
-  // async function handleSubmit(e) {
-  //   e.preventDefault();
-  //   setLoading(true);
-
-  //   try {
-  //     const data = await await.login({ email, password });
-
-  //     if (res.ok) {
-  //       localStorage.setItem("token", data.token);
-  //       localStorage.setItem("role", "cgs");
-  //       navigate("/admin/dashboard");
-  //     } else {
-  //       alert(data.error || "Invalid Admin Credentials");
-  //     }
-  //   } catch (err) {
-  //     console.error("Login error:", err);
-  //     alert("An error occurred. Please try again.");
-  //   } finally {
-  //     setLoading(false); 
-  //   }
-  // }
   
   async function handleSubmit(e) {
     e.preventDefault();
     setLoading(true);
 
     try {
-      const data = await login({ email, password });
+      const data = await authService.login(role, { email, password});
 
-      if (res.ok) {
-        localStorage.setItem("token", data.token);
-        localStorage.setItem("role", "cgs");
-        navigate("/admin/dashboard");
+      console.log("Login response:", data);
+
+      if (data.accessToken) {
+        localStorage.setItem("token", data.accessToken);
+        localStorage.setItem("refreshToken", data.refreshToken);
+        localStorage.setItem("role", data.role);
+
+        if (onLogin) onLogin("cgs");
+        if (role === "cgs") navigate("/cgs/dashboard");
+        else
+        navigate("/");
       } else {
-        alert(data.error || "Invalid Admin Credentials");
+        alert(data.error || "Invalid Credentials");
       }
     } catch (err) {
-      console.error("Login error:", err);
-      alert("An error occurred. Please try again.");
+      // console.error("Login error:", err);
+      console.error("Login Error:", err.response?.data || err.message);
+      alert(err.response?.data?.error || "Login failed");
     } finally {
       setLoading(false); 
     }
