@@ -1,44 +1,50 @@
 import { useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../../shared/ui/card';
+import { Search, UserX } from 'lucide-react';
 import { toast } from 'sonner';
+
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '../../../shared/ui/card';
+
 import SearchUserForm from '../components/cgs/SearchUserForm';
 import UserDetailCard from '../components/cgs/UserDetailCard';
 import ConfirmRegisterModal from '../components/cgs/ConfirmRegisterModal';
-import { mockUsers } from '../data/mockUsers';
-import { Search, UserX } from 'lucide-react';
 
 export default function CGSRegisterUsers() {
-  const [users, setUsers] = useState(mockUsers);
+  const [users, setUsers] = useState([]);
   const [searchResult, setSearchResult] = useState(null);
   const [isSearching, setIsSearching] = useState(false);
   const [hasSearched, setHasSearched] = useState(false);
   const [showConfirmModal, setShowConfirmModal] = useState(false);
 
-  const handleSearch = (role, idValue, departmentCode) => {
+  const handleSearch = (role, idValue, departmentCode, examinerType) => {
     setIsSearching(true);
     setHasSearched(true);
+    setSearchResult(null);
 
-    // Simulate API delay
+    // 🔧 Simulated backend behavior (to be replaced with API)
     setTimeout(() => {
-      const found = users.find((user) => {
-        const roleMatch = user.role === role;
-        const idMatch =
-          role === 'Student'
-            ? user.studentId?.toLowerCase() === idValue.toLowerCase()
-            : user.employeeId?.toLowerCase() === idValue.toLowerCase();
-        const deptMatch = departmentCode
-          ? user.departmentCode.toLowerCase() === departmentCode.toLowerCase()
-          : true;
-
-        return roleMatch && (idValue ? idMatch : true) && deptMatch;
-      });
-
-      setSearchResult(found || null);
       setIsSearching(false);
 
-      if (!found) {
-        toast.error('No user found matching the search criteria.');
+      // Examiner registration flow (simulated success)
+      if (role === 'Examiner' && idValue) {
+        setSearchResult({
+          id: 'temp-user',
+          role,
+          email: idValue,
+          departmentCode,
+          examinerType,
+          status: 'Unregistered',
+          name: 'Simulated User',
+        });
+        return;
       }
+
+      toast.error('No user found matching the search criteria.');
     }, 500);
   };
 
@@ -47,18 +53,19 @@ export default function CGSRegisterUsers() {
   };
 
   const confirmRegistration = () => {
-    if (searchResult) {
-      setUsers((prev) =>
-        prev.map((user) =>
-          user.id === searchResult.id ? { ...user, status: 'Registered' } : user
-        )
-      );
-      setSearchResult((prev) =>
-        prev ? { ...prev, status: 'Registered' } : null
-      );
-      setShowConfirmModal(false);
-      toast.success('User registered successfully!');
-    }
+    if (!searchResult) return;
+
+    setUsers((prev) => [
+      ...prev,
+      { ...searchResult, id: crypto.randomUUID(), status: 'Registered' },
+    ]);
+
+    setSearchResult((prev) =>
+      prev ? { ...prev, status: 'Registered' } : null
+    );
+
+    setShowConfirmModal(false);
+    toast.success('User registered successfully!');
   };
 
   return (
@@ -66,11 +73,11 @@ export default function CGSRegisterUsers() {
       <div>
         <h1 className="text-2xl font-bold text-foreground">Register Users</h1>
         <p className="text-muted-foreground">
-          Search and register students, supervisors, or examiners in the system.
+          Search and register students, supervisors, and examiners.
         </p>
       </div>
 
-      {/* Search Section */}
+      {/* Search */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -78,7 +85,7 @@ export default function CGSRegisterUsers() {
             User Search
           </CardTitle>
           <CardDescription>
-            Search for a user by selecting their role and entering their ID or department code.
+            Select role and enter required identification details.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -86,31 +93,26 @@ export default function CGSRegisterUsers() {
         </CardContent>
       </Card>
 
-      {/* Search Result */}
+      {/* Results */}
       {hasSearched && (
         <div className="space-y-4">
-          <h2 className="text-lg font-semibold text-foreground">Search Result</h2>
           {searchResult ? (
-            <div className="max-w-md">
-              <UserDetailCard user={searchResult} onRegister={handleRegister} />
-            </div>
+            <UserDetailCard
+              user={searchResult}
+              onRegister={handleRegister}
+            />
           ) : (
-            <Card className="bg-muted/50">
-              <CardContent className="flex flex-col items-center justify-center py-8">
-                <UserX className="h-12 w-12 text-muted-foreground mb-3" />
-                <p className="text-muted-foreground text-center">
-                  No user found matching the search criteria.
-                </p>
-                <p className="text-sm text-muted-foreground text-center mt-1">
-                  Please check the ID and department code and try again.
-                </p>
-              </CardContent>
-            </Card>
+            <div className="flex flex-col items-center justify-center p-8 rounded-lg border bg-muted/40">
+              <UserX className="h-10 w-10 text-muted-foreground mb-2" />
+              <p className="text-muted-foreground font-medium">
+                No unregistered user found
+              </p>
+            </div>
           )}
         </div>
       )}
 
-      {/* Confirmation Modal */}
+      {/* Confirmation */}
       {searchResult && (
         <ConfirmRegisterModal
           open={showConfirmModal}
