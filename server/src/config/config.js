@@ -18,6 +18,8 @@ import initRole from "../models/roles.js";
 import initStudentinfo from "../models/studentinfo.js";
 import initTableDepartments from "../models/tbldepartments.js";
 import initThesis from "../models/thesis.js";
+import initStudentDocument from "../models/studentDocument.js";
+
 
 // Create Sequelize instance first
 const sequelize = new Sequelize(
@@ -46,6 +48,14 @@ const role = initRole(sequelize, DataTypes);
 const studentinfo = initStudentinfo(sequelize, DataTypes);
 const tbldepartments = initTableDepartments(sequelize, DataTypes);
 const thesis = initThesis(sequelize, DataTypes);
+const studentDocument = initStudentDocument(sequelize, DataTypes);
+
+// Relationships
+masterStu.hasMany(studentDocument, { foreignKey: "stu_id" });
+studentDocument.belongsTo(masterStu, { foreignKey: "stu_id" });
+
+supervisor.hasMany(studentDocument, { foreignKey: "supervisor_id" });
+studentDocument.belongsTo(supervisor, { foreignKey: "supervisor_id" });
 
 // Export everything
 export {
@@ -53,6 +63,7 @@ export {
   masterStu,
   supervisor,
   superVisoryMeeting,
+  studentDocument,
   cgs_admin,
   empinfo,
   evaluation,
