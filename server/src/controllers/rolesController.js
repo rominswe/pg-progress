@@ -1,10 +1,10 @@
-import {role} from "../config/config.js";
+import { role } from "../config/config.js"; // Class-based model from config.js
 
 // Get all roles
 export const getAllRoles = async (req, res) => {
   try {
-    const roles = await role.findAll();
-    res.json(roles);
+    const rolesList = await role.findAll(); // class method
+    res.json(rolesList);
   } catch (error) {
     res.status(500).json({ error: error.message });
   }
@@ -13,7 +13,7 @@ export const getAllRoles = async (req, res) => {
 // Get single role by role_id
 export const getRoleById = async (req, res) => {
   try {
-    const singleRole = await role.findByPk(req.params.role_id);
+    const singleRole = await role.findByPk(req.params.role_id); // class method
     if (!singleRole) return res.status(404).json({ message: "Role not found" });
     res.json(singleRole);
   } catch (error) {
@@ -24,7 +24,7 @@ export const getRoleById = async (req, res) => {
 // Create a new role
 export const createRole = async (req, res) => {
   try {
-    const newRole = await role.create(req.body);
+    const newRole = await role.create(req.body); // class method
     res.status(201).json(newRole);
   } catch (error) {
     res.status(500).json({ error: error.message });

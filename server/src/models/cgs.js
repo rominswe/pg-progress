@@ -2,10 +2,10 @@ import bcrypt from 'bcryptjs';
 import _sequelize from 'sequelize';
 const { Model, Sequelize } = _sequelize;
 
-export default class supervisor extends Model {
+export default class cgs extends Model {
   static init(sequelize, DataTypes) {
-    const Supervisor = super.init({
-      sup_id: {
+    const Cgs = super.init({
+      cgs_id: {
         type: DataTypes.STRING(20),
         allowNull: false,
         primaryKey: true
@@ -31,7 +31,7 @@ export default class supervisor extends Model {
         allowNull: false
       },
       Password: {
-        type: DataTypes.STRING(500),
+        type: DataTypes.STRING(180),
         allowNull: false
       },
       Phonenumber: {
@@ -70,13 +70,26 @@ export default class supervisor extends Model {
       }
     }, {
       sequelize,
-      tableName: 'supervisor',
+      tableName: 'cgs',
       timestamps: false,
       indexes: [
-        { name: "PRIMARY", unique: true, using: "BTREE", fields: ['sup_id'] },
-        { name: "fk_emp_sup", using: "BTREE", fields: ['emp_id'] },
-        { name: "fk_dep_code_sup", using: "BTREE", fields: ['Dep_Code'] },
-        { name: "fk_role_sup", using: "BTREE", fields: ['role_id'] }
+        { name: "PRIMARY", 
+          unique: true, 
+          using: "BTREE", 
+          fields: ['cgs_id'] 
+        },
+        { name: "fk_emp_cgs", 
+          using: "BTREE", 
+          fields: ['emp_id'] 
+        },
+        { name: "fk_dep_code_cgs", 
+          using: "BTREE", 
+          fields: ['Dep_Code'] 
+        },
+        { name: "fk_role_cgs", 
+          using: "BTREE", 
+          fields: ['role_id'] 
+        }
       ],
 
       // 🔐 Password hashing hooks
@@ -94,11 +107,11 @@ export default class supervisor extends Model {
       }
     });
 
-    // ✅ Instance method for login
-    Supervisor.prototype.checkPassword = function(plainPassword) {
+    // ✅ Instance method to check password
+    Cgs.prototype.checkPassword = function(plainPassword) {
       return bcrypt.compare(plainPassword, this.Password);
     };
 
-    return Supervisor;
+    return Cgs;
   }
 }

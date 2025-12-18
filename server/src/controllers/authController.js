@@ -1,4 +1,4 @@
-import { masterStu, supervisor, cgs_admin } from "../config/config.js";
+import { masterStu, supervisor, cgs } from "../config/config.js";
 import bcrypt from "bcrypt";
 import { signAccessToken, signRefreshToken } from "../utils/token.js";
 import jwt from "jsonwebtoken";
@@ -96,7 +96,7 @@ export const cgsLogin = async (req, res) => {
 
   try {
     const { email, password } = req.body;
-    const user = await cgs_admin.findOne({ where: { EmailId: email } });
+    const user = await cgs.findOne({ where: { EmailId: email } });
     if (!user) return res.status(401).json({ error: "User not found" });
 
     console.log("Found user:", user);

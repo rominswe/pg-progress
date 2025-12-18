@@ -1,4 +1,4 @@
-import {empinfo} from "../config/config.js";
+import { empinfo } from "../config/config.js";
 
 // Get all employees
 export const getAllEmployees = async (req, res) => {
@@ -24,7 +24,7 @@ export const getEmployeeById = async (req, res) => {
 // Create a new employee
 export const createEmployee = async (req, res) => {
   try {
-    const newEmployee = await empinfo.create(req.body);
+    const newEmployee = await empinfo.create(req.body); // ✅ Password hashing is automatic
     res.status(201).json(newEmployee);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -37,7 +37,7 @@ export const updateEmployee = async (req, res) => {
     const employee = await empinfo.findByPk(req.params.emp_id);
     if (!employee) return res.status(404).json({ message: "Employee not found" });
 
-    await employee.update(req.body);
+    await employee.update(req.body); // ✅ Password rehash if updated
     res.json(employee);
   } catch (error) {
     res.status(500).json({ error: error.message });

@@ -1,5 +1,9 @@
-export default (sequelize, DataTypes) => {
-  return sequelize.define('progress', {
+import _sequelize from 'sequelize';
+const { Model, Sequelize } = _sequelize;
+
+export default class progress extends Model {
+  static init(sequelize, DataTypes) {
+  return super.init({
     progress_id: {
       autoIncrement: true,
       type: DataTypes.INTEGER,
@@ -33,7 +37,7 @@ export default (sequelize, DataTypes) => {
     date_updated: {
       type: DataTypes.DATE,
       allowNull: true,
-      defaultValue: DataTypes.NOW
+      defaultValue: Sequelize.Sequelize.literal('CURRENT_TIMESTAMP')
     }
   }, {
     sequelize,
@@ -57,5 +61,5 @@ export default (sequelize, DataTypes) => {
       },
     ]
   });
-};
-
+  }
+}

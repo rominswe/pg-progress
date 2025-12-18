@@ -2,13 +2,21 @@ import bcrypt from 'bcryptjs';
 import _sequelize from 'sequelize';
 const { Model, Sequelize } = _sequelize;
 
-export default class empinfo extends Model {
+export default class studinfo extends Model {
   static init(sequelize, DataTypes) {
-    const Empinfo = super.init({
-      emp_id: {
+    const StudInfo = super.init({
+      stu_id: {
         type: DataTypes.STRING(20),
         allowNull: false,
         primaryKey: true
+      },
+      Dep_Code: {
+        type: DataTypes.STRING(100),
+        allowNull: false
+      },
+      Prog_Code: {
+        type: DataTypes.STRING(100),
+        allowNull: false
       },
       FirstName: {
         type: DataTypes.STRING(150),
@@ -34,12 +42,20 @@ export default class empinfo extends Model {
         type: DataTypes.STRING(100),
         allowNull: false
       },
-      Dep_Code: {
+      Acad_Year: {
+        type: DataTypes.STRING(100),
+        allowNull: false
+      },
+      Exp_GraduatedYear: {
         type: DataTypes.STRING(100),
         allowNull: false
       },
       Address: {
         type: DataTypes.STRING(255),
+        allowNull: false
+      },
+      Av_leave: {
+        type: DataTypes.STRING(150),
         allowNull: false
       },
       Phonenumber: {
@@ -63,12 +79,20 @@ export default class empinfo extends Model {
         type: DataTypes.STRING(200),
         allowNull: false
       },
+      ID_Image: {
+        type: DataTypes.STRING(200),
+        allowNull: false
+      },
       Country: {
         type: DataTypes.STRING(300),
         allowNull: true
       },
       Passport: {
         type: DataTypes.STRING(30),
+        allowNull: true
+      },
+      Roomnum: {
+        type: DataTypes.STRING(15),
         allowNull: true
       },
       Vcode: {
@@ -81,12 +105,13 @@ export default class empinfo extends Model {
       }
     }, {
       sequelize,
-      tableName: 'empinfo',
+      tableName: 'studinfo',
+      hasTrigger: true,
       timestamps: false,
       indexes: [
-        { name: "PRIMARY", unique: true, using: "BTREE", fields: ['emp_id'] },
+        { name: "PRIMARY", unique: true, using: "BTREE", fields: ['stu_id'] },
         { name: "Dep_Code", using: "BTREE", fields: ['Dep_Code'] },
-        { name: "emp_id", using: "BTREE", fields: ['emp_id'] }
+        { name: "Prog_Code", using: "BTREE", fields: ['Prog_Code'] }
       ],
 
       // 🔐 Password hashing hooks
@@ -104,11 +129,11 @@ export default class empinfo extends Model {
       }
     });
 
-    // ✅ Instance method to check password
-    Empinfo.prototype.checkPassword = function(plainPassword) {
+    // ✅ Instance method to verify password
+    StudInfo.prototype.checkPassword = function(plainPassword) {
       return bcrypt.compare(plainPassword, this.Password);
     };
 
-    return Empinfo;
+    return StudInfo;
   }
 }

@@ -4,21 +4,21 @@ import dotenv from "dotenv";
 // Load environment variables
 dotenv.config();
 
-// Import model factory functions
-import initMasterStu from "../models/masterStu.js";
-import initSupervisor from "../models/supervisor.js";
-import initSuperVisoryMeetings from "../models/supervisorymeetings.js";
-import initCgsAdmin from "../models/cgsadmin.js";
-import initEmpinfo from "../models/empinfo.js";
-import initEvaluation from "../models/evaluation.js";
-import initExaminer from "../models/examiner.js";
-import initPrograminfo from "../models/programinfo.js";
-import initProgress from "../models/progress.js";
-import initRole from "../models/roles.js";
-import initStudentinfo from "../models/studentinfo.js";
-import initTableDepartments from "../models/tbldepartments.js";
-import initThesis from "../models/thesis.js";
-import initStudentDocument from "../models/studentDocument.js";
+// Import class-based models
+import Supervisor from "../models/supervisor.js";
+import MasterStu from "../models/master_stu.js";
+import SuperVisoryMeeting from "../models/supervisory_meetings.js";
+import Cgs from "../models/cgs.js";
+import Empinfo from "../models/empinfo.js";
+import Evaluation from "../models/evaluation.js";
+import Examiner from "../models/examiner.js";
+import ProgramInfo from "../models/program_info.js";
+import Progress from "../models/progress.js";
+import Role from "../models/roles.js";
+import Studentinfo from "../models/studinfo.js";
+import TableDepartments from "../models/tbldepartments.js";
+import Thesis from "../models/thesis.js";
+import StudentDocument from "../models/student_documents.js";
 
 
 // Create Sequelize instance first
@@ -35,20 +35,20 @@ const sequelize = new Sequelize(
 );
 
 // Initialize all models using the sequelize instance
-const supervisor = initSupervisor(sequelize, DataTypes);
-const masterStu = initMasterStu(sequelize, DataTypes);
-const superVisoryMeeting = initSuperVisoryMeetings(sequelize, DataTypes);
-const cgs_admin = initCgsAdmin(sequelize, DataTypes);
-const empinfo = initEmpinfo(sequelize, DataTypes);
-const evaluation = initEvaluation(sequelize, DataTypes);
-const examiner = initExaminer(sequelize, DataTypes);
-const programInfo = initPrograminfo(sequelize, DataTypes);
-const progress = initProgress(sequelize, DataTypes);
-const role = initRole(sequelize, DataTypes);
-const studentinfo = initStudentinfo(sequelize, DataTypes);
-const tbldepartments = initTableDepartments(sequelize, DataTypes);
-const thesis = initThesis(sequelize, DataTypes);
-const studentDocument = initStudentDocument(sequelize, DataTypes);
+const supervisor = Supervisor.init(sequelize, DataTypes);
+const masterStu = MasterStu.init(sequelize, DataTypes);
+const superVisoryMeeting = SuperVisoryMeeting.init(sequelize, DataTypes);
+const cgs = Cgs.init(sequelize, DataTypes);
+const empinfo = Empinfo.init(sequelize, DataTypes);
+const evaluation = Evaluation.init(sequelize, DataTypes);
+const examiner = Examiner.init(sequelize, DataTypes);
+const programInfo = ProgramInfo.init(sequelize, DataTypes);
+const progress = Progress.init(sequelize, DataTypes);
+const role = Role.init(sequelize, DataTypes);
+const studentinfo = Studentinfo.init(sequelize, DataTypes);
+const tbldepartments = TableDepartments.init(sequelize, DataTypes);
+const thesis = Thesis.init(sequelize, DataTypes);
+const studentDocument = StudentDocument.init(sequelize, DataTypes);
 
 // Relationships
 masterStu.hasMany(studentDocument, { foreignKey: "stu_id" });
@@ -64,7 +64,7 @@ export {
   supervisor,
   superVisoryMeeting,
   studentDocument,
-  cgs_admin,
+  cgs,
   empinfo,
   evaluation,
   examiner,

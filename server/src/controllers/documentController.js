@@ -1,20 +1,21 @@
-import { studentDocument, masterStu } from "../config/config.js";
+import { studentDocument, masterStu, supervisor } from "../config/config.js";
 
 // ✅ Student uploads document
 export const uploadDocument = async (req, res) => {
   try {
-    const { stu_id, supervisor_id, document_type } = req.body;
+    const { master_id, sup_id, document_type } = req.body; // updated field names
 
     if (!req.file) {
       return res.status(400).json({ message: "No file uploaded" });
     }
 
     await studentDocument.create({
-      stu_id,
-      supervisor_id,
+      master_id,
+      sup_id,
       document_name: req.file.originalname,
-      document_type,
+      document_type: document_type || "Thesis Chapter",
       file_path: req.file.path,
+      file_size_kb: req.file.size / 1024,
     });
 
     res.status(201).json({ message: "Document uploaded successfully" });
@@ -26,17 +27,17 @@ export const uploadDocument = async (req, res) => {
 
 // ✅ Supervisor views submissions
 export const getSubmissionsForSupervisor = async (req, res) => {
-  const { supervisor_id } = req.params;
+  const { sup_id } = req.params;
 
   const submissions = await studentDocument.findAll({
-    where: { supervisor_id },
+    where: { sup_id },
     include: [
       {
         model: masterStu,
-        attributes: ["stu_id", "Name"],
+        attributes: ["master_id", "Name"], // make sure `Name` exists in masterStu
       },
     ],
-    order: [["submitted_at", "DESC"]],
+    order: [["uploaded_at", "DESC"]],
   });
 
   res.json(submissions);
@@ -44,17 +45,15 @@ export const getSubmissionsForSupervisor = async (req, res) => {
 
 // ✅ Supervisor review
 export const reviewSubmission = async (req, res) => {
-  const { doc_id } = req.params;
-  const { status, score, comments } = req.body;
+  const { document_id } = req.params;
+  const { status } = req.body;
 
   await studentDocument.update(
     {
       status,
-      score,
-      comments,
       reviewed_at: new Date(),
     },
-    { where: { doc_id } }
+    { where: { document_id } }
   );
 
   res.json({ message: "Review updated" });

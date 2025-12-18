@@ -1,5 +1,9 @@
-export default (sequelize, DataTypes) => {
-  return sequelize.define('roles', {
+import _sequelize from 'sequelize';
+const { Model, Sequelize } = _sequelize;
+
+export default class roles extends Model {
+  static init(sequelize, DataTypes) {
+  return super.init({
     role_id: {
       type: DataTypes.STRING(100),
       allowNull: false,
@@ -12,15 +16,11 @@ export default (sequelize, DataTypes) => {
     Creation_Date: {
       type: DataTypes.DATE,
       allowNull: false,
-      defaultValue: DataTypes.NOW
+      defaultValue: Sequelize.Sequelize.literal('CURRENT_TIMESTAMP')
     },
     Dep_Code: {
       type: DataTypes.STRING(100),
-      allowNull: false,
-      references: {
-        model: 'tbldepartments',
-        key: 'Dep_Code'
-      }
+      allowNull: false
     }
   }, {
     sequelize,
@@ -44,5 +44,5 @@ export default (sequelize, DataTypes) => {
       },
     ]
   });
-};
-
+  }
+}

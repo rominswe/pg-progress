@@ -1,5 +1,9 @@
-export default (sequelize, DataTypes) => {
-  return sequelize.define('program_info', {
+import _sequelize from 'sequelize';
+const { Model, Sequelize } = _sequelize;
+
+export default class program_info extends Model {
+  static init(sequelize, DataTypes) {
+  return super.init({
     Prog_Code: {
       type: DataTypes.STRING(100),
       allowNull: false,
@@ -7,11 +11,7 @@ export default (sequelize, DataTypes) => {
     },
     Dep_Code: {
       type: DataTypes.STRING(100),
-      allowNull: false,
-      references: {
-        model: 'tbldepartments',
-        key: 'Dep_Code'
-      }
+      allowNull: false
     },
     prog_name: {
       type: DataTypes.STRING(300),
@@ -20,7 +20,7 @@ export default (sequelize, DataTypes) => {
     Creation_Date: {
       type: DataTypes.DATE,
       allowNull: false,
-      defaultValue: DataTypes.NOW
+      defaultValue: Sequelize.Sequelize.literal('CURRENT_TIMESTAMP')
     }
   }, {
     sequelize,
@@ -44,5 +44,5 @@ export default (sequelize, DataTypes) => {
       },
     ]
   });
-};
-
+  }
+}

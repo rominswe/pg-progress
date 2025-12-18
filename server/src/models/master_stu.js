@@ -2,24 +2,24 @@ import bcrypt from 'bcryptjs';
 import _sequelize from 'sequelize';
 const { Model, Sequelize } = _sequelize;
 
-export default class supervisor extends Model {
+export default class master_stu extends Model {
   static init(sequelize, DataTypes) {
-    const Supervisor = super.init({
-      sup_id: {
+    const MasterStu = super.init({
+      master_id: {
         type: DataTypes.STRING(20),
         allowNull: false,
         primaryKey: true
       },
-      emp_id: {
+      stu_id: {
         type: DataTypes.STRING(20),
         allowNull: false,
         references: {
-          model: 'empinfo',
-          key: 'emp_id'
+          model: 'studinfo',
+          key: 'stu_id'
         }
       },
       FirstName: {
-        type: DataTypes.STRING(150),
+        type: DataTypes.STRING(100),
         allowNull: false
       },
       LastName: {
@@ -34,22 +34,6 @@ export default class supervisor extends Model {
         type: DataTypes.STRING(500),
         allowNull: false
       },
-      Phonenumber: {
-        type: DataTypes.CHAR(20),
-        allowNull: false
-      },
-      Profile_Image: {
-        type: DataTypes.STRING(255),
-        allowNull: true
-      },
-      role_id: {
-        type: DataTypes.STRING(100),
-        allowNull: false,
-        references: {
-          model: 'roles',
-          key: 'role_id'
-        }
-      },
       Dep_Code: {
         type: DataTypes.STRING(100),
         allowNull: false,
@@ -58,28 +42,41 @@ export default class supervisor extends Model {
           key: 'Dep_Code'
         }
       },
+      Prog_Code: {
+        type: DataTypes.STRING(100),
+        allowNull: false,
+        references: {
+          model: 'program_info',
+          key: 'Prog_Code'
+        }
+      },
+      role_id: {
+        type: DataTypes.STRING(100),
+        allowNull: false,
+        defaultValue: "Student"
+      },
       Status: {
         type: DataTypes.ENUM('Active','Inactive'),
         allowNull: false,
         defaultValue: "Active"
       },
-      RegDate: {
+      Reg_Date: {
         type: DataTypes.DATE,
         allowNull: false,
         defaultValue: Sequelize.literal('CURRENT_TIMESTAMP')
       }
     }, {
       sequelize,
-      tableName: 'supervisor',
+      tableName: 'master_stu',
       timestamps: false,
       indexes: [
-        { name: "PRIMARY", unique: true, using: "BTREE", fields: ['sup_id'] },
-        { name: "fk_emp_sup", using: "BTREE", fields: ['emp_id'] },
-        { name: "fk_dep_code_sup", using: "BTREE", fields: ['Dep_Code'] },
-        { name: "fk_role_sup", using: "BTREE", fields: ['role_id'] }
+        { name: "PRIMARY", unique: true, using: "BTREE", fields: ['master_id'] },
+        { name: "fk_stu_master", using: "BTREE", fields: ['stu_id'] },
+        { name: "fk_dep_code_master", using: "BTREE", fields: ['Dep_Code'] },
+        { name: "fk_program_code_master", using: "BTREE", fields: ['Prog_Code'] }
       ],
 
-      // 🔐 Password hashing hooks
+      // 🔐 Hooks for password hashing
       hooks: {
         beforeCreate: async (user) => {
           if (user.Password) {
@@ -94,11 +91,11 @@ export default class supervisor extends Model {
       }
     });
 
-    // ✅ Instance method for login
-    Supervisor.prototype.checkPassword = function(plainPassword) {
+    // ✅ Instance method to check password
+    MasterStu.prototype.checkPassword = function(plainPassword) {
       return bcrypt.compare(plainPassword, this.Password);
     };
 
-    return Supervisor;
+    return MasterStu;
   }
 }

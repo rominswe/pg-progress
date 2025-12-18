@@ -1,9 +1,10 @@
-import {progress} from "../config/config.js";
+// Import the class-based model from config.js
+import { progress as Progress } from "../config/config.js";
 
 // Get all progress records
 export const getAllProgress = async (req, res) => {
   try {
-    const progressRecords = await progress.findAll();
+    const progressRecords = await Progress.findAll();
     res.json(progressRecords);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -13,8 +14,10 @@ export const getAllProgress = async (req, res) => {
 // Get single progress record by progress_id
 export const getProgressById = async (req, res) => {
   try {
-    const record = await progress.findByPk(req.params.progress_id);
-    if (!record) return res.status(404).json({ message: "Progress record not found" });
+    const record = await Progress.findByPk(req.params.progress_id);
+    if (!record)
+      return res.status(404).json({ message: "Progress record not found" });
+
     res.json(record);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -24,7 +27,7 @@ export const getProgressById = async (req, res) => {
 // Create a new progress record
 export const createProgress = async (req, res) => {
   try {
-    const newRecord = await progress.create(req.body);
+    const newRecord = await Progress.create(req.body);
     res.status(201).json(newRecord);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -34,8 +37,9 @@ export const createProgress = async (req, res) => {
 // Update a progress record
 export const updateProgress = async (req, res) => {
   try {
-    const record = await progress.findByPk(req.params.progress_id);
-    if (!record) return res.status(404).json({ message: "Progress record not found" });
+    const record = await Progress.findByPk(req.params.progress_id);
+    if (!record)
+      return res.status(404).json({ message: "Progress record not found" });
 
     await record.update(req.body);
     res.json(record);
@@ -47,8 +51,9 @@ export const updateProgress = async (req, res) => {
 // Delete a progress record
 export const deleteProgress = async (req, res) => {
   try {
-    const record = await progress.findByPk(req.params.progress_id);
-    if (!record) return res.status(404).json({ message: "Progress record not found" });
+    const record = await Progress.findByPk(req.params.progress_id);
+    if (!record)
+      return res.status(404).json({ message: "Progress record not found" });
 
     await record.destroy();
     res.json({ message: "Progress record deleted successfully" });

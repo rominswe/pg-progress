@@ -10,10 +10,10 @@ import {
 const router = express.Router();
 
 // CRUD endpoints
-router.get("/", getAllPrograms);
-router.get("/:Prog_Code", getProgramById);
-router.post("/", createProgram);
-router.put("/:Prog_Code", updateProgram);
-router.delete("/:Prog_Code", deleteProgram);
+router.get("/", getAllPrograms);           // Get all programs
+router.get("/:Prog_Code", getProgramById); // Get program by ID
+router.post("/", createProgram);           // Create new program
+router.put("/:Prog_Code", updateProgram);  // Update program
+router.delete("/:Prog_Code", deleteProgram); // Delete program
 
 export default router;

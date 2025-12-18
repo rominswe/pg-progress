@@ -2,17 +2,18 @@ import express from 'express';
 import {
   getAllDepartments,
   getDepartmentByCode,
-    createDepartment,
-    updateDepartment,
-    deleteDepartment,
+  createDepartment,
+  updateDepartment,
+  deleteDepartment,
 } from '../controllers/tblDepartmentsController.js';
+
 const router = express.Router();
 
 // CRUD endpoints
 router.get('/', getAllDepartments);
-router.get('/:dept_id', getDepartmentByCode);
+router.get('/:Dep_Code', getDepartmentByCode); // use Dep_Code
 router.post('/', createDepartment);
-router.put('/:dept_id', updateDepartment);
-router.delete('/:dept_id', deleteDepartment);
+router.put('/:Dep_Code', updateDepartment);     // use Dep_Code
+router.delete('/:Dep_Code', deleteDepartment);  // use Dep_Code
 
 export default router;

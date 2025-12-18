@@ -1,7 +1,7 @@
-import {masterStu} from "../config/config.js";
+import { masterStu } from "../config/config.js";
 
 // Get all students
-export const getAllStudents = async (rep, res) => {
+export const getAllStudents = async (req, res) => {
   try {
     const students = await masterStu.findAll();
     res.json(students);
@@ -10,10 +10,10 @@ export const getAllStudents = async (rep, res) => {
   }
 };
 
-// Get single student by stu_id
+// Get single student by master_id (primary key)
 export const getStudentById = async (req, res) => {
   try {
-    const student = await masterStu.findByPk(req.params.stu_id);
+    const student = await masterStu.findByPk(req.params.master_id);
     if (!student) return res.status(404).json({ message: "Student not found" });
     res.json(student);
   } catch (error) {
@@ -21,7 +21,7 @@ export const getStudentById = async (req, res) => {
   }
 };
 
-// Create a new student
+// Create a new student (password is hashed automatically by hook)
 export const createStudent = async (req, res) => {
   try {
     const newStudent = await masterStu.create(req.body);
@@ -31,10 +31,10 @@ export const createStudent = async (req, res) => {
   }
 };
 
-// Update a student
+// Update a student (password will be rehashed automatically if changed)
 export const updateStudent = async (req, res) => {
   try {
-    const student = await masterStu.findByPk(req.params.stu_id);
+    const student = await masterStu.findByPk(req.params.master_id);
     if (!student) return res.status(404).json({ message: "Student not found" });
 
     await student.update(req.body);
@@ -47,7 +47,7 @@ export const updateStudent = async (req, res) => {
 // Delete a student
 export const deleteStudent = async (req, res) => {
   try {
-    const student = await masterStu.findByPk(req.params.stu_id);
+    const student = await masterStu.findByPk(req.params.master_id);
     if (!student) return res.status(404).json({ message: "Student not found" });
 
     await student.destroy();

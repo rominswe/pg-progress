@@ -1,5 +1,9 @@
-export default (sequelize, DataTypes) => {
-  return sequelize.define('evaluation', {
+import _sequelize from 'sequelize';
+const { Model, Sequelize } = _sequelize;
+
+export default class evaluation extends Model {
+  static init(sequelize, DataTypes) {
+  return super.init({
     evaluation_id: {
       autoIncrement: true,
       type: DataTypes.INTEGER.UNSIGNED,
@@ -52,5 +56,5 @@ export default (sequelize, DataTypes) => {
       },
     ]
   });
-};
-
+  }
+}

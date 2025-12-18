@@ -1,5 +1,9 @@
-export default (sequelize, DataTypes) => {
-  return sequelize.define('tbldepartments', {
+import _sequelize from 'sequelize';
+const { Model, Sequelize } = _sequelize;
+
+export default class tbldepartments extends Model {
+  static init(sequelize, DataTypes) {
+  return super.init({
     Dep_Code: {
       type: DataTypes.STRING(100),
       allowNull: false,
@@ -12,7 +16,7 @@ export default (sequelize, DataTypes) => {
     CreationDate: {
       type: DataTypes.DATE,
       allowNull: true,
-      defaultValue: DataTypes.NOW
+      defaultValue: Sequelize.Sequelize.literal('CURRENT_TIMESTAMP')
     }
   }, {
     sequelize,
@@ -29,5 +33,5 @@ export default (sequelize, DataTypes) => {
       },
     ]
   });
-};
-
+  }
+}
