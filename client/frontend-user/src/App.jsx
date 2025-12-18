@@ -6,7 +6,7 @@ import { useState, useEffect } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 // UI utilities (Toaster, Sonner, Tooltip)
-import { isTokenExpired } from "./services/jwt";
+import { isTokenExpired } from "../../shared/services/jwt";
 // import { refreshToken, logout } from "./services/api";
 import ProtectedRoute from "./components/auth/ProtectedRoute";
 
@@ -38,7 +38,7 @@ function AppWrapper() {
   // Persistent login
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [role, setRole] = useState(null);
-  const [loading, setLoading] = useState(true); // Block is render until check is done.
+  // const [loading, setLoading] = useState(true); // Block is render until check is done.
 
   useEffect(() => {
     const token = localStorage.getItem("token");
@@ -54,11 +54,11 @@ function AppWrapper() {
     setLoading(false);
   }, []);
 
-  useEffect(() => {
-  if (!loading && !isAuthenticated && location.pathname !== "/login" ) {
-    navigate("/login", { replace: true });
-  }
-}, [loading, isAuthenticated, navigate, location.pathname]);
+//   useEffect(() => {
+//   if (!loading && !isAuthenticated && location.pathname !== "/login" ) {
+//     navigate("/login", { replace: true });
+//   }
+// }, [loading, isAuthenticated, navigate, location.pathname]);
   
   // Callback from Login.jsx
   const handleLogin = (userRole) => {
@@ -105,7 +105,11 @@ function AppWrapper() {
 
       {/* ===== STUDENT ===== */}
       <Route path="/student/*" element={
-        <ProtectedRoute isAuthenticated={isAuthenticated} userRole={role} allowedRole="student">
+        <ProtectedRoute 
+        isAuthenticated={isAuthenticated} 
+        userRole={role}
+        loading = {loading}
+        allowedRole="student">
           <StudentLayout onLogout={handleLogout} />
         </ProtectedRoute>
       }>
@@ -120,7 +124,11 @@ function AppWrapper() {
 
       {/* ===== SUPERVISOR ===== */}
       <Route path="/supervisor/*" element={
-        <ProtectedRoute isAuthenticated={isAuthenticated} userRole={role} allowedRole="supervisor">
+        <ProtectedRoute 
+        isAuthenticated={isAuthenticated} 
+        userRole={role}
+        loading = {loading}
+        allowedRole="supervisor">
           <SupervisorLayout onLogout={handleLogout} />
         </ProtectedRoute>
       }>

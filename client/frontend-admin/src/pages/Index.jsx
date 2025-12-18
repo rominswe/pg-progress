@@ -1,7 +1,7 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Button } from '../components/ui/button';
-import { Card, CardHeader, CardTitle, CardDescription } from '../components/ui/card';
+import { Button } from '../../../shared/ui/button';
+import { Card, CardHeader, CardTitle, CardDescription } from '../../../shared/ui/card';
 import { GraduationCap, Users, FileCheck, Activity, ArrowRight } from 'lucide-react';
 
 const features = [

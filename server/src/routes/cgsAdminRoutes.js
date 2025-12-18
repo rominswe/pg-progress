@@ -5,13 +5,10 @@ import {
   createAdmin,
   updateAdmin,
   deleteAdmin,
-} from '../controllers/cgAdminController.js';
+} from '../controllers/cgsAdminController.js';
 import {protect} from '../middleware/authmiddleware.js';
-import { cgsLogin } from "../controllers/authController.js";
 
 const router = express.Router();
-
-router.post("/login", cgsLogin);
 
 // Protect each route explicitly
 router.get('/', protect(['cgs']), getAllAdmins);

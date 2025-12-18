@@ -1,36 +1,36 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { UserCircle, CheckCircle, Lock } from "lucide-react";
-// import { API_BASE_URL } from "@/services/api";
-// import { authService } from "@/services/api";
+import { useAuth } from "../../../../shared/auth/AuthContext";
 
-import { useAuth } from "./AuthContext";
-
-export default function AdminLogin({ onLogin }) {
+export default function AdminLogin() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
-  const role = "cgs"; 
+  const [error, setError] = useState(null);
+  
+  const role = "cgs";
   const navigate = useNavigate();
-  const {login} = useAuth();
+  const {login, user} = useAuth();
+
+//   useEffect(() => {
+//   if (user?.role === "cgs") navigate("/cgs/dashboard", { replace: true });
+// }, [user]);
   
   async function handleSubmit(e) {
     e.preventDefault();
     setLoading(true);
+    setError(null);
 
     try {
       const data = await login(role, { email, password });
-
-      console.log("Login response:", data);
-
-        if (role === "cgs") navigate("/cgs/dashboard");
-        else navigate("/index");
       
+      // console.log("Login response:", data); // Do not foget to delet this code before puting on the production server
+      navigate("/cgs/dashboard", { replace: true });
       } catch (err) {
       // console.error("Login error:", err);
-      console.error("Login Error:", err.response?.data || err.message);
-      alert(err.response?.data?.error || "Login failed");
+      setError(err.response?.data?.error || "Login failed");
     } finally {
       setLoading(false); 
     }
@@ -77,6 +77,7 @@ export default function AdminLogin({ onLogin }) {
                 type="email"
                 required
                 value={email}
+                disabled={loading}
                 onChange={(e) => setEmail(e.target.value)}
                 placeholder="admin@aiu.edu.my"
                 className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-blue-500 focus:border-blue-500 outline-none transition duration-150"
@@ -89,6 +90,7 @@ export default function AdminLogin({ onLogin }) {
                 type="password"
                 required
                 value={password}
+                disabled={loading}
                 onChange={(e) => setPassword(e.target.value)}
                 placeholder="Enter your password"
                 className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-blue-500 focus:border-blue-500 outline-none transition duration-150"
@@ -109,6 +111,12 @@ export default function AdminLogin({ onLogin }) {
             >
               {loading ? "Verifying..." : "Secure Login"}
             </motion.button>
+
+            {error && (
+              <p className="text-red-600 text-sm mt-2 text-center">
+                {error}
+                </p>
+              )}
           </form>
         </div>
 

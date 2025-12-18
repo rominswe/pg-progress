@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../components/ui/card';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '../../../shared/ui/card';
 import { toast } from 'sonner';
 import SearchUserForm from '../components/cgs/SearchUserForm';
 import UserDetailCard from '../components/cgs/UserDetailCard';

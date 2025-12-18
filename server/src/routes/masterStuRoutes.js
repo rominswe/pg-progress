@@ -6,12 +6,9 @@ import {
   updateStudent,
   deleteStudent,
 } from "../controllers/masterStuController.js";
-import { studentLogin } from "../controllers/authController.js";
 import {protect} from '../middleware/authmiddleware.js';
 
 const router = express.Router();
-
-router.post("/login", studentLogin);
 
 // CRUD endpoints
 router.get("/", protect(["student"]),getAllStudents);

@@ -2,7 +2,7 @@ import jwt from "jsonwebtoken";
 
 export const protect = (roles = []) => (req, res, next) => {
   const token = req.cookies.accessToken;
-  if (!token) return res.status(401).json({ error: "No token" });
+  if (!token) return res.status(401).json({ error: "Unauthorized Access" });
 
   try {
     const decoded = jwt.verify(token, process.env.JWT_SECRET);

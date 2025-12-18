@@ -6,12 +6,9 @@ import {
   updateSupervisor,
   deleteSupervisor,
 } from "../controllers/supervisorController.js";
-import { supervisorLogin } from "../controllers/authController.js";
 import {protect} from '../middleware/authmiddleware.js';
 
 const router = express.Router();
-
-router.post("/login", supervisorLogin);
 
 // CRUD endpoints
 router.get("/", protect(["supervisor"]), getAllSupervisors);

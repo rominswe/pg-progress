@@ -1,15 +1,15 @@
 import { useState } from 'react';
 import { Search } from 'lucide-react';
-import { Button } from '../ui/button';
-import { Label } from '../ui/label';
+import { Button } from '../../../../shared/ui/button';
+import { Label } from '../../../../shared/ui/label';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '../ui/select';
-import { Input } from '../ui/input';
+} from '../../../../shared/ui/select';
+import { Input } from '../../../../shared/ui/input';
 import { mockUsers, DEPARTMENTS } from '../../data/mockUsers';
 
 export default function SearchUserForm({ onSearch, isSearching }) {

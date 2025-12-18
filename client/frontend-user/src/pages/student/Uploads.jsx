@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Upload, FileText, File, X, CheckCircle } from 'lucide-react';
 import axios from 'axios';
-import { API_BASE_URL } from '../../services/api';
+// import { API_BASE_URL } from '../../services/api';
 
 const Uploads = () => {
   const [dragActive, setDragActive] = useState(false);

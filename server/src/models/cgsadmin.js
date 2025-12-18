@@ -53,18 +53,10 @@ export default (sequelize, DataTypes) => {
     role: {
       type: DataTypes.STRING(30),
       allowNull: false
-    },
-    location: {
-      type: DataTypes.STRING(200),
-      allowNull: false
-    },
-    Country: {
-      type: DataTypes.STRING(300),
-      allowNull: true
     }
   }, {
     sequelize,
-    tableName: 'cgs_admin',
+    tableName: 'cgs',
     timestamps: false,
     indexes: [
       {

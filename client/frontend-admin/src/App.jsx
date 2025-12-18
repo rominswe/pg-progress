@@ -6,12 +6,12 @@ import { useState, useEffect } from "react";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 
 // UI utilities (Toaster, Sonner, Tooltip)
-import { Toaster } from "./components/ui/toaster";
-import { Toaster as Sonner } from "./components/ui/sonner";
-import { TooltipProvider } from "./components/ui/tooltip";
-import { isTokenExpired } from "./services/jwt";
-import ProtectedRoute from "./components/auth/ProtectedRoute";
-import { authService } from "./services/api";
+import { Toaster } from "../../shared/ui/toaster";
+import { Toaster as Sonner } from "../../shared/ui/sonner";
+import { TooltipProvider } from "../../shared/ui/tooltip";
+import { isTokenExpired } from "../../shared/services/jwt";
+import ProtectedRoute from "../../shared/auth/ProtectedRoute";
+import { authService } from "../../shared/services/api";
 
 // Login Components
 import AdminLogin from "./components/auth/AdminLogin";
@@ -22,7 +22,8 @@ import CGSDashboard from "./pages/CGSDashboard";
 import CGSRegisterUsers from "./pages/CGSRegisterUsers";
 import CGSMonitoring from "./pages/CGSMonitoring";
 import CGSVerifyDocuments from "./pages/CGSVerifyDocuments";
-import CGSIndex from "./pages/Index";
+// import CGSIndex from "./pages/Index";
+import { set } from "date-fns";
 
 // QueryClient
 const queryClient = new QueryClient();
@@ -34,80 +35,97 @@ function AppWrapper() {
 
   // Persistent login
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [loading, setLoading] = useState(true); // Block is render until check is done.
+  const [loading, setLoading] = useState(true);
+  const [userRole, setUserRole] = useState(null);
 
+  // Persistent login check
   useEffect(() => {
-    authService.me()
-      .then((data) => {
-        if (data.user && data.user.role === "cgs") {
+    const checkAuth = async () => {
+      try {
+        const data = await authService.me();
+        if (data.user) {
           setIsAuthenticated(true);
+          setUserRole(data.user.role);
         } else {
           setIsAuthenticated(false);
+          setUserRole(null);
         }
-      })
-      .catch(() => setIsAuthenticated(false))
-      .finally(() => setLoading(false));
+      } catch {
+        setIsAuthenticated(false);
+        setUserRole(null);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    checkAuth();
   }, []);
+
   // useEffect(() => {
-  //   const token = localStorage.getItem("token");
-  //   const storedRole = localStorage.getItem("role");
-    
-  //   if (token && storedRole === 'cgs' && !isTokenExpired(token)) {
-  //     setIsAuthenticated(true);
-  //     setRole(storedRole);
-  //   } else {
-  //     setIsAuthenticated(false);
-  //     setRole(null);
-  //   }
-  //   setLoading(false);
+  //   authService.me()
+  //     .then((data) => {
+  //       if (data.user) {
+  //         setIsAuthenticated(true);
+  //       } else {
+  //         setIsAuthenticated(false);
+  //       }
+  //     })
+  //     .catch(() => setIsAuthenticated(false))
+  //     .finally(() => setLoading(false));
   // }, []);
 
-  useEffect(() => {
-    const publicRoutes = ["/index", "/login"];
-    if (!loading) {
-      if (!isAuthenticated && !publicRoutes.includes(location.pathname.toLowerCase())) {
-        navigate("/index", { replace: true });
-      }
-
-      // if (isAuthenticated && location.pathname === "/login") {
-      //   navigate("/cgs/dashboard", { replace: true });
-      // }
-    }
-  }, [loading, isAuthenticated, navigate, location.pathname]);
+  // useEffect(() => {
+  //   // const publicRoutes = ["/index", "/login"];
+  //   if (!loading && !isAuthenticated && location.pathname !== "/login" ) {
+  //   navigate("/index", { replace: true });
+  // }
+  // }, [loading, isAuthenticated, location.pathname, navigate]);
   
   // Callback from Login.jsx
-  const handleLogin = () => {
-    setIsAuthenticated(true);
-    navigate("/cgs/dashboard", { replace: true });
+  const handleLogin = async (role, credentials) => {
+    try {
+      await authService.login(role, credentials); // API call logs in and sets cookie
+      setIsAuthenticated(true);
+      setUserRole(role);
+      navigate("/cgs/dashboard", { replace: true });
+    } catch (err) {
+      console.error("Login failed", err);
+      alert("Login failed. Please check your credentials.");
+    }
   };
 
   // Logout function
   const handleLogout = async () => {
-    await authService.logout(); // Call backend to clear cookies
-    setIsAuthenticated(false);
-    navigate("/index", { replace: true });
+    try {
+      await authService.logout();
+      // api.defaults.headers['Authorization'] = ''; // clears server cookie
+    } catch (err) {
+      console.error("Logout failed", err);
+    } finally {
+      setIsAuthenticated(false);
+      setUserRole(null);
+      navigate("/login", { replace: true });
+    }
   };
-
-   if (loading)
-  return (
-    <div className="flex items-center justify-center h-screen text-lg font-semibold">
-      Loading...
-    </div>
-  );
   
   return (
 
       <Routes>
-      {/* ===== Landing Pages ===== */}
-      <Route path="/index" element={<CGSIndex />} />
+      ===== Landing Pages =====
+      {/* <Route path="/index" element={<CGSIndex />} /> */}
 
       {/* ===== LOGIN PAGES ===== */}
       <Route path="/login" element={<AdminLogin onLogin={handleLogin} />} />
 
       {/* ===== CGS ===== */}
       <Route path="/cgs/*" element={
-        <ProtectedRoute isAuthenticated={isAuthenticated} >
-          <CGSLayout onLogout={handleLogout} />
+        <ProtectedRoute 
+        isAuthenticated={isAuthenticated}
+        loading={loading}
+        userRole={userRole}
+        allowedRole="cgs"
+        >
+          <CGSLayout onLogout = {handleLogout} />
         </ProtectedRoute>
       }>
         <Route index element={<Navigate to="dashboard" replace />} />
@@ -118,7 +136,7 @@ function AppWrapper() {
       </Route>
 
       {/* ===== FALLBACK ===== */}
-      <Route path="*" element={<Navigate to="/index" replace />} />
+      <Route path="*" element={<Navigate to="/login" replace />} />
     </Routes>
   );
 }

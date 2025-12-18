@@ -4,33 +4,32 @@ import { motion } from "framer-motion";
 import { Users, CheckCircle } from "lucide-react"; // Changed FileText to Users/CheckCircle
 // import { API_BASE_URL } from "../../services/api";
 // import { authService } from "../../services/api";
-import { useAuth } from "./AuthContext";
+import { useAuth } from "../../../../shared/auth/AuthContext";
 
-export default function userLogin({ onLogin }) {
+export default function UserLogin() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [role, setRole] = useState("student");
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(null);
+  
   const navigate = useNavigate();
-  const {login} = useAuth();
+  const {login, user} = useAuth();
 
   async function handleSubmit(e) {
     e.preventDefault();
     setLoading(true);
+    setError(null);
 
     try {
-      const data = await login(role, { email, password });
-
-        if (onLogin) onLogin(role);
+       await login(role, { email, password });
 
         // Redirect based on role
-        if (role === "student") navigate("/student/dashboard");
-        else if (role === "supervisor") navigate("/supervisor/dashboard");
-        else navigate("/");
-
+        if (role === "student") navigate("/student/dashboard", {replace: true});
+        else if (role === "supervisor") navigate("/supervisor/dashboard", {replace: true});
+        else navigate("/login");
     } catch (err) {
-      console.error("Login Error:", err.response?.data || err.message);
-      alert(err.response?.data?.error || "Login failed");
+      setError(err.response?.data?.error || "Login failed");
 }finally {
       setLoading(false); 
     }
@@ -111,6 +110,7 @@ export default function userLogin({ onLogin }) {
               <motion.input
                 type="email"
                 value={email}
+                disabled={loading}
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 whileFocus={{ scale: 1.01 }}
@@ -124,6 +124,7 @@ export default function userLogin({ onLogin }) {
               <motion.input
                 type="password"
                 value={password}
+                disabled={loading}
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 whileFocus={{ scale: 1.01 }}
@@ -142,6 +143,10 @@ export default function userLogin({ onLogin }) {
             >
               {loading ? "Signing in..." : `Sign In as ${role}`}
             </motion.button>
+            {error && (
+              <p className="text-red-600 text-sm mt-2 text-center">
+                {error}
+                </p>)}
           </form>
         </div>
 
