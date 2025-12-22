@@ -7,20 +7,13 @@ import {
   deleteAdmin,
 } from '../controllers/cgsController.js';
 import { protect } from '../middleware/authmiddleware.js';
-import { requirePermission } from '../middleware/rbacMiddleware.js';
-import { PERMISSIONS } from '../config/rbac.js';
 
 const router = express.Router();
 
-// All routes require authentication
-router.use(protect());
-
-// Admin management - CGS Admin full access, EXCGS read-only
-router.get('/', requirePermission(PERMISSIONS.MANAGE_SYSTEM), getAllAdmins);
-router.get('/:cgs_id', requirePermission(PERMISSIONS.READ_USER), getAdminById);
-
-// Admin CRUD - CGS Admin only
-router.post('/', requirePermission(PERMISSIONS.CREATE_USER), createAdmin);
-router.put('/:cgs_id', requirePermission(PERMISSIONS.UPDATE_USER), updateAdmin);
-router.delete('/:cgs_id', requirePermission(PERMISSIONS.DELETE_USER), deleteAdmin);
+// Protect each route explicitly
+router.get('/', protect(["CGSADM", "EXCGS"]), getAllAdmins);
+router.get('/:cgs_id', protect(["CGSADM", "EXCGS"]), getAdminById); // use cgs_id param
+router.post('/', protect(["CGSADM"]), createAdmin);
+router.put('/:cgs_id', protect(["CGSADM"]), updateAdmin);
+router.delete('/:cgs_id', protect(["CGSADM"]), deleteAdmin);
 export default router;

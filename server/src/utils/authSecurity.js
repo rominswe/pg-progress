@@ -1,26 +1,19 @@
-import { loginAttempt } from "../config/config.js";
-import { auditLog, AUDIT_ACTIONS, AUDIT_STATUS } from "./audit.js";
+import { auditLog, loginAttempt } from "../config/config.js"; // Sequelize models
 import { Op } from "sequelize";
 
 /* ================= LOG AUTH EVENT ================= */
-export const logAuthEvent = async (email, role_id, event, req = null, status = AUDIT_STATUS.SUCCESS, errorMessage = null) => {
+export const logAuthEvent = async (email, role_id, event, req = null) => {
   try {
-    const ip = req?.ip || req?.connection?.remoteAddress || "unknown";
-    const userAgent = req?.get("user-agent") || "unknown";
-    const sessionId = req?.session?.id || null;
+    const ip = req?.ip || "unknown";
+    const userAgent = req?.headers["user-agent"] || "unknown";
 
-    await auditLog({
-      userId: email,
-      action: event,
-      userRole: role_id,
-      entityType: 'SESSION',
-      entityId: sessionId,
-      details: `${event} event`,
-      ipAddress: ip,
-      userAgent: userAgent,
-      sessionId: sessionId,
-      status: status,
-      errorMessage: errorMessage
+    await auditLog.create({
+      email,
+      role_id,
+      event,
+      ip,
+      userAgent,
+      timestamp: new Date(),
     });
   } catch (err) {
     console.error("Failed to log auth event:", err);

@@ -1,14 +1,7 @@
 import { createClient } from "redis";
 import dotenv from "dotenv";
 
-// Load environment variables based on NODE_ENV
-const env = process.env.NODE_ENV || 'development';
-dotenv.config({ path: `.env.${env}` });
-
-// Fallback to .env if environment-specific file doesn't exist
-if (!process.env.REDIS_HOST) {
-  dotenv.config({ path: '.env' });
-}
+dotenv.config();
 
 const redisClient = createClient({
   url: `redis://${process.env.REDIS_HOST}:${process.env.REDIS_PORT}`

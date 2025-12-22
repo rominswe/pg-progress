@@ -14,7 +14,7 @@ export const getAllVisitingStaff = async (req, res) => {
 /* ================= GET VISITING STAFF BY ID ================= */
 export const getVisitingStaffById = async (req, res) => {
   try {
-    const staff = await visiting_staff.findByPk(req.params.staff_id);
+    const staff = await visiting_staff.findByPk(req.params.visiting_id);
     if (!staff) return res.status(404).json({ error: "Visiting staff not found" });
     res.json(staff);
   } catch (err) {
@@ -36,7 +36,7 @@ export const createVisitingStaff = async (req, res) => {
 /* ================= UPDATE VISITING STAFF ================= */
 export const updateVisitingStaff = async (req, res) => {
   try {
-    const staff = await visiting_staff.findByPk(req.params.staff_id);
+    const staff = await visiting_staff.findByPk(req.params.visiting_id);
     if (!staff) return res.status(404).json({ error: "Visiting staff not found" });
 
     await staff.update(req.body);
@@ -51,7 +51,7 @@ export const updateVisitingStaff = async (req, res) => {
 /* ================= DELETE VISITING STAFF ================= */
 export const deleteVisitingStaff = async (req, res) => {
   try {
-    const staff = await visiting_staff.findByPk(req.params.staff_id);
+    const staff = await visiting_staff.findByPk(req.params.visiting_id);
     if (!staff) return res.status(404).json({ error: "Visiting staff not found" });
 
     await staff.destroy();

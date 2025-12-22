@@ -1,7 +1,7 @@
 import _sequelize from 'sequelize';
 const { Model, Sequelize } = _sequelize;
 
-export default class VerificationToken extends Model {
+export default class RefreshToken extends Model {
   static init(sequelize, DataTypes) {
   return super.init({
     token: {
@@ -9,21 +9,29 @@ export default class VerificationToken extends Model {
       allowNull: false,
       primaryKey: true
     },
+    'userId:': {
+      type: DataTypes.STRING(255),
+      allowNull: false
+    },
+    role_id: {
+      type: DataTypes.STRING(255),
+      allowNull: false
+    },
     user_table: {
       type: DataTypes.STRING(255),
       allowNull: false
     },
-    user_id: {
+    expiresAt: {
       type: DataTypes.STRING(255),
       allowNull: false
     },
-    expiresAt: {
-      type: DataTypes.DATEONLY,
+    tokenId: {
+      type: DataTypes.STRING(255),
       allowNull: false
     }
   }, {
     sequelize,
-    tableName: 'VerificationToken',
+    tableName: 'RefreshToken',
     timestamps: false,
     indexes: [
       {

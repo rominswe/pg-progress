@@ -35,7 +35,7 @@ export default class documents_uploads extends Model {
       allowNull: false
     },
     document_type: {
-      type: DataTypes.ENUM('Thesis Chapter','Research Proposal','Progress Report','Literature Review','Final Thesis','Draft','Supporting Documents','Other'),
+      type: DataTypes.ENUM('Thesis Chapter','Research Proposal','Progress Report','Literature Review','Other'),
       allowNull: false,
       defaultValue: "Other"
     },
@@ -46,19 +46,6 @@ export default class documents_uploads extends Model {
     file_size_kb: {
       type: DataTypes.INTEGER,
       allowNull: false
-    },
-    version: {
-      type: DataTypes.INTEGER,
-      allowNull: false,
-      defaultValue: 1
-    },
-    parent_doc_id: {
-      type: DataTypes.INTEGER,
-      allowNull: true,
-      references: {
-        model: 'documents_uploads',
-        key: 'doc_up_id'
-      }
     },
     status: {
       type: DataTypes.ENUM('Pending','Approved','Rejected'),

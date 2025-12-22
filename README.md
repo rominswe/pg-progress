@@ -61,68 +61,27 @@ A modern and efficient web platform designed to streamline thesis supervision, s
 
 <!-- 
 
-## Security Features
-
-- **Rate Limiting**: Prevents brute-force attacks and API abuse
-- **Input Validation**: Comprehensive validation and sanitization
-- **HTTPS Enforcement**: Automatic redirection to secure connections
-- **Security Headers**: Helmet.js implementation with CSP, HSTS, and XSS protection
-- **CORS Configuration**: Strict origin validation for frontend integration
-- **Audit Logging**: Complete activity tracking for compliance and security monitoring
-
-For detailed security implementation, see [SECURITY_IMPLEMENTATION.md](./SECURITY_IMPLEMENTATION.md).
+## Tech Stack
 
 ### Frontend
-- React (Vite)
-- JavaScript
-- Tailwind CSS
-- React Router
-- Lucide React (icons)
-- Docker
+React (Vite)
+JavaScript
+Tailwind CSS
+React Router
+Lucide React (icons)
+Docker
 
 ### Backend
-- Node.js
-- Express.js
-- MySQL
-- Redis (Session Store)
-- Docker
+Node.js
+MySQL
+Docker
 
 ## Dependencies
-- Node.js (v18 or higher)
-- MySQL (v8.0 or higher)
-- Redis
-- Docker & Docker Compose
+Node.js (v22.)
+MySQL (v8.0 or higher)
+React
 
-## Quick Start
-
-### Development Environment
-
-1. **Clone the repository:**
-   ```bash
-   git clone <repository-url>
-   cd pg-progress
-   ```
-
-2. **Environment Setup:**
-   ```bash
-   cp .env.example server/.env.development
-   # Edit server/.env.development with your local configuration
-   ```
-
-3. **Start with Docker:**
-   ```bash
-   docker-compose up --build
-   ```
-
-4. **Access the application:**
-   - Frontend User: http://localhost:5173
-   - Frontend Admin: http://localhost:5174
-   - Backend API: http://localhost:5000
-   - phpMyAdmin: http://localhost:8080
-
-### Other Environments
-
-For detailed setup instructions for staging and production environments, see [ENVIRONMENT_SETUP.md](./ENVIRONMENT_SETUP.md).
+## Project Setup
 
 ## Project Architecture 
 

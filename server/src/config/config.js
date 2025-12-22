@@ -1,14 +1,8 @@
 import { Sequelize, DataTypes } from "sequelize";
 import dotenv from "dotenv";
 
-// Load environment variables based on NODE_ENV
-const env = process.env.NODE_ENV || 'development';
-dotenv.config({ path: `.env.${env}` });
-
-// Fallback to .env if environment-specific file doesn't exist
-if (!process.env.DB_NAME) {
-  dotenv.config({ path: '.env' });
-}
+// Load environment variables
+dotenv.config();
 
 // Import class-based models
 import Supervisor from "../models/supervisor.js";
@@ -22,15 +16,15 @@ import Progress from "../models/progress.js";
 import Role from "../models/roles.js";
 import Studentinfo from "../models/studinfo.js";
 import TableDepartments from "../models/tbldepartments.js";
-import VisitingStaff from "../models/visiting_staff.js";
+import VisitingStaff  from "../models/visiting_staff.js ";
 import DocUp from "../models/documents_uploads.js";
 import DocRev from "../models/documents_reviews.js";
 
 // Auth / Security Models
+import RefreshToken from "../models/RefreshToken.js";
+import VerificationToken from "../models/VerificationToken.js";
 import AuditLog from "../models/AuditLog.js";
 import LoginAttempt from "../models/LoginAttempt.js";
-import VerificationToken from "../models/VerificationToken.js";
-import Notifications from "../models/notifications.js";
 
 // Create Sequelize instance first
 const sequelize = new Sequelize(
@@ -66,10 +60,10 @@ const doc_up = DocUp.init(sequelize, DataTypes);
 const doc_rev = DocRev.init(sequelize, DataTypes);
 
 // ================= AUTH MODELS ================= //
+const refreshToken = RefreshToken.init(sequelize, DataTypes);
 const verificationToken = VerificationToken.init(sequelize, DataTypes);
 const auditLog = AuditLog.init(sequelize, DataTypes);
 const loginAttempt = LoginAttempt.init(sequelize, DataTypes);
-const notifications = Notifications.init(sequelize, DataTypes);
 
 // Relationships
 
@@ -122,12 +116,15 @@ master_stu.belongsTo(studentinfo, { foreignKey: "stu_id" });
 programInfo.hasMany(master_stu, { foreignKey: "Prog_Code" });
 master_stu.belongsTo(programInfo, { foreignKey: "Prog_Code" });
 
-// Progress relationships
-master_stu.hasMany(progress, { foreignKey: "thesis_id", sourceKey: "master_id", as: "progress" });
-progress.belongsTo(master_stu, { foreignKey: "thesis_id", targetKey: "master_id", as: "student" });
-
 
 // ----- AUTH / SECURITY RELATIONS -----
+// RefreshToken → any user table dynamically
+refreshToken.belongsTo(cgs, { foreignKey: "userId", constraints: false, scope: { table: "cgs" }, as: "cgsUser" });
+refreshToken.belongsTo(supervisor, { foreignKey: "userId", constraints: false, scope: { table: "supervisor" }, as: "supervisorUser" });
+refreshToken.belongsTo(master_stu, { foreignKey: "userId", constraints: false, scope: { table: "master_stu" }, as: "studentUser" });
+refreshToken.belongsTo(examiner, { foreignKey: "userId", constraints: false, scope: { table: "examiner" }, as: "examinerUser" });
+refreshToken.belongsTo(visiting_staff, { foreignKey: "userId", constraints: false, scope: { table: "visiting_staff" }, as: "visitingStaffUser" });
+
 // VerificationToken → any user table dynamically
 verificationToken.belongsTo(cgs, { foreignKey: "user_id", constraints: false, scope: { user_table: "cgs" }, as: "cgsUser" });
 verificationToken.belongsTo(supervisor, { foreignKey: "user_id", constraints: false, scope: { user_table: "supervisor" }, as: "supervisorUser" });
@@ -154,10 +151,6 @@ doc_rev.belongsTo(doc_up, { foreignKey: "doc_up_id", as: "doc_up" });
 master_stu.hasMany(doc_up, { foreignKey: "master_id", as: "documents_uploads" });
 doc_up.belongsTo(master_stu, { foreignKey: "master_id", as: "master" });
 
-// Document versions (self-referencing)
-doc_up.hasMany(doc_up, { foreignKey: "parent_doc_id", as: "versions" });
-doc_up.belongsTo(doc_up, { foreignKey: "parent_doc_id", as: "parent_document" });
-
 // Role → document uploads & reviews
 role.hasMany(doc_up, { foreignKey: "role_id" });
 doc_up.belongsTo(role, { foreignKey: "role_id", as: "role" });
@@ -181,8 +174,8 @@ export {
   progress,
   doc_up,
   doc_rev,
+  refreshToken,
   verificationToken,
   auditLog,
-  loginAttempt,
-  notifications
+  loginAttempt
 };
