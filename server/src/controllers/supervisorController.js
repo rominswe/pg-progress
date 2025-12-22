@@ -64,19 +64,3 @@ export const deleteSupervisor = async (req, res) => {
     res.status(500).json({ error: error.message });
   }
 };
-
-// Login check example (optional)
-export const loginSupervisor = async (req, res) => {
-  try {
-    const { EmailId, Password } = req.body;
-    const user = await supervisor.findOne({ where: { EmailId } });
-    if (!user) return res.status(404).json({ message: "Supervisor not found" });
-
-    const isMatch = await user.checkPassword(Password);
-    if (!isMatch) return res.status(401).json({ message: "Invalid credentials" });
-
-    res.json({ message: "Login successful", user });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-};

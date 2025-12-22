@@ -1,9 +1,9 @@
-import { Examiner } from "../config/config.js";
+import { examiner } from "../config/config.js";
 
 // Get all examiners
 export const getAllExaminers = async (req, res) => {
   try {
-    const examiners = await Examiner.findAll();
+    const examiners = await examiner.findAll();
     res.json(examiners);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -13,7 +13,7 @@ export const getAllExaminers = async (req, res) => {
 // Get single examiner by examiner_id
 export const getExaminerById = async (req, res) => {
   try {
-    const examiner = await Examiner.findByPk(req.params.examiner_id);
+    const examiner = await examiner.findByPk(req.params.examiner_id);
     if (!examiner) return res.status(404).json({ message: "Examiner not found" });
     res.json(examiner);
   } catch (error) {
@@ -24,7 +24,7 @@ export const getExaminerById = async (req, res) => {
 // Create a new examiner
 export const createExaminer = async (req, res) => {
   try {
-    const newExaminer = await Examiner.create(req.body);
+    const newExaminer = await examiner.create(req.body);
     res.status(201).json(newExaminer);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -34,7 +34,7 @@ export const createExaminer = async (req, res) => {
 // Update an examiner
 export const updateExaminer = async (req, res) => {
   try {
-    const examiner = await Examiner.findByPk(req.params.examiner_id);
+    const examiner = await examiner.findByPk(req.params.examiner_id);
     if (!examiner) return res.status(404).json({ message: "Examiner not found" });
 
     await examiner.update(req.body);
@@ -47,7 +47,7 @@ export const updateExaminer = async (req, res) => {
 // Delete an examiner
 export const deleteExaminer = async (req, res) => {
   try {
-    const examiner = await Examiner.findByPk(req.params.examiner_id);
+    const examiner = await examiner.findByPk(req.params.examiner_id);
     if (!examiner) return res.status(404).json({ message: "Examiner not found" });
 
     await examiner.destroy();

@@ -11,9 +11,9 @@ import { protect } from '../middleware/authmiddleware.js';
 const router = express.Router();
 
 // CRUD endpoints
-router.get("/", protect(['examiner']), getAllExaminers);
-router.get("/:examiner_id", protect(['examiner']), getExaminerById);
-router.post("/", protect(['examiner']), createExaminer);
-router.put("/:examiner_id", protect(['examiner']), updateExaminer);
-router.delete("/:examiner_id", protect(['examiner']), deleteExaminer);
+router.get("/", protect(["CGSADM", "EXCGS"]), getAllExaminers);
+router.get("/:examiner_id", protect(["CGSADM", "EXCGS"]), getExaminerById);
+router.post("/", protect(["CGSADM"]), createExaminer);
+router.put("/:examiner_id", protect(["CGSADM"]), updateExaminer);
+router.delete("/:examiner_id", protect(["CGSADM"]), deleteExaminer);
 export default router;

@@ -5,20 +5,16 @@ import {
   createSupervisor,
   updateSupervisor,
   deleteSupervisor,
-  loginSupervisor // optional
 } from "../controllers/supervisorController.js";
 import { protect } from "../middleware/authmiddleware.js";
 
 const router = express.Router();
 
 // CRUD endpoints
-router.get("/", protect(["supervisor"]), getAllSupervisors);
-router.get("/:emp_id", protect(["supervisor"]), getSupervisorById);
-router.post("/", protect(["supervisor"]), createSupervisor);
-router.put("/:emp_id", protect(["supervisor"]), updateSupervisor);
-router.delete("/:emp_id", protect(["supervisor"]), deleteSupervisor);
-
-// Optional login route
-router.post("/login", loginSupervisor);
+router.get("/", protect(["SUV", "CGSADM", "EXCGS"]), getAllSupervisors);
+router.get("/:sup_id", protect(["SUV", "CGSADM", "EXCGS"]), getSupervisorById);
+router.post("/", protect(["SUV", "CGSADM", "EXCGS"]), createSupervisor);
+router.put("/:sup_id", protect(["SUV", "CGSADM", "EXCGS"]), updateSupervisor);
+router.delete("/:sup_id", protect(["SUV", "CGSADM", "EXCGS"]), deleteSupervisor);
 
 export default router;

@@ -1,4 +1,4 @@
-import { cgs } from "../config/config.js"; // cgs is already the class-based model
+import { cgs } from "../config/config.js";
 
 // Get all admins
 export const getAllAdmins = async (req, res) => {
@@ -14,7 +14,7 @@ export const getAllAdmins = async (req, res) => {
 export const getAdminById = async (req, res) => {
   try {
     const admin = await cgs.findByPk(req.params.admin_id); // match router param
-    if (!admin) return res.status(404).json({ message: "Admin not found" });
+    if (!admin) return res.status(404).json({ message: "User not found" });
     res.json(admin);
   } catch (error) {
     res.status(500).json({ error: error.message });
@@ -36,7 +36,7 @@ export const createAdmin = async (req, res) => {
 export const updateAdmin = async (req, res) => {
   try {
     const admin = await cgs.findByPk(req.params.admin_id);
-    if (!admin) return res.status(404).json({ message: "Admin not found" });
+    if (!admin) return res.status(404).json({ message: "User not found" });
 
     // If updating password, hook will automatically hash it
     await admin.update(req.body);
@@ -50,10 +50,10 @@ export const updateAdmin = async (req, res) => {
 export const deleteAdmin = async (req, res) => {
   try {
     const admin = await cgs.findByPk(req.params.admin_id);
-    if (!admin) return res.status(404).json({ message: "Admin not found" });
+    if (!admin) return res.status(404).json({ message: "User not found" });
 
     await admin.destroy();
-    res.json({ message: "Admin deleted successfully" });
+    res.json({ message: "User deleted successfully" });
   } catch (error) {
     res.status(500).json({ error: error.message });
   }

@@ -4,70 +4,88 @@ const { Model, Sequelize } = _sequelize;
 
 export default class cgs extends Model {
   static init(sequelize, DataTypes) {
-    const Cgs = super.init({
-      cgs_id: {
-        type: DataTypes.STRING(20),
-        allowNull: false,
-        primaryKey: true
-      },
-      emp_id: {
-        type: DataTypes.STRING(20),
-        allowNull: false,
-        references: {
-          model: 'empinfo',
-          key: 'emp_id'
-        }
-      },
-      FirstName: {
-        type: DataTypes.STRING(150),
-        allowNull: false
-      },
-      LastName: {
-        type: DataTypes.STRING(150),
-        allowNull: false
-      },
-      EmailId: {
-        type: DataTypes.STRING(200),
-        allowNull: false
-      },
-      Password: {
-        type: DataTypes.STRING(180),
-        allowNull: false
-      },
-      Phonenumber: {
-        type: DataTypes.CHAR(20),
-        allowNull: false
-      },
-      Profile_Image: {
-        type: DataTypes.STRING(255),
-        allowNull: true
-      },
-      role_id: {
-        type: DataTypes.STRING(100),
-        allowNull: false,
-        references: {
-          model: 'roles',
-          key: 'role_id'
-        }
-      },
-      Dep_Code: {
-        type: DataTypes.STRING(100),
-        allowNull: false,
-        references: {
-          model: 'tbldepartments',
-          key: 'Dep_Code'
-        }
-      },
-      Status: {
-        type: DataTypes.ENUM('Active','Inactive'),
-        allowNull: false,
-        defaultValue: "Active"
-      },
-      RegDate: {
-        type: DataTypes.DATE,
-        allowNull: false,
-        defaultValue: Sequelize.literal('CURRENT_TIMESTAMP')
+  return super.init({
+    cgs_id: {
+      type: DataTypes.STRING(20),
+      allowNull: false,
+      primaryKey: true
+    },
+    emp_id: {
+      type: DataTypes.STRING(20),
+      allowNull: false,
+      references: {
+        model: 'empinfo',
+        key: 'emp_id'
       }
+    },
+    FirstName: {
+      type: DataTypes.STRING(150),
+      allowNull: false
+    },
+    LastName: {
+      type: DataTypes.STRING(150),
+      allowNull: false
+    },
+    EmailId: {
+      type: DataTypes.STRING(200),
+      allowNull: false
+    },
+    Password: {
+      type: DataTypes.STRING(180),
+      allowNull: false
+    },
+    Phonenumber: {
+      type: DataTypes.CHAR(20),
+      allowNull: false
+    },
+    Profile_Image: {
+      type: DataTypes.STRING(255),
+      allowNull: true
+    },
+    role_id: {
+      type: DataTypes.STRING(100),
+      allowNull: false,
+      references: {
+        model: 'roles',
+        key: 'role_id'
+      }
+    },
+    Dep_Code: {
+      type: DataTypes.STRING(100),
+      allowNull: false,
+      references: {
+        model: 'tbldepartments',
+        key: 'Dep_Code'
+      }
+    },
+    Status: {
+      type: DataTypes.ENUM('Active','Inactive','Pending'),
+      allowNull: false,
+      defaultValue: "Pending"
+    },
+    RegDate: {
+      type: DataTypes.DATE,
+      allowNull: false,
+      defaultValue: Sequelize.Sequelize.literal('CURRENT_TIMESTAMP')
+    },
+    StartDate: {
+      type: DataTypes.DATE,
+      allowNull: false
+    },
+    EndDate: {
+      type: DataTypes.DATE,
+      allowNull: false
+    },
+    IsVerified: {
+      type: DataTypes.TINYINT,
+      allowNull: true,
+      defaultValue: 0
+    },
+    MustChangePassword: {
+      type: DataTypes.BOOLEAN,
+      allowNull: true,
+      defaultValue: 1
+    }
     }, {
       sequelize,
       tableName: 'cgs',
