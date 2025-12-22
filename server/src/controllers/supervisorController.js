@@ -13,7 +13,7 @@ export const getAllSupervisors = async (req, res) => {
 // Get single supervisor by emp_id
 export const getSupervisorById = async (req, res) => {
   try {
-    const singleSupervisor = await supervisor.findByPk(req.params.emp_id);
+    const singleSupervisor = await supervisor.findByPk(req.params.sup_id);
     if (!singleSupervisor) {
       return res.status(404).json({ message: "Supervisor not found" });
     }
@@ -37,7 +37,7 @@ export const createSupervisor = async (req, res) => {
 // Update a supervisor
 export const updateSupervisor = async (req, res) => {
   try {
-    const singleSupervisor = await supervisor.findByPk(req.params.emp_id);
+    const singleSupervisor = await supervisor.findByPk(req.params.sup_id);
     if (!singleSupervisor) {
       return res.status(404).json({ message: "Supervisor not found" });
     }
@@ -53,7 +53,7 @@ export const updateSupervisor = async (req, res) => {
 // Delete a supervisor
 export const deleteSupervisor = async (req, res) => {
   try {
-    const singleSupervisor = await supervisor.findByPk(req.params.emp_id);
+    const singleSupervisor = await supervisor.findByPk(req.params.sup_id);
     if (!singleSupervisor) {
       return res.status(404).json({ message: "Supervisor not found" });
     }

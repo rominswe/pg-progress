@@ -14,7 +14,6 @@ export default class LoginAttempt extends Model {
     timestamps: true,
     indexes: [
       {
-        name: "PRIMARY",
         unique: true,
         using: "BTREE",
         fields: [

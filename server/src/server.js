@@ -1,5 +1,6 @@
 import app from "./app.js";
 import { sequelize } from "./config/config.js";
+import notificationScheduler from "./utils/notificationScheduler.js";
 
 console.log("ENV TEST:", process.env.DB_USER, process.env.DB_PASS, process.env.DB_NAME);
 
@@ -16,6 +17,9 @@ async function startServer() {
       // Sync models (creates tables if not exist)
       await sequelize.sync();
       console.log("✅ Database synced");
+
+      // Start notification scheduler
+      notificationScheduler.start();
 
       app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));
       break; // exit loop on success

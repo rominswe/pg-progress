@@ -6,14 +6,20 @@ import {
   updateMeeting,
   deleteMeeting,
 } from "../controllers/supervisoryMeetingController.js";
+import { protect } from '../middleware/authmiddleware.js';
+import { requirePermission, requireRole, requireOwnership } from '../middleware/rbacMiddleware.js';
+import { PERMISSIONS } from '../config/rbac.js';
 
 const router = express.Router();
 
-// CRUD endpoints
-router.get("/", getAllMeetings);
-router.get("/:meeting_id", getMeetingById);
-router.post("/", createMeeting);
-router.put("/:meeting_id", updateMeeting);
-router.delete("/:meeting_id", deleteMeeting);
+// All routes require authentication
+router.use(protect());
+
+// CRUD endpoints - meetings accessible to supervisors, students, and admins
+router.get("/", requirePermission(PERMISSIONS.VIEW_ALL_PROGRESS), getAllMeetings);
+router.get("/:meeting_id", requireOwnership('meeting_id'), getMeetingById);
+router.post("/", requirePermission(PERMISSIONS.APPROVE_STUDENT_ACTIONS), createMeeting);
+router.put("/:meeting_id", requireOwnership('meeting_id'), updateMeeting);
+router.delete("/:meeting_id", requirePermission(PERMISSIONS.APPROVE_STUDENT_ACTIONS), deleteMeeting);
 
 export default router;

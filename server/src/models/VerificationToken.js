@@ -18,7 +18,7 @@ export default class VerificationToken extends Model {
       allowNull: false
     },
     expiresAt: {
-      type: DataTypes.DATEONLY,
+      type: DataTypes.DATE,
       allowNull: false
     }
   }, {
