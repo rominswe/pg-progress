@@ -2,14 +2,14 @@ import { useState } from 'react';
 import SupervisorReviewForm from '../../components/SupervisorReviewForm';
 
 const ReviewRequest = () => {
-  // 1. Mock Data aligned with StudentForm.jsx fields and categories
+  // 1. Mock Data
   const [requests, setRequests] = useState([
     { 
       id: 1, 
       fullName: "Alex Rivera", 
       studentId: "AIU 22001234", 
       program: "Doctor of Philosophy (Business Management)",
-      serviceCategory: "Extension of Study", // Matches StudentForm Option 3
+      serviceCategory: "Extension of Study",
       submissionDate: "2023-10-25",
       currentEndDate: "2023-12-01",
       requestedNewEndDate: "2024-06-01",
@@ -20,7 +20,7 @@ const ReviewRequest = () => {
       fullName: "Sarah Chen", 
       studentId: "AIU 22005566", 
       program: "Master of Education (by Research)",
-      serviceCategory: "Add/Drop Course", // Matches StudentForm Option 1
+      serviceCategory: "Add/Drop Course",
       submissionDate: "2023-10-26",
       courseCode: "EDU702",
       courseName: "Advanced Research Methods",
@@ -31,7 +31,7 @@ const ReviewRequest = () => {
       fullName: "Marcus Tan", 
       studentId: "AIU 21009988", 
       program: "Master of Business Management (by Research)",
-      serviceCategory: "Deferment of Study", // Matches StudentForm Option 2
+      serviceCategory: "Deferment of Study",
       submissionDate: "2023-10-27",
       defermentReason: "Medical recovery required after surgery.",
       resumingSemester: "Semester 2, 2024",
@@ -42,7 +42,6 @@ const ReviewRequest = () => {
   const [selectedRequest, setSelectedRequest] = useState(null);
 
   const handleDecision = (result) => {
-    // result would contain the supervisor's comments/approval and the original student data
     console.log('Final Decision processed for:', result.fullName);
     
     // Remove from list after processing
@@ -56,19 +55,11 @@ const ReviewRequest = () => {
     return (
       <div className="academic-theme">
         <div className="animate-in fade-in duration-300">
-          <button 
-            onClick={() => setSelectedRequest(null)}
-            className="btn-secondary"
-            style={{ marginBottom: '1.5rem', cursor: 'pointer' }}
-          >
-            ← Back to Request Inbox
-          </button>
-
-          {/* This form should be built to display the specific fields 
-              based on the serviceCategory passed in studentData */}
+          {/* Internal Form with its own Back buttons */}
           <SupervisorReviewForm 
             studentData={selectedRequest} 
             onDecision={() => handleDecision(selectedRequest)} 
+            onBack={() => setSelectedRequest(null)} // THIS TELLS THE FORM HOW TO GO BACK
           />
         </div>
       </div>
@@ -102,7 +93,7 @@ const ReviewRequest = () => {
                     <td>
                       <div style={{ fontWeight: 'bold' }}>{req.fullName}</div>
                       <div style={{ fontSize: '0.85rem', color: '#666' }}>{req.studentId}</div>
-                      <div style={{ fontSize: '0.75rem', italic: 'true' }}>{req.program}</div>
+                      <div style={{ fontSize: '0.75rem', fontStyle: 'italic' }}>{req.program}</div>
                     </td>
                     <td>
                       <span className={`badge ${req.serviceCategory.replace(/\s+/g, '-').toLowerCase()}`}>
