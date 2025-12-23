@@ -33,7 +33,7 @@ export const sendVerificationEmail = async (user, token, tempPassword, role_id) 
     });
 
     const mailOptions = {
-      from: process.env.EMAIL_FROM || `"PG Progress System" <${process.env.EMAIL_USER}>`,
+      from: process.env.EMAIL_FROM || `"AIU PG Progress" <${process.env.EMAIL_USER}>`,
       to: user.EmailId,
       subject: `Verify Your Account - ${role_id.toUpperCase()}`,
       html: `

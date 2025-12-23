@@ -3,6 +3,7 @@ const router = express.Router();
 
 /* ================= MIDDLEWARE ================= */
 import {protect} from "../middleware/authmiddleware.js";
+import {requireRole} from "../middleware/rbacMiddleware.js";
 
 /* ================= CONTROLLERS ================= */
 import {
@@ -18,7 +19,7 @@ import {
   updateDepartmentAdmin,
 
   getAllProgramsAdmin,
-  getAllProgressAdmin,
+  // getAllProgressAdmin,
 
   getAllDocumentsAdmin,
   deleteDocumentAdmin,
@@ -28,8 +29,8 @@ import {
 } from "../controllers/adminController.js";
 
 /* ================= ROUTE PROTECTION ================= */
-router.use(protect()); // 🛡️ PROTECT ALL ROUTES
-router.use(protect(["CGSADM"])); // 🔐 ONLY CGS ADMIN
+router.use(protect); // 🛡️ PROTECT ALL ROUTES
+router.use(requireRole("CGSADM")); // 🔐 ONLY CGS ADMIN
 
 /* ================= STUDENTS ================= */
 router.get("/students", getAllStudentsAdmin);
@@ -53,7 +54,7 @@ router.put("/departments/:Dep_Code", updateDepartmentAdmin);
 router.get("/programs", getAllProgramsAdmin);
 
 /* ================= PROGRESS ================= */
-router.get("/progress", getAllProgressAdmin);
+// router.get("/progress", getAllProgressAdmin);
 
 /* ================= DOCUMENTS ================= */
 router.get("/documents", getAllDocumentsAdmin);

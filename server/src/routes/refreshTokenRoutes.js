@@ -4,11 +4,12 @@ import {
   getAllRefreshTokens,
   revokeRefreshToken
 } from "../controllers/refreshTokenController.js";
+import { requireRole } from '../middleware/rbacMiddleware.js';
 
 const router = express.Router();
 
 // Admin-only access for token management
-router.get("/", protect(["CGSADM", "EXCGS"]), getAllRefreshTokens);
-router.delete("/:tokenId", protect(["CGSADM", "EXCGS"]), revokeRefreshToken);
+router.get("/", protect, requireRole("CGSADM"), getAllRefreshTokens);
+router.delete("/:tokenId", protect, requireRole("CGSADM"), revokeRefreshToken);
 
 export default router;

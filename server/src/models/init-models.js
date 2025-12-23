@@ -11,11 +11,9 @@ import _empinfo from  "./empinfo.js";
 import _examiner from  "./examiner.js";
 import _master_stu from  "./master_stu.js";
 import _program_info from  "./program_info.js";
-import _progress from  "./progress.js";
 import _roles from  "./roles.js";
 import _studinfo from  "./studinfo.js";
 import _supervisor from  "./supervisor.js";
-import _supervisory_meetings from  "./supervisory_meetings.js";
 import _tbldepartments from  "./tbldepartments.js";
 import _visiting_staff from  "./visiting_staff.js";
 
@@ -31,11 +29,9 @@ export default function initModels(sequelize) {
   const examiner = _examiner.init(sequelize, DataTypes);
   const master_stu = _master_stu.init(sequelize, DataTypes);
   const program_info = _program_info.init(sequelize, DataTypes);
-  const progress = _progress.init(sequelize, DataTypes);
   const roles = _roles.init(sequelize, DataTypes);
   const studinfo = _studinfo.init(sequelize, DataTypes);
   const supervisor = _supervisor.init(sequelize, DataTypes);
-  const supervisory_meetings = _supervisory_meetings.init(sequelize, DataTypes);
   const tbldepartments = _tbldepartments.init(sequelize, DataTypes);
   const visiting_staff = _visiting_staff.init(sequelize, DataTypes);
 
@@ -90,11 +86,9 @@ export default function initModels(sequelize) {
     examiner,
     master_stu,
     program_info,
-    progress,
     roles,
     studinfo,
     supervisor,
-    supervisory_meetings,
     tbldepartments,
     visiting_staff,
   };

@@ -7,14 +7,15 @@ import {
   updateVisitingStaff,
   deleteVisitingStaff
 } from "../controllers/visitingStaffController.js";
+import { requireRole } from '../middleware/rbacMiddleware.js';
 
 const router = express.Router();
 
 // Admin access for external examiner management
-router.get("/", protect(["CGSADM", "EXCGS"]), getAllVisitingStaff);
-router.get("/:staff_id", protect(["CGSADM", "EXCGS"]), getVisitingStaffById);
-router.post("/", protect(["CGSADM"]), createVisitingStaff);
-router.put("/:staff_id", protect(["CGSADM"]), updateVisitingStaff);
-router.delete("/:staff_id", protect(["CGSADM"]), deleteVisitingStaff);
+router.get("/", protect, requireRole("CGSADM", "EXCGS"), getAllVisitingStaff);
+router.get("/:staff_id", protect, requireRole("CGSADM", "EXCGS"), getVisitingStaffById);
+router.post("/", protect, requireRole("CGSADM"), createVisitingStaff);
+router.put("/:staff_id", protect, requireRole("CGSADM"), updateVisitingStaff);
+router.delete("/:staff_id", protect, requireRole("CGSADM"), deleteVisitingStaff);
 
 export default router;

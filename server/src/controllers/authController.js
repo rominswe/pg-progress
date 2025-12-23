@@ -76,19 +76,18 @@ export const login = async (req, res) => {
     if (!user) {
       await recordLoginAttempt(email);
       await logAuthEvent(email, role_id, "LOGIN_FAIL", req);
-      throw new Error("Invalid credentials");
+      throw new Error("Invalid Email");
     }
 
     if (user.role.role_id !== role_id) throw new Error("Role mismatch");
-
     enforceAccountRules(user);
 
     // Check password
-    const valid =  bcrypt.compare(password, user.Password);
+    const valid = await bcrypt.compare(password, user.Password);
     if (!valid) {
       await recordLoginAttempt(email);
       await logAuthEvent(email, role_id, "LOGIN_FAIL", req);
-      throw new Error("Invalid credentials");
+      throw new Error("Invalid Password");
     }
 
     // Check if user must change temporary password
@@ -101,27 +100,24 @@ export const login = async (req, res) => {
       });
     }
 
-    // Generate tokens
-    const payload = {
-      userId: user[user.constructor.primaryKeyAttribute],
-      role_id: user.role.role_id,
+    // Save user info in session
+    req.session.user = {
+      id: user[user.constructor.primaryKeyAttribute],
+      email: user.EmailId,
+      role: user.role.role_id,
       table: modelUsed,
     };
-    const accessToken = signAccessToken(payload);
-    const refreshToken = await rotateRefreshToken(payload);
-
-    res
-      .cookie("accessToken", accessToken, cookieOptions(60 * 60 * 1000))
-      .cookie("refreshToken", refreshToken, cookieOptions(7 * 24 * 60 * 60 * 1000))
-      .json({
-        role: user.role.role_name,
-        user: {
-          id: payload.userId,
-          name: `${user.FirstName} ${user.LastName}`,
-        },
-      });
 
     await logAuthEvent(email, role_id, "LOGIN_SUCCESS", req);
+
+    res.json({
+      message: "Login successful",
+      user: {
+        id: user[user.constructor.primaryKeyAttribute],
+        name: `${user.FirstName} ${user.LastName}`,
+        role: user.role.role_id,
+      },
+    });
   } catch (err) {
     res.status(403).json({ error: err.message });
   }
@@ -187,12 +183,14 @@ export const verifyAccount = async (req, res) => {
     if (!record) return res.status(400).json({ error: "Invalid or expired token" });
 
     // Determine the model
-    const Model =
-      record.user_table === "examiner"
-        ? examiner
-        : record.user_table === "visiting_staff"
-        ? visiting_staff
-        : ROLE_MODEL_MAP[record.role_id];
+    let Model;
+    if (record.user_table === "examiner") {
+      Model = examiner;
+    } else if (record.user_table === "visiting_staff") {
+      Model = visiting_staff;
+    } else {
+      Model = ROLE_MODEL_MAP[record.role_id];
+    }
 
     // Fetch the user
     const user = await Model.findByPk(record.user_id);
@@ -222,32 +220,37 @@ export const verifyAccount = async (req, res) => {
 
 /* ================= /ME GET ================= */
 export const me = async (req, res) => {
-  const { userId, table, role_id } = req.user;
+  if (!req.session?.user) return res.status(401).json({ error: "Unauthorized" });
 
-  const Model =
-    table === "examiner"
-      ? examiner
-      : table === "visiting_staff"
-      ? visiting_staff
-      : ROLE_MODEL_MAP[role_id];
+  const { id, role: role_id, table } = req.session.user;
+  let Model;
 
-  const user = await Model.findByPk(userId, { include: [{ model: role }] });
+  if (table === "examiner") Model = examiner;
+  else if (table === "visiting_staff") Model = visiting_staff;
+  else {
+    const ROLE_MODEL_MAP = { CGSADM: cgs, SUV: supervisor, STU: master_stu, EXCGS: cgs };
+    Model = ROLE_MODEL_MAP[role_id];
+  }
+
+  const user = await Model.findByPk(id);
   if (!user) return res.status(404).json({ error: "User not found" });
 
-  res.json(user);
+  res.json({ id: user.id, email: user.EmailId, role: user.role_id });
 };
 
 /* ================= /ME UPDATE ================= */
 export const updateMe = async (req, res) => {
-  const { userId, table, role_id } = req.user;
+  const { id: userId, table, role_id } = req.session.user;
   const { Password, Phonenumber, Profile_Image } = req.body;
 
-  const Model =
-    table === "examiner"
-      ? examiner
-      : table === "visiting_staff"
-      ? visiting_staff
-      : ROLE_MODEL_MAP[role_id];
+  let Model;
+  if (table === "examiner") {
+    Model = examiner;
+  } else if (table === "visiting_staff") {
+    Model = visiting_staff;
+  } else {
+    Model = ROLE_MODEL_MAP[role_id];
+  }
 
   const user = await Model.findByPk(userId);
   if (!user) return res.status(404).json({ error: "User not found" });
@@ -290,11 +293,8 @@ export const refreshToken = async (req, res) => {
 
 /* ================= LOGOUT ================= */
 export const logout = async (req, res) => {
-  const { refreshToken } = req.cookies;
-  if (refreshToken) await rotateRefreshToken(null, refreshToken, true); // revoke
-
-  res
-    .clearCookie("accessToken", cookieOptions(0))
-    .clearCookie("refreshToken", cookieOptions(0))
-    .json({ message: "Logout success" });
+  req.session.destroy(err => {
+    if (err) return res.status(500).json({ error: "Logout failed" });
+    res.clearCookie("sid").json({ message: "Logout successful" });
+  });
 };

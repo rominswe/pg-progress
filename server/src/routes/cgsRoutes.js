@@ -7,13 +7,14 @@ import {
   deleteAdmin,
 } from '../controllers/cgsController.js';
 import { protect } from '../middleware/authmiddleware.js';
+import { requireRole } from '../middleware/rbacMiddleware.js';
 
 const router = express.Router();
 
 // Protect each route explicitly
-router.get('/', protect(["CGSADM", "EXCGS"]), getAllAdmins);
-router.get('/:cgs_id', protect(["CGSADM", "EXCGS"]), getAdminById); // use cgs_id param
-router.post('/', protect(["CGSADM"]), createAdmin);
-router.put('/:cgs_id', protect(["CGSADM"]), updateAdmin);
-router.delete('/:cgs_id', protect(["CGSADM"]), deleteAdmin);
+router.get('/', protect, requireRole('CGSADM', 'EXCGS'), getAllAdmins);
+router.get('/:cgs_id', protect, requireRole('CGSADM', 'EXCGS'), getAdminById); // use cgs_id param
+router.post('/', protect, requireRole('CGSADM'), createAdmin);
+router.put('/:cgs_id', protect, requireRole('CGSADM'), updateAdmin);
+router.delete('/:cgs_id', protect, requireRole('CGSADM'), deleteAdmin);
 export default router;

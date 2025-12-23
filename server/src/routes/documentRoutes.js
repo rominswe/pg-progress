@@ -5,16 +5,17 @@ import {
   getMyDocuments,
   reviewDocument,
 } from "../controllers/documentController.js";
+import { requireRole } from "../middleware/rbacMiddleware.js";
 
 const router = express.Router();
 
 // ✅ Upload document(s)
-router.post("/upload", protect(["STU"]), uploadDocument);
+router.post("/upload", protect, requireRole("STU"), uploadDocument);
 
 // ✅ Get logged-in user's documents
-router.get("/me", protect(["STU"]), getMyDocuments);
+router.get("/me", protect, requireRole("STU"), getMyDocuments);
 
 // ✅ Review document (restricted roles)
-router.post("/review", protect(["SUV", "EXA", "EXEB"]), reviewDocument);
+router.post("/review", protect, requireRole("SUV", "EXA", "EXCGS", "CGSADM"), reviewDocument);
 
 export default router;

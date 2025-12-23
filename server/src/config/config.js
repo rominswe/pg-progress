@@ -7,12 +7,10 @@ dotenv.config();
 // Import class-based models
 import Supervisor from "../models/supervisor.js";
 import MasterStu from "../models/master_stu.js";
-import SuperVisoryMeeting from "../models/supervisory_meetings.js";
 import Cgs from "../models/cgs.js";
 import Empinfo from "../models/empinfo.js";
 import Examiner from "../models/examiner.js";
 import ProgramInfo from "../models/program_info.js";
-import Progress from "../models/progress.js";
 import Role from "../models/roles.js";
 import Studentinfo from "../models/studinfo.js";
 import TableDepartments from "../models/tbldepartments.js";
@@ -52,9 +50,6 @@ const visiting_staff = VisitingStaff.init(sequelize, DataTypes);
 const studentinfo = Studentinfo.init(sequelize, DataTypes);
 const programInfo = ProgramInfo.init(sequelize, DataTypes);
 const master_stu = MasterStu.init(sequelize, DataTypes);
-
-const superVisoryMeeting = SuperVisoryMeeting.init(sequelize, DataTypes);
-const progress = Progress.init(sequelize, DataTypes);
 
 const doc_up = DocUp.init(sequelize, DataTypes);
 const doc_rev = DocRev.init(sequelize, DataTypes);
@@ -170,8 +165,6 @@ export {
   studentinfo,
   master_stu,
   programInfo,
-  superVisoryMeeting,
-  progress,
   doc_up,
   doc_rev,
   refreshToken,

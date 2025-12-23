@@ -7,14 +7,14 @@ import {
   deleteAllLoginAttempts,
 } from "../controllers/loginAttemptController.js";
 import { protect } from "../middleware/authmiddleware.js";
+import { requireRole } from "../middleware/rbacMiddleware.js";
 
 const router = express.Router();
 
-// Admin-only access
-router.get("/", protect(["CGSADM"]), getAllLoginAttempts);
-router.get("/:email", protect(["CGSADM"]), getLoginAttemptByEmail);
-router.post("/", protect(["CGSADM"]), createLoginAttempt);
-router.delete("/:email", protect(["CGSADM"]), deleteLoginAttempt);
-router.delete("/", protect(["CGSADM"]), deleteAllLoginAttempts);
-
+// CRUD endpoints
+router.get("/", protect, requireRole("CGSADM"), getAllLoginAttempts);
+router.get("/:email", protect, requireRole("CGSADM"), getLoginAttemptByEmail);
+router.post("/", protect, requireRole("CGSADM"), createLoginAttempt);
+router.delete("/:email", protect, requireRole("CGSADM"), deleteLoginAttempt);
+router.delete("/", protect, requireRole("CGSADM"), deleteAllLoginAttempts);
 export default router;

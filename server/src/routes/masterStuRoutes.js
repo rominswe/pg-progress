@@ -7,13 +7,15 @@ import {
   deleteStudent,
 } from "../controllers/masterStuController.js";
 import { protect } from '../middleware/authmiddleware.js';
+import { requireRole } from '../middleware/rbacMiddleware.js';
 
 const router = express.Router();
 
 // CRUD endpoints
-router.get("/", protect(["EXCGS", "SUV", "EXA", "CGSADM"]), getAllStudents);
-router.get("/:master_id", protect(["EXCGS", "SUV", "EXA", "CGSADM"]), getStudentById);
-router.post("/", protect(["CGSADM"]), createStudent);
-router.put("/:master_id", protect(["CGSADM"]), updateStudent);
-router.delete("/:master_id", protect(["CGSADM"]), deleteStudent);
+router.get("/", protect, requireRole("EXCGS", "CGSADM"), getAllStudents);
+router.get("/:master_id", protect, requireRole("EXCGS", "SUV", "EXA", "CGSADM"), getStudentById);
+router.post("/", protect, requireRole("CGSADM"), createStudent);
+router.put("/:master_id", protect, requireRole("CGSADM"), updateStudent);
+router.delete("/:master_id", protect, requireRole("CGSADM"), deleteStudent);
+
 export default router;

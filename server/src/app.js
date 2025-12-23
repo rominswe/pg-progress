@@ -3,16 +3,17 @@ import cors from "cors";
 import dotenv from "dotenv";
 import cookieParser from "cookie-parser";
 import { logger } from "./utils/logger.js";
+import session from "express-session";
+import connectRedis from "connect-redis";
+import redisClient from "./config/redis.js";
 /* ================= ROUTES ================= */
 import authRoutes from "./routes/authRoutes.js";
 import empinfoRoutes from "./routes/empinfoRoutes.js";
 import masterStuRoutes from "./routes/masterStuRoutes.js";
 import programInfoRoutes from "./routes/programinfoRoutes.js";
-import progressRoutes from "./routes/progressRoutes.js";
 import roleRoutes from "./routes/rolesRoutes.js";
 import studentinfoRoutes from "./routes/studentInfoRoutes.js";
 import supervisorRoutes from "./routes/supervisorRoutes.js";
-import supervisoryMeetingRoutes from "./routes/supervisoryMeetingRoutes.js";
 import tblDepartmentsRoutes from "./routes/tblDepartmentsRoutes.js";
 import examinerRoutes from "./routes/examinerRoutes.js";
 import visitingStaffRoutes from "./routes/visitingStaffRoutes.js";
@@ -27,7 +28,8 @@ import verificationTokenRoutes from "./routes/verificationTokenRoutes.js";
 
 dotenv.config();
 const app = express();
-const allowedOrigins = ["http://localhost:5173", "http://localhost:5174"];
+const RedisStore = connectRedis(session);
+const allowedOrigins = new Set(["http://localhost:5173", "http://localhost:5174"]);
 
 app.use(
     cors({
@@ -41,6 +43,23 @@ app.use(
     }, 
         credentials: true
     }));
+
+app.use(
+  session({
+    store: new RedisStore({ client: redisClient }),
+    name: "sid", // cookie name
+    secret: process.env.SESSION_SECRET || "supersecretkey",
+    resave: false,
+    saveUninitialized: false,
+    rolling: true,
+    cookie: {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      maxAge: 1000 * 60 * 60 * 3, // 3 hours
+      sameSite: process.env.NODE_ENV === "production" ? "strict" : "lax",
+    },
+  })
+);
 app.use(express.json());
 app.use(cookieParser());
 app.use(logger);
@@ -52,13 +71,11 @@ app.use("/empinfo", empinfoRoutes);
 app.use("/masterstu", masterStuRoutes);
 app.use("/cgs", cgsRoutes);
 app.use("/programs", programInfoRoutes);
-app.use("/progress", progressRoutes);
 app.use("/roles", roleRoutes);
 app.use("/studentsinfo", studentinfoRoutes);
 app.use("/supervisors", supervisorRoutes);
 app.use("/examiners", examinerRoutes);
 app.use("/visiting-staff", visitingStaffRoutes);
-app.use("/supervisory-meetings", supervisoryMeetingRoutes);
 app.use("/departments", tblDepartmentsRoutes);
 
 /* ================= ADMIN / SYSTEM ================= */
