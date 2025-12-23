@@ -12,6 +12,7 @@ import ProtectedRoute from "./components/auth/ProtectedRoute";
 
 // Login Components
 import UserLogin from "./components/auth/UserLogin";
+import AuthLayout from "./components/layouts/AuthLayout";
 
 // Student pages
 import StudentLayout from "./components/student/StudentLayout";
@@ -21,12 +22,14 @@ import ThesisSubmission from "./pages/student/ThesisSubmission";
 import ProgressUpdates from "./pages/student/ProgressUpdates";
 import Feedback from "./pages/student/Feedback";
 import Analytics from "./pages/student/Analytics";
+import ServiceRequest from "./pages/student/ServiceRequest";
 
 // Supervisor pages
 import SupervisorLayout from "./components/supervisor/SupervisorLayout";
 import SupervisorDashboard from "./pages/supervisor/Dashboard";
 import StudentList from "./pages/supervisor/StudentList";
 import ReviewSubmissions from "./pages/supervisor/ReviewSubmissions";
+import ReviewRequest from './pages/supervisor/ReviewRequest';
 
 // QueryClient
 const queryClient = new QueryClient();
@@ -100,7 +103,17 @@ function AppWrapper() {
 
       <Routes>
       {/* ===== LOGIN PAGES ===== */}
-      <Route path="/login" element={<UserLogin onLogin={handleLogin} />} />
+     import AuthLayout from "./components/layouts/AuthLayout";
+
+<Route
+  path="/login"
+  element={
+    <AuthLayout>
+      <UserLogin onLogin={handleLogin} />
+    </AuthLayout>
+  }
+/>
+
 
 
       {/* ===== STUDENT ===== */}
@@ -116,6 +129,7 @@ function AppWrapper() {
         <Route path="progress-updates" element={<ProgressUpdates />} />
         <Route path="feedback" element={<Feedback />} />
         <Route path="analytics" element={<Analytics />} />
+        <Route path="service-request" element={<ServiceRequest />} /> {/* ✅ NEW */}
       </Route>
 
       {/* ===== SUPERVISOR ===== */}
@@ -128,6 +142,7 @@ function AppWrapper() {
         <Route path="dashboard" element={<SupervisorDashboard />} />
         <Route path="students" element={<StudentList />} />
         <Route path="review" element={<ReviewSubmissions />} />
+        <Route path="review-request" element={<ReviewRequest />} />
       </Route>
 
       {/* ===== FALLBACK ===== */}

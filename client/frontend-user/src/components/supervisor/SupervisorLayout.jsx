@@ -176,6 +176,7 @@ import {
   LayoutDashboard,
   Users,
   FileText,
+  FilePlus, // <--- Added this import
   Menu,
   X,
   LogOut,
@@ -184,7 +185,7 @@ import {
 } from 'lucide-react';
 
 /* ============================================================
-   Logout Modal (unchanged)
+   Logout Modal
    ============================================================ */
 const LogoutModal = ({ isOpen, onClose, onConfirm }) => {
   if (!isOpen) return null;
@@ -231,7 +232,8 @@ const SupervisorLayout = ({ onLogout }) => {
   const navItems = [
     { path: '/supervisor/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
     { path: '/supervisor/students', icon: Users, label: 'My Students' },
-    { path: '/supervisor/reviews', icon: FileText, label: 'Reviews' },
+    { path: '/supervisor/reviews', icon: FileText, label: 'Past Reviews' },
+    { path: '/supervisor/review-request', icon: FilePlus, label: 'Review Requests' },
   ];
 
   const handleLogoutClick = () => setShowLogoutModal(true);
@@ -252,7 +254,7 @@ const SupervisorLayout = ({ onLogout }) => {
         ${sidebarOpen ? 'translate-x-0' : '-translate-x-full'}
         lg:translate-x-0 bg-white border-r border-gray-200`}
       >
-        <div className="h-full px-3 py-4 overflow-y-auto">
+        <div className="h-full px-3 py-4 overflow-y-auto relative">
           {/* Logo */}
           <div className="flex items-center justify-between mb-8 px-2">
             <div className="flex items-center gap-2">
@@ -301,7 +303,7 @@ const SupervisorLayout = ({ onLogout }) => {
             <button
               onClick={handleLogoutClick}
               className="flex items-center gap-3 px-3 py-2.5 w-full
-              rounded-lg text-gray-700 hover:bg-red-50 hover:text-red-600"
+              rounded-lg text-gray-700 hover:bg-red-50 hover:text-red-600 transition-colors"
             >
               <LogOut className="w-5 h-5" />
               <span className="font-medium">Logout</span>
@@ -315,33 +317,33 @@ const SupervisorLayout = ({ onLogout }) => {
         {/* Header */}
         <header className="bg-white border-b border-gray-200 sticky top-0 z-30">
           <div className="px-4 sm:px-6 lg:px-8 py-4 flex items-center justify-between">
-            {/* Mobile menu */}
+            {/* Mobile menu toggle */}
             <button
               onClick={() => setSidebarOpen(true)}
-              className="lg:hidden"
+              className="lg:hidden p-2 text-gray-600 hover:bg-gray-100 rounded-lg"
               aria-label="Open sidebar"
             >
               <Menu className="w-6 h-6" />
             </button>
 
             <h1 className="text-xl font-semibold text-gray-800">
-              Supervisor Dashboard
+              Supervisor Portal
             </h1>
 
             {/* User section */}
             <div className="flex items-center gap-4">
               <button className="relative p-2 text-gray-600 hover:bg-gray-100 rounded-lg">
                 <Bell className="w-5 h-5" />
-                <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+                <span className="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
               </button>
 
               <div className="flex items-center gap-3 pl-4 border-l border-gray-200">
+                <div className="hidden sm:block text-right">
+                  <p className="text-sm font-medium text-gray-800">Dr. John Smith</p>
+                  <p className="text-xs text-gray-500">Academic Supervisor</p>
+                </div>
                 <div className="w-9 h-9 bg-blue-600 rounded-full flex items-center justify-center">
                   <User className="w-5 h-5 text-white" />
-                </div>
-                <div className="hidden sm:block">
-                  <p className="text-sm font-medium text-gray-800">Dr NPC</p>
-                  <p className="text-xs text-gray-500">Supervisor</p>
                 </div>
               </div>
             </div>
@@ -354,7 +356,7 @@ const SupervisorLayout = ({ onLogout }) => {
         </main>
       </div>
 
-      {/* Sidebar overlay */}
+      {/* Sidebar overlay for mobile */}
       {sidebarOpen && (
         <div
           className="fixed inset-0 bg-black bg-opacity-50 z-30 lg:hidden"
@@ -373,4 +375,3 @@ const SupervisorLayout = ({ onLogout }) => {
 };
 
 export default SupervisorLayout;
-SupervisorLayout;

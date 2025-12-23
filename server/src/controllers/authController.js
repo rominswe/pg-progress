@@ -45,7 +45,8 @@ export const supervisorLogin = async (req, res) => {
   const { email, password } = req.body;
   
   try {
-    const user = await supervisor.findOne({ where: { emp_email: email } });
+    const user = await supervisor.findOne({ where: { EmailId: email } });
+
     if (!user) return res.status(401).json({ error: "User not found" });
 
     
