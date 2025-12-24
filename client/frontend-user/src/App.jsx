@@ -30,6 +30,8 @@ import SupervisorDashboard from "./pages/supervisor/Dashboard";
 import StudentList from "./pages/supervisor/StudentList";
 import ReviewSubmissions from "./pages/supervisor/ReviewSubmissions";
 import ReviewRequest from './pages/supervisor/ReviewRequest';
+import ProgressEvaluation from "./pages/supervisor/ProgressEvaluation";
+
 
 // QueryClient
 const queryClient = new QueryClient();
@@ -143,6 +145,7 @@ function AppWrapper() {
         <Route path="students" element={<StudentList />} />
         <Route path="review" element={<ReviewSubmissions />} />
         <Route path="review-request" element={<ReviewRequest />} />
+        <Route path="evaluate" element={<ProgressEvaluation />} />
       </Route>
 
       {/* ===== FALLBACK ===== */}

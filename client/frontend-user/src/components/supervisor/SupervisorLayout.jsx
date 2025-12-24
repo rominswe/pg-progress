@@ -176,7 +176,8 @@ import {
   LayoutDashboard,
   Users,
   FileText,
-  FilePlus, // <--- Added this import
+  FilePlus,
+  ClipboardCheck, // <--- Added this import
   Menu,
   X,
   LogOut,
@@ -234,6 +235,7 @@ const SupervisorLayout = ({ onLogout }) => {
     { path: '/supervisor/students', icon: Users, label: 'My Students' },
     { path: '/supervisor/reviews', icon: FileText, label: 'Past Reviews' },
     { path: '/supervisor/review-request', icon: FilePlus, label: 'Review Requests' },
+    { path: '/supervisor/evaluate', icon: ClipboardCheck, label: 'Evaluation' },
   ];
 
   const handleLogoutClick = () => setShowLogoutModal(true);

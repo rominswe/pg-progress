@@ -240,3 +240,114 @@
   box-shadow: var(--shadow-lg-academic);
   border-color: var(--primary-color);
 }
+
+/* ============================================================
+   SECTION 3: EVALUATION PORTAL (New Glassmorphism Styles)
+   Scoped to .evaluation-portal to prevent "leakage"
+   ============================================================ */
+.evaluation-portal {
+  /* Evaluation Variables */
+  --eval-bg: linear-gradient(135deg, #0f172a 0%, #172554 50%, #1e1b4b 100%);
+  --glass-bg: rgba(255, 255, 255, 0.07);
+  --glass-border: rgba(255, 255, 255, 0.12);
+  --primary-accent: #3b82f6;
+  --secondary-accent: #ec4899;
+  --text-main: #f8fafc;
+  --text-muted: #94a3b8;
+  --success: #10b981;
+  --danger: #ef4444;
+
+  /* Layout for the Evaluation Section */
+  width: 100%;
+  min-height: 100vh;
+  background: var(--eval-bg);
+  color: var(--text-main);
+  font-family: 'Outfit', sans-serif;
+  padding: 4rem 2rem;
+}
+
+/* Scoped Glass Panels */
+.evaluation-portal .glass-panel {
+  background: var(--glass-bg);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--glass-border);
+  border-radius: 20px;
+  padding: 2rem;
+  margin-bottom: 2rem;
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.2);
+}
+
+.evaluation-portal .form-header h1 {
+  font-size: 2.5rem;
+  font-weight: 700;
+  background: linear-gradient(to right, #60a5fa, #c084fc);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Scoped Rating Chips */
+.evaluation-portal .rating-chip {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.05);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.evaluation-portal .rating-chip.selected {
+  background: var(--primary-accent);
+  box-shadow: 0 0 15px rgba(59, 130, 246, 0.5);
+}
+
+/* Scoped Radio Pills */
+.evaluation-portal .radio-pill {
+  padding: 0.6rem 2rem;
+  background: rgba(0,0,0,0.2);
+  border-radius: 50px;
+  cursor: pointer;
+  border: 1px solid var(--glass-border);
+}
+
+.evaluation-portal .active-yes {
+  background: rgba(239, 68, 68, 0.2);
+  border-color: var(--danger);
+}
+
+.evaluation-portal .active-no {
+  background: rgba(16, 185, 129, 0.2);
+  border-color: var(--success);
+}
+
+/* Scoped Inputs */
+.evaluation-portal input, 
+.evaluation-portal textarea, 
+.evaluation-portal select {
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid var(--glass-border);
+  color: white;
+  border-radius: 10px;
+  padding: 0.8rem;
+}
+
+/* Scoped Submit Button */
+.evaluation-portal .submit-btn {
+  width: 100%;
+  padding: 1rem;
+  border-radius: 15px;
+  background: linear-gradient(135deg, var(--primary-accent), var(--secondary-accent));
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* Scoped Table */
+.evaluation-portal .request-table {
+    width: 100%;
+    color: var(--text-main);
+}
