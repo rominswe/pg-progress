@@ -1,8 +1,9 @@
 import { Sequelize, DataTypes } from "sequelize";
 import dotenv from "dotenv";
+import path from "node:path"
 
 // Load environment variables
-dotenv.config();
+dotenv.config({ path: path.resolve(process.cwd(), "../.env") });
 
 // Import class-based models
 import Supervisor from "../models/supervisor.js";
@@ -14,15 +15,14 @@ import ProgramInfo from "../models/program_info.js";
 import Role from "../models/roles.js";
 import Studentinfo from "../models/studinfo.js";
 import TableDepartments from "../models/tbldepartments.js";
-import VisitingStaff  from "../models/visiting_staff.js ";
+import VisitingStaff from "../models/visiting_staff.js";
 import DocUp from "../models/documents_uploads.js";
 import DocRev from "../models/documents_reviews.js";
 
 // Auth / Security Models
-import RefreshToken from "../models/RefreshToken.js";
-import VerificationToken from "../models/VerificationToken.js";
-import AuditLog from "../models/AuditLog.js";
-import LoginAttempt from "../models/LoginAttempt.js";
+import AuditLog from "../models/audit_log.js";
+import LoginAttempt from "../models/login_attempt.js";
+import VerificationToken from "../models/verification_token.js";
 
 // Create Sequelize instance first
 const sequelize = new Sequelize(
@@ -55,10 +55,9 @@ const doc_up = DocUp.init(sequelize, DataTypes);
 const doc_rev = DocRev.init(sequelize, DataTypes);
 
 // ================= AUTH MODELS ================= //
-const refreshToken = RefreshToken.init(sequelize, DataTypes);
-const verificationToken = VerificationToken.init(sequelize, DataTypes);
 const auditLog = AuditLog.init(sequelize, DataTypes);
 const loginAttempt = LoginAttempt.init(sequelize, DataTypes);
+const verificationToken = VerificationToken.init(sequelize, DataTypes);
 
 // Relationships
 
@@ -113,12 +112,6 @@ master_stu.belongsTo(programInfo, { foreignKey: "Prog_Code" });
 
 
 // ----- AUTH / SECURITY RELATIONS -----
-// RefreshToken → any user table dynamically
-refreshToken.belongsTo(cgs, { foreignKey: "userId", constraints: false, scope: { table: "cgs" }, as: "cgsUser" });
-refreshToken.belongsTo(supervisor, { foreignKey: "userId", constraints: false, scope: { table: "supervisor" }, as: "supervisorUser" });
-refreshToken.belongsTo(master_stu, { foreignKey: "userId", constraints: false, scope: { table: "master_stu" }, as: "studentUser" });
-refreshToken.belongsTo(examiner, { foreignKey: "userId", constraints: false, scope: { table: "examiner" }, as: "examinerUser" });
-refreshToken.belongsTo(visiting_staff, { foreignKey: "userId", constraints: false, scope: { table: "visiting_staff" }, as: "visitingStaffUser" });
 
 // VerificationToken → any user table dynamically
 verificationToken.belongsTo(cgs, { foreignKey: "user_id", constraints: false, scope: { user_table: "cgs" }, as: "cgsUser" });
@@ -127,7 +120,7 @@ verificationToken.belongsTo(master_stu, { foreignKey: "user_id", constraints: fa
 verificationToken.belongsTo(examiner, { foreignKey: "user_id", constraints: false, scope: { user_table: "examiner" }, as: "examinerUser" });
 verificationToken.belongsTo(visiting_staff, { foreignKey: "user_id", constraints: false, scope: { user_table: "visiting_staff" }, as: "visitingStaffUser" });
 
-// AuditLog → optional link for user tracking
+// AuditLog → link for user tracking
 [auditLog, loginAttempt].forEach(model => {
   model.belongsTo(cgs, { foreignKey: "email", targetKey: "EmailId", constraints: false, as: "cgsUser" });
   model.belongsTo(supervisor, { foreignKey: "email", targetKey: "EmailId", constraints: false, as: "supervisorUser" });
@@ -167,8 +160,7 @@ export {
   programInfo,
   doc_up,
   doc_rev,
-  refreshToken,
-  verificationToken,
   auditLog,
-  loginAttempt
+  loginAttempt,
+  verificationToken
 };

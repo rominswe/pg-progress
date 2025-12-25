@@ -77,39 +77,50 @@ export default class cgs extends Model {
       allowNull: false
     },
     IsVerified: {
-      type: DataTypes.TINYINT,
-      allowNull: true,
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
       defaultValue: 0
     },
     MustChangePassword: {
       type: DataTypes.BOOLEAN,
-      allowNull: true,
+      allowNull: false,
       defaultValue: 1
     }
-    }, {
-      sequelize,
-      tableName: 'cgs',
-      timestamps: false,
-      indexes: [
-        { name: "PRIMARY", 
-          unique: true, 
-          using: "BTREE", 
-          fields: ['cgs_id'] 
-        },
-        { name: "fk_emp_cgs", 
-          using: "BTREE", 
-          fields: ['emp_id'] 
-        },
-        { name: "fk_dep_code_cgs", 
-          using: "BTREE", 
-          fields: ['Dep_Code'] 
-        },
-        { name: "fk_role_cgs", 
-          using: "BTREE", 
-          fields: ['role_id'] 
-        }
-      ],
-
+  }, {
+    sequelize,
+    tableName: 'cgs',
+    timestamps: false,
+    indexes: [
+      {
+        name: "PRIMARY",
+        unique: true,
+        using: "BTREE",
+        fields: [
+          { name: "cgs_id" },
+        ]
+      },
+      {
+        name: "fk_emp_cgs",
+        using: "BTREE",
+        fields: [
+          { name: "emp_id" },
+        ]
+      },
+      {
+        name: "fk_dep_code_cgs",
+        using: "BTREE",
+        fields: [
+          { name: "Dep_Code" },
+        ]
+      },
+      {
+        name: "fk_role_cgs",
+        using: "BTREE",
+        fields: [
+          { name: "role_id" },
+        ]
+      },
+    ],
       // 🔐 Password hashing hooks
       hooks: {
         beforeCreate: async (user) => {
@@ -124,12 +135,5 @@ export default class cgs extends Model {
         }
       }
     });
-
-    // ✅ Instance method to check password
-    Cgs.prototype.checkPassword = function(plainPassword) {
-      return bcrypt.compare(plainPassword, this.Password);
-    };
-
-    return Cgs;
   }
 }

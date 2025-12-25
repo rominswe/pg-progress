@@ -3,7 +3,7 @@ import _sequelize from 'sequelize';
 const { Model, Sequelize } = _sequelize;
 
 export default class examiner extends Model {
-  static init(sequelize, DataTypes) {
+ static init(sequelize, DataTypes) {
   return super.init({
     examiner_id: {
       type: DataTypes.STRING(20),
@@ -76,25 +76,50 @@ export default class examiner extends Model {
       allowNull: false
     },
     IsVerified: {
-      type: DataTypes.TINYINT,
-      allowNull: true,
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
       defaultValue: 0
     },
     MustChangePassword: {
       type: DataTypes.BOOLEAN,
-      allowNull: true,
+      allowNull: false,
       defaultValue: 1
     }
-    }, {
-      sequelize,
-      tableName: 'examiner',
-      timestamps: false,
-      indexes: [
-        { name: "PRIMARY", unique: true, using: "BTREE", fields: ['examiner_id'] },
-        { name: "fk_emp_examiner", using: "BTREE", fields: ['emp_id'] },
-        { name: "fk_dep_code_examiner", using: "BTREE", fields: ['Dep_Code'] },
-        { name: "fk_role_examiner", using: "BTREE", fields: ['role_id'] }
-      ],
+  }, {
+    sequelize,
+    tableName: 'examiner',
+    timestamps: false,
+    indexes: [
+      {
+        name: "PRIMARY",
+        unique: true,
+        using: "BTREE",
+        fields: [
+          { name: "examiner_id" },
+        ]
+      },
+      {
+        name: "fk_emp_examiner",
+        using: "BTREE",
+        fields: [
+          { name: "emp_id" },
+        ]
+      },
+      {
+        name: "fk_dep_code_examiner",
+        using: "BTREE",
+        fields: [
+          { name: "Dep_Code" },
+        ]
+      },
+      {
+        name: "fk_role_examiner",
+        using: "BTREE",
+        fields: [
+          { name: "role_id" },
+        ]
+      },
+    ],
 
       // 🔐 Password hashing hooks
       hooks: {
@@ -110,12 +135,5 @@ export default class examiner extends Model {
         }
       }
     });
-
-    // ✅ Instance method for login
-    Examiner.prototype.checkPassword = function(plainPassword) {
-      return bcrypt.compare(plainPassword, this.Password);
-    };
-
-    return Examiner;
   }
 }

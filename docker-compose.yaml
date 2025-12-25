@@ -4,7 +4,11 @@ services:
     ports:
       - "5000:5000"
     env_file:
-      - ./server/.env
+      - ./.env
+    environment:
+     - DB_HOST=mysql
+     - DB_PORT=3306
+     - REDIS_HOST=redis
     depends_on:
       - mysql
       - redis
@@ -37,8 +41,8 @@ services:
     image: mysql:8.0
     restart: always
     environment:
-      MYSQL_ROOT_PASSWORD: root
-      MYSQL_DATABASE: aiu_pg_progress
+      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
+      MYSQL_DATABASE: ${DB_NAME}
     ports:
       - "3307:3306"
     volumes:
@@ -62,8 +66,8 @@ services:
     environment:
       PMA_HOST: mysql
       PMA_PORT: 3306
-      PMA_USER: root
-      PMA_PASSWORD: root
+      PMA_USER: ${DB_USER}
+      PMA_PASSWORD: ${DB_PASSWORD}
     depends_on:
       - mysql
     networks:
@@ -75,90 +79,3 @@ volumes:
 networks:
   app-network:
     driver: bridge
-
-# version: "3.9"
-
-# services:
-#   server:
-#     build: ./server
-#     container_name: pg-progress-server
-#     ports:
-#       - "5000:5000"
-#     env_file:
-#       - ./server/.env
-#     depends_on:
-#       - mysql
-#       - redis
-#     networks:
-#       - app-network
-
-#   frontend-user:
-#     build: ./client/frontend-user
-#     container_name: pg-progress-frontend-user
-#     ports:
-#       - "5173:5173"
-#     stdin_open: true
-#     tty: true
-#     depends_on:
-#       - server
-#     networks:
-#       - app-network
-
-#   frontend-admin:
-#     build: ./client/frontend-admin
-#     container_name: pg-progress-frontend-admin
-#     ports:
-#       - "5174:5174"
-#     stdin_open: true
-#     tty: true
-#     depends_on:
-#       - server
-#     networks:
-#       - app-network
-
-#   mysql:
-#     image: mysql:8.0
-#     container_name: pg-progress-mysql
-#     restart: always
-#     environment:
-#       MYSQL_ROOT_PASSWORD: root
-#       MYSQL_DATABASE: central_db   # ✅ KEEP THIS
-#     ports:
-#       - "3307:3306"
-#     volumes:
-#       - mysql_data:/var/lib/mysql
-#     networks:
-#       - app-network
-
-#   redis:
-#     image: redis:8.0-alpine
-#     container_name: pg-progress-redis
-#     restart: always
-#     ports:
-#       - "6379:6379"
-#     networks:
-#       - app-network
-
-#   phpmyadmin:
-#     image: phpmyadmin:latest
-#     container_name: pg-progress-phpmyadmin
-#     restart: always
-#     ports:
-#       - "8080:80"
-#     environment:
-#       PMA_HOST: mysql
-#       PMA_PORT: 3306
-#       PMA_USER: root
-#       PMA_PASSWORD: root
-#     depends_on:
-#       - mysql
-#     networks:
-#       - app-network
-
-# volumes:
-#   mysql_data:
-
-# networks:
-#   app-network:
-#     driver: bridge
-

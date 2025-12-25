@@ -5,39 +5,46 @@ import upload from "../middleware/upload.js";
  * Upload document (single or multiple files)
  */
 export const uploadDocument = async (req, res) => {
-  const multiUpload = upload.array("files"); // multiple files allowed
-
-  multiUpload(req, res, async (err) => {
+  if (!req.user) {
+    return res.status(401).json({ error: "Unauthorized" });
+  }
+  upload.array("files")(req, res, async (err) => {
     if (err) return res.status(400).json({ error: err.message });
 
     try {
-      const user = req.user;
+      const { id, role_id } = req.user;
       const { document_type } = req.body;
 
-      if (!req.files || req.files.length === 0) {
+      if (role_id !== "STU") {
+        return res.status(403).json({ error: "Only students can upload documents" });
+      }
+
+      if (!req.files?.length) {
         return res.status(400).json({ error: "No files uploaded" });
       }
 
-      const uploadedDocs = [];
+      const docs = [];
 
-      for (let file of req.files) {
-        const doc = await doc_up.create({
-          uploaded_by: user[user.constructor.primaryKeyAttributes[0]],
-          master_id: user.master_id || null,
-          role_id: user.role_id,
+      for (const file of req.files) {
+        docs.push(await doc_up.create({
+          uploaded_by: id,
+          master_id: id,
+          role_id,
           document_name: file.originalname,
           document_type: document_type || "Others",
           file_path: file.path,
           file_size_kb: Math.round(file.size / 1024),
           status: "Pending",
-        });
-        uploadedDocs.push(doc);
+          Dep_Code: "CGS"
+        }));
       }
 
-      res.status(201).json({ message: "Documents uploaded successfully", documents: uploadedDocs });
-    } catch (error) {
-      console.error("Upload error:", error);
-      res.status(500).json({ error: "Server error" });
+      res.status(201).json({
+        message: "Documents uploaded successfully",
+        documents: docs
+      });
+    } catch (err) {
+      res.status(500).json({ error: err.message });
     }
   });
 };
@@ -48,19 +55,19 @@ export const uploadDocument = async (req, res) => {
  */
 export const getMyDocuments = async (req, res) => {
   try {
-    const user = req.user;
-    const { status, document_type } = req.query;
+    const { id, role_id } = req.user;
+    if (role_id !== "STU") {
+      return res.status(403).json({ error: "Access denied" });
+    }
 
-    const whereClause = { uploaded_by: user[user.constructor.primaryKeyAttributes[0]] };
-    if (status) whereClause.status = status;
-    if (document_type) whereClause.document_type = document_type;
+    const documents = await doc_up.findAll({
+      where: { uploaded_by: id },
+      order: [["uploaded_at", "DESC"]]
+    });
 
-    const documents = await doc_up.findAll({ where: whereClause });
-
-    res.status(200).json({ documents });
+    res.json({ documents });
   } catch (err) {
-    console.error("Get my documents error:", err);
-    res.status(500).json({ error: "Server error" });
+    res.status(500).json({ error: err.message });
   }
 };
 
@@ -70,33 +77,41 @@ export const getMyDocuments = async (req, res) => {
  */
 export const reviewDocument = async (req, res) => {
   try {
-    const user = req.user;
+    const { id, role_id } = req.user;
     const { doc_up_id, status, comments, score } = req.body;
 
-    if (!["Pending", "Approved", "Rejected"].includes(status)) {
-      return res.status(400).json({ error: "Invalid status" });
+    if (!["SUV", "EXA", "EXCGS", "CGSADM"].includes(role_id)) {
+      return res.status(403).json({ error: "Not authorized to review documents" });
     }
 
     const doc = await doc_up.findByPk(doc_up_id);
+    if (doc.Dep_Code !== "CGS") return res.status(403).json({ error: "Unauthorized document access" });
     if (!doc) return res.status(404).json({ error: "Document not found" });
 
-    // Create review record
+
+    // Prevent double review
+    const existing = await doc_rev.findOne({
+      where: { doc_up_id, reviewed_by: id }
+    });
+    if (existing) {
+      return res.status(409).json({ error: "You already reviewed this document" });
+    }
+
     const review = await doc_rev.create({
-      doc_up_id: doc.doc_up_id,
-      reviewed_by: user[user.constructor.primaryKeyAttributes[0]],
-      role_id: user.role_id,
+      doc_up_id,
+      reviewed_by: id,
+      role_id,
       status,
       comments: comments || null,
-      score: score || 0,
+      score: score || null,
+      Dep_Code: "CGS"
     });
 
-    // Update document status
     doc.status = status;
     await doc.save();
 
-    res.status(200).json({ message: "Document reviewed successfully", review });
+    res.json({ message: "Document reviewed", review });
   } catch (err) {
-    console.error("Review document error:", err);
-    res.status(500).json({ error: "Server error" });
+    res.status(500).json({ error: err.message });
   }
 };

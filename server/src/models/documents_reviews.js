@@ -30,6 +30,14 @@ export default class documents_reviews extends Model {
         key: 'role_id'
       }
     },
+    Dep_Code: {
+      type: DataTypes.STRING(100),
+      allowNull: false,
+      references: {
+        model: 'tbldepartments',
+        key: 'Dep_Code'
+      }
+    },
     status: {
       type: DataTypes.ENUM('Pending','Approved','Rejected'),
       allowNull: false,
@@ -73,6 +81,13 @@ export default class documents_reviews extends Model {
         using: "BTREE",
         fields: [
           { name: "role_id" },
+        ]
+      },
+      {
+        name: "fk_dep_code_doc_rev",
+        using: "BTREE",
+        fields: [
+          { name: "Dep_Code" },
         ]
       },
     ]

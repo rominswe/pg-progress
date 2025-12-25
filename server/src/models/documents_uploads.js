@@ -56,6 +56,14 @@ export default class documents_uploads extends Model {
       type: DataTypes.DATE,
       allowNull: false,
       defaultValue: Sequelize.Sequelize.literal('CURRENT_TIMESTAMP')
+    },
+    Dep_Code: {
+      type: DataTypes.STRING(100),
+      allowNull: false,
+      references: {
+        model: 'tbldepartments',
+        key: 'Dep_Code'
+      }
     }
   }, {
     sequelize,
@@ -82,6 +90,13 @@ export default class documents_uploads extends Model {
         using: "BTREE",
         fields: [
           { name: "master_id" },
+        ]
+      },
+      {
+        name: "fk_dep_code_doc_up",
+        using: "BTREE",
+        fields: [
+          { name: "Dep_Code" },
         ]
       },
     ]

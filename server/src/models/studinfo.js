@@ -103,17 +103,34 @@ export default class studinfo extends Model {
       type: DataTypes.INTEGER,
       allowNull: true
     }
-    }, {
-      sequelize,
-      tableName: 'studinfo',
-      hasTrigger: true,
-      timestamps: false,
-      indexes: [
-        { name: "PRIMARY", unique: true, using: "BTREE", fields: ['stu_id'] },
-        { name: "Dep_Code", using: "BTREE", fields: ['Dep_Code'] },
-        { name: "Prog_Code", using: "BTREE", fields: ['Prog_Code'] }
-      ],
-
+  }, {
+    sequelize,
+    tableName: 'studinfo',
+    timestamps: false,
+    indexes: [
+      {
+        name: "PRIMARY",
+        unique: true,
+        using: "BTREE",
+        fields: [
+          { name: "stu_id" },
+        ]
+      },
+      {
+        name: "Dep_Code",
+        using: "BTREE",
+        fields: [
+          { name: "Dep_Code" },
+        ]
+      },
+      {
+        name: "Prog_Code",
+        using: "BTREE",
+        fields: [
+          { name: "Prog_Code" },
+        ]
+      },
+    ],
       // 🔐 Password hashing hooks
       hooks: {
         beforeCreate: async (user) => {
@@ -128,12 +145,5 @@ export default class studinfo extends Model {
         }
       }
     });
-
-    // ✅ Instance method to verify password
-    StudInfo.prototype.checkPassword = function(plainPassword) {
-      return bcrypt.compare(plainPassword, this.Password);
-    };
-
-    return StudInfo;
   }
 }

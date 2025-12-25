@@ -73,8 +73,8 @@ export default class supervisor extends Model {
       allowNull: false
     },
     IsVerified: {
-      type: DataTypes.TINYINT,
-      allowNull: true,
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
       defaultValue: 0
     },
     EndDate: {
@@ -83,19 +83,44 @@ export default class supervisor extends Model {
     },
     MustChangePassword: {
       type: DataTypes.BOOLEAN,
-      allowNull: true,
+      allowNull: false,
       defaultValue: 1
     }
-    }, {
-      sequelize,
-      tableName: 'supervisor',
-      timestamps: false,
-      indexes: [
-        { name: "PRIMARY", unique: true, using: "BTREE", fields: ['sup_id'] },
-        { name: "fk_emp_sup", using: "BTREE", fields: ['emp_id'] },
-        { name: "fk_dep_code_sup", using: "BTREE", fields: ['Dep_Code'] },
-        { name: "fk_role_sup", using: "BTREE", fields: ['role_id'] }
-      ],
+  }, {
+    sequelize,
+    tableName: 'supervisor',
+    timestamps: false,
+    indexes: [
+      {
+        name: "PRIMARY",
+        unique: true,
+        using: "BTREE",
+        fields: [
+          { name: "sup_id" },
+        ]
+      },
+      {
+        name: "fk_emp_sup",
+        using: "BTREE",
+        fields: [
+          { name: "emp_id" },
+        ]
+      },
+      {
+        name: "fk_dep_code_sup",
+        using: "BTREE",
+        fields: [
+          { name: "Dep_Code" },
+        ]
+      },
+      {
+        name: "fk_role_sup",
+        using: "BTREE",
+        fields: [
+          { name: "role_id" },
+        ]
+      },
+    ],
 
       // 🔐 Password hashing hooks
       hooks: {
@@ -111,12 +136,5 @@ export default class supervisor extends Model {
         }
       }
     });
-
-    // ✅ Instance method for login
-    Supervisor.prototype.checkPassword = function(plainPassword) {
-      return bcrypt.compare(plainPassword, this.Password);
-    };
-
-    return Supervisor;
   }
 }

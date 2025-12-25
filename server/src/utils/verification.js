@@ -5,7 +5,7 @@ import { v4 as uuidv4 } from "uuid";
 export const createVerificationToken = async (user_table, user_id) => {
   const token = uuidv4();
 
-  await VerificationToken.create({
+  await verificationToken.create({
     token,
     user_table,
     user_id,

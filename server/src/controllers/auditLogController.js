@@ -1,22 +1,30 @@
 import { auditLog } from "../config/config.js";
 
-// Get all audit logs
-export const getAllAuditLogs = async (req, res) => {
-  try {
-    const logs = await auditLog.findAll();
-    res.json({ status: "success", logs });
-  } catch (err) {
-    res.status(500).json({ status: "error", message: err.message });
+const ensureCGSAdmin = (req) => {
+  if (req.user.role_id !== "CGSADM") {
+    const err = new Error("Forbidden: Admin access only");
+    err.status = 403;
+    throw err;
   }
 };
 
-// Get single audit log
-export const getAuditLogById = async (req, res) => {
+// Audit Logs - Read Only
+export const getAuditLogsAdmin = async (req, res) => {
   try {
-    const log = await auditLog.findByPk(req.params.audit_id);
-    if (!log) return res.status(404).json({ status: "error", message: "Audit log not found" });
-    res.json({ status: "success", log });
+
+    ensureCGSAdmin(req); // CGS Admin only
+    const logs = await auditLog.findAll({
+      order: [["createdAt", "DESC"]],
+    });
+
+    res.status(200).json({
+      total: logs.length,
+      logs
+    });
+
   } catch (err) {
-    res.status(500).json({ status: "error", message: err.message });
+    res.status(err.status || 500).json({
+      error: err.message || "Failed to fetch audit logs"
+    });
   }
 };

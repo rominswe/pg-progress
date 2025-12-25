@@ -1,9 +1,8 @@
 import _sequelize from "sequelize";
 const DataTypes = _sequelize.DataTypes;
-import _AuditLog from  "./AuditLog.js";
-import _LoginAttempt from  "./LoginAttempt.js";
-import _RefreshToken from  "./RefreshToken.js";
-import _VerificationToken from  "./VerificationToken.js";
+import _audit_log from  "./audit_log.js";
+import _login_attempt from  "./login_attempt.js";
+import _verification_token from  "./verification_token.js";
 import _cgs from  "./cgs.js";
 import _documents_reviews from  "./documents_reviews.js";
 import _documents_uploads from  "./documents_uploads.js";
@@ -18,10 +17,9 @@ import _tbldepartments from  "./tbldepartments.js";
 import _visiting_staff from  "./visiting_staff.js";
 
 export default function initModels(sequelize) {
-  const AuditLog = _AuditLog.init(sequelize, DataTypes);
-  const LoginAttempt = _LoginAttempt.init(sequelize, DataTypes);
-  const RefreshToken = _RefreshToken.init(sequelize, DataTypes);
-  const VerificationToken = _VerificationToken.init(sequelize, DataTypes);
+  const audit_log = _audit_log.init(sequelize, DataTypes);
+  const login_attempt = _login_attempt.init(sequelize, DataTypes);
+  const verification_token = _verification_token.init(sequelize, DataTypes);
   const cgs = _cgs.init(sequelize, DataTypes);
   const documents_reviews = _documents_reviews.init(sequelize, DataTypes);
   const documents_uploads = _documents_uploads.init(sequelize, DataTypes);
@@ -65,6 +63,10 @@ export default function initModels(sequelize) {
   studinfo.hasMany(master_stu, { as: "master_stus", foreignKey: "stu_id"});
   cgs.belongsTo(tbldepartments, { as: "Dep_Code_tbldepartment", foreignKey: "Dep_Code"});
   tbldepartments.hasMany(cgs, { as: "cgs", foreignKey: "Dep_Code"});
+  documents_reviews.belongsTo(tbldepartments, { as: "Dep_Code_tbldepartment", foreignKey: "Dep_Code"});
+  tbldepartments.hasMany(documents_reviews, { as: "documents_reviews", foreignKey: "Dep_Code"});
+  documents_uploads.belongsTo(tbldepartments, { as: "Dep_Code_tbldepartment", foreignKey: "Dep_Code"});
+  tbldepartments.hasMany(documents_uploads, { as: "documents_uploads", foreignKey: "Dep_Code"});
   examiner.belongsTo(tbldepartments, { as: "Dep_Code_tbldepartment", foreignKey: "Dep_Code"});
   tbldepartments.hasMany(examiner, { as: "examiners", foreignKey: "Dep_Code"});
   master_stu.belongsTo(tbldepartments, { as: "Dep_Code_tbldepartment", foreignKey: "Dep_Code"});
@@ -75,10 +77,9 @@ export default function initModels(sequelize) {
   tbldepartments.hasMany(visiting_staff, { as: "visiting_staffs", foreignKey: "Dep_Code"});
 
   return {
-    AuditLog,
-    LoginAttempt,
-    RefreshToken,
-    VerificationToken,
+    audit_log,
+    login_attempt,
+    verification_token,
     cgs,
     documents_reviews,
     documents_uploads,

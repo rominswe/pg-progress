@@ -1,7 +1,7 @@
 import _sequelize from 'sequelize';
-const { Model, Sequelize } = _sequelize;
+const { Model} = _sequelize;
 
-export default class VerificationToken extends Model {
+export default class verification_token extends Model {
   static init(sequelize, DataTypes) {
   return super.init({
     token: {
@@ -23,7 +23,7 @@ export default class VerificationToken extends Model {
     }
   }, {
     sequelize,
-    tableName: 'VerificationToken',
+    tableName: 'verification_token',
     timestamps: false,
     indexes: [
       {

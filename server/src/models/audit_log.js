@@ -1,9 +1,14 @@
 import _sequelize from 'sequelize';
-const { Model, Sequelize } = _sequelize;
+const { Model} = _sequelize;
 
-export default class AuditLog extends Model {
+export default class audit_log extends Model {
   static init(sequelize, DataTypes) {
   return super.init({
+    id: {
+      type: DataTypes.INTEGER,
+      primaryKey: true,
+      autoIncrement: true
+    },
     email: {
       type: DataTypes.STRING(255),
       allowNull: false,
@@ -31,7 +36,7 @@ export default class AuditLog extends Model {
     }
   }, {
     sequelize,
-    tableName: 'AuditLog',
+    tableName: 'audit_log',
     timestamps: false,
     indexes: [
       {
@@ -39,7 +44,7 @@ export default class AuditLog extends Model {
         unique: true,
         using: "BTREE",
         fields: [
-          { name: "email" },
+          { name: "id" },
         ]
       },
     ]

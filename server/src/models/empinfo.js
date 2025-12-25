@@ -71,19 +71,42 @@ export default class empinfo extends Model {
       type: DataTypes.STRING(30),
       allowNull: true
     },
+    Vcode: {
+      type: DataTypes.STRING(100),
+      allowNull: true
+    },
     Isverified: {
       type: DataTypes.INTEGER,
       allowNull: true
     }
-    }, {
-      sequelize,
-      tableName: 'empinfo',
-      timestamps: false,
-      indexes: [
-        { name: "PRIMARY", unique: true, using: "BTREE", fields: ['emp_id'] },
-        { name: "Dep_Code", using: "BTREE", fields: ['Dep_Code'] },
-        { name: "emp_id", using: "BTREE", fields: ['emp_id'] }
-      ],
+  }, {
+    sequelize,
+    tableName: 'empinfo',
+    timestamps: false,
+    indexes: [
+      {
+        name: "PRIMARY",
+        unique: true,
+        using: "BTREE",
+        fields: [
+          { name: "emp_id" },
+        ]
+      },
+      {
+        name: "Dep_Code",
+        using: "BTREE",
+        fields: [
+          { name: "Dep_Code" },
+        ]
+      },
+      {
+        name: "emp_id",
+        using: "BTREE",
+        fields: [
+          { name: "emp_id" },
+        ]
+      },
+    ],
 
       // 🔐 Password hashing hooks
       hooks: {
@@ -99,12 +122,5 @@ export default class empinfo extends Model {
         }
       }
     });
-
-    // ✅ Instance method to check password
-    Empinfo.prototype.checkPassword = function(plainPassword) {
-      return bcrypt.compare(plainPassword, this.Password);
-    };
-
-    return Empinfo;
-  }
+ }
 }

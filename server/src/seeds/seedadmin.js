@@ -1,8 +1,8 @@
-import bcrypt from "bcryptjs";
 import dotenv from "dotenv";
+import path from "node:path"
 import { sequelize, empinfo, cgs, role, auditLog } from "../config/config.js";
 
-dotenv.config();
+dotenv.config({ path: path.resolve(process.cwd(), "../.env") });
 
 async function seedAdmin() {
   try {
@@ -20,7 +20,7 @@ async function seedAdmin() {
     if (!adminRole) throw new Error(`Role ${ROLE_ID} does not exist`);
 
     // Hash password
-    const hashedPassword = await bcrypt.hash(ADMIN_PASSWORD, 12);
+    const hashedPassword = ADMIN_PASSWORD;
 
     // Create or get empinfo
     const [emp] = await empinfo.findOrCreate({
@@ -43,7 +43,7 @@ async function seedAdmin() {
     });
 
     // Create or get CGS admin
-    const [admin, created] = await cgs.findOrCreate({
+    const [created] = await cgs.findOrCreate({
       where: { emp_id: EMP_ID },
       defaults: {
         cgs_id: "CGS-ADMIN-001",
@@ -54,10 +54,10 @@ async function seedAdmin() {
         LastName: emp.LastName,
         Phonenumber: emp.Phonenumber,
         StartDate: new Date(),
-        EndDate: 2099-12-31,
+        EndDate: "2099-12-31",
         role_id: ROLE_ID,
         Dep_Code: DEP_CODE,
-        is_verified: true,
+        isVerified: false,
         RegDate: new Date(),
       },
     });

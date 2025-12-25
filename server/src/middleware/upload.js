@@ -1,9 +1,9 @@
 import multer from "multer";
-import fs from "fs";
-import path from "path";
+import fs from "node:fs";
+import path from "node:path";
 
 // Base uploads folder
-const BASE_UPLOAD_DIR = "uploads/documents";
+const BASE_UPLOAD_DIR = "./uploads/documents";
 
 // Ensure base folder exists
 if (!fs.existsSync(BASE_UPLOAD_DIR)) {

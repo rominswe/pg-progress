@@ -4,7 +4,7 @@ const { Model, Sequelize } = _sequelize;
 
 export default class visiting_staff extends Model {
   static init(sequelize, DataTypes) {
-    return super.init({
+  return super.init({
     visiting_id: {
       type: DataTypes.STRING(20),
       allowNull: false,
@@ -69,8 +69,8 @@ export default class visiting_staff extends Model {
       allowNull: false
     },
     IsVerified: {
-      type: DataTypes.TINYINT,
-      allowNull: true,
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
       defaultValue: 0
     },
     Dep_Code: {
@@ -83,18 +83,37 @@ export default class visiting_staff extends Model {
     },
     MustChangePassword: {
       type: DataTypes.BOOLEAN,
-      allowNull: true,
+      allowNull: false,
       defaultValue: 1
     }
-    }, {
-      sequelize,
-      tableName: 'visiting_staff',
-      timestamps: false,
-      indexes: [
-        { name: "PRIMARY", unique: true, using: "BTREE", fields: ['visiting_id'] },
-        { name: "fk_dep_code_visiting_staff", using: "BTREE", fields: ['Dep_Code'] },
-        { name: "fk_role_visiting_staff", using: "BTREE", fields: ['role_id'] }
-      ],
+  }, {
+    sequelize,
+    tableName: 'visiting_staff',
+    timestamps: false,
+    indexes: [
+      {
+        name: "PRIMARY",
+        unique: true,
+        using: "BTREE",
+        fields: [
+          { name: "visiting_id" },
+        ]
+      },
+      {
+        name: "fk_role_visiting_staff",
+        using: "BTREE",
+        fields: [
+          { name: "role_id" },
+        ]
+      },
+      {
+        name: "fk_dep_code_visiting_staff",
+        using: "BTREE",
+        fields: [
+          { name: "Dep_Code" },
+        ]
+      },
+    ],
 
       // 🔐 Password hashing hooks
       hooks: {
@@ -110,12 +129,5 @@ export default class visiting_staff extends Model {
         }
       }
     });
-
-    // ✅ Instance method to check password
-    VisitingStaff.prototype.checkPassword = function(plainPassword) {
-      return bcrypt.compare(plainPassword, this.Password);
-    };
-
-    return VisitingStaff;
   }
 }

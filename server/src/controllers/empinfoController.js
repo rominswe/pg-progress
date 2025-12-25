@@ -1,58 +1,50 @@
 import { empinfo } from "../config/config.js";
 
-// Get all employees
+const ensureEmpinfoAccess = (req) => {
+  if (req.user.role_id !== "CGSADM") {
+    const err = new Error("Forbidden: Admin access only");
+    err.status = 403;
+    throw err;
+  }
+};
+
+const allowedAttributes = [
+  "emp_id",
+  "FirstName",
+  "LastName",
+  "EmailId",
+  "Dep_Code",
+  "Phonenumber",
+  "Status",
+  "role"
+];
+
 export const getAllEmployees = async (req, res) => {
   try {
-    const employees = await empinfo.findAll();
-    res.json(employees);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
+    ensureEmpinfoAccess(req);
+    const employees = await empinfo.findAll({
+      where: { Dep_Code: "CGS" },
+      attributes: allowedAttributes,
+      order: [["RegDate", "DESC"]]
+    });
+
+    res.json({ total: employees.length, employees });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
   }
 };
 
-// Get single employee by emp_id
 export const getEmployeeById = async (req, res) => {
   try {
-    const employee = await empinfo.findByPk(req.params.emp_id);
-    if (!employee) return res.status(404).json({ message: "Employee not found" });
-    res.json(employee);
+    ensureEmpinfoAccess(req);
+    const employees = await empinfo.findByPk(req.params.id, {
+      where: { Dep_Code: "CGS" },
+      attributes: allowedAttributes
+    });
+
+    res.status(200).json({employees});
   } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-};
-
-// Create a new employee
-export const createEmployee = async (req, res) => {
-  try {
-    const newEmployee = await empinfo.create(req.body); // ✅ Password hashing is automatic
-    res.status(201).json(newEmployee);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-};
-
-// Update an employee
-export const updateEmployee = async (req, res) => {
-  try {
-    const employee = await empinfo.findByPk(req.params.emp_id);
-    if (!employee) return res.status(404).json({ message: "Employee not found" });
-
-    await employee.update(req.body); // ✅ Password rehash if updated
-    res.json(employee);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-};
-
-// Delete an employee
-export const deleteEmployee = async (req, res) => {
-  try {
-    const employee = await empinfo.findByPk(req.params.emp_id);
-    if (!employee) return res.status(404).json({ message: "Employee not found" });
-
-    await employee.destroy();
-    res.json({ message: "Employee deleted successfully" });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
+    res.status(error.status || 500).json({ 
+      message: error.message || "Failed to fetch Employees information" });
+  } 
 };

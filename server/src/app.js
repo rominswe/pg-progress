@@ -1,41 +1,40 @@
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
+import path  from "node:path";
 import cookieParser from "cookie-parser";
 import { logger } from "./utils/logger.js";
 import session from "express-session";
-import connectRedis from "connect-redis";
+import { RedisStore } from "connect-redis";
 import redisClient from "./config/redis.js";
+
 /* ================= ROUTES ================= */
 import authRoutes from "./routes/authRoutes.js";
-import empinfoRoutes from "./routes/empinfoRoutes.js";
-import masterStuRoutes from "./routes/masterStuRoutes.js";
-import programInfoRoutes from "./routes/programinfoRoutes.js";
-import roleRoutes from "./routes/rolesRoutes.js";
-import studentinfoRoutes from "./routes/studentInfoRoutes.js";
-import supervisorRoutes from "./routes/supervisorRoutes.js";
-import tblDepartmentsRoutes from "./routes/tblDepartmentsRoutes.js";
-import examinerRoutes from "./routes/examinerRoutes.js";
-import visitingStaffRoutes from "./routes/visitingStaffRoutes.js";
-import cgsRoutes from "./routes/cgsRoutes.js";
-
-/* ===== System / Security ===== */
 import adminRoutes from "./routes/adminRoutes.js";
 import auditLogRoutes from "./routes/auditLogRoutes.js";
+import documentRoutes from "./routes/documentRoutes.js";
+import empinfoRoutes from "./routes/empinfoRoutes.js";
 import loginAttemptRoutes from "./routes/loginAttemptRoutes.js";
-import refreshTokenRoutes from "./routes/refreshTokenRoutes.js";
-import verificationTokenRoutes from "./routes/verificationTokenRoutes.js";
+import profileRoutes from "./routes/profileRoutes.js";
+import programInfoRoutes from "./routes/programInfoRoutes.js";
+import rolesRoutes from "./routes/rolesRoutes.js";
+import studentInfoRoutes from "./routes/studentInfoRoutes.js";
+import tblDepartmentsRoutes from "./routes/tblDepartmentsRoutes.js";
 
-dotenv.config();
+dotenv.config({ path: path.resolve(process.cwd(), "../.env") });
 const app = express();
-const RedisStore = connectRedis(session);
 const allowedOrigins = new Set(["http://localhost:5173", "http://localhost:5174"]);
+
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
+app.use(logger);
 
 app.use(
     cors({
         origin: function (origin, callback){
           if (!origin) return callback(null, true);
-          if (allowedOrigins.includes(origin)) {
+          if (allowedOrigins.has(origin)) {
             callback(null, true);
           } else {
         callback(new Error("CORS policy: This origin is not allowed"));
@@ -60,28 +59,31 @@ app.use(
     },
   })
 );
-app.use(express.json());
-app.use(cookieParser());
-app.use(logger);
 
 /* ================= API ROUTES ================= */
-app.use("/auth", authRoutes);
+app.use("/api/auth", authRoutes);
+app.use("/api/admin", adminRoutes);
+app.use("/api/audit-logs", auditLogRoutes);
+app.use("/api/documents", documentRoutes);
+app.use("/api/employees", empinfoRoutes);
+app.use("/api/login-attempts", loginAttemptRoutes);
+app.use("/api/profile", profileRoutes);
+app.use("/api/program-info", programInfoRoutes);
+app.use("/api/roles", rolesRoutes);
+app.use("/api/students", studentInfoRoutes);
+app.use("/api/departments", tblDepartmentsRoutes);
 
-app.use("/empinfo", empinfoRoutes);
-app.use("/masterstu", masterStuRoutes);
-app.use("/cgs", cgsRoutes);
-app.use("/programs", programInfoRoutes);
-app.use("/roles", roleRoutes);
-app.use("/studentsinfo", studentinfoRoutes);
-app.use("/supervisors", supervisorRoutes);
-app.use("/examiners", examinerRoutes);
-app.use("/visiting-staff", visitingStaffRoutes);
-app.use("/departments", tblDepartmentsRoutes);
+/* ================= HEALTH CHECK ================= */
+app.get("/health", (req, res) => {
+  res.status(200).json({
+    status: "OK",
+    message: "Backend is reachable",
+  });
+});
 
-/* ================= ADMIN / SYSTEM ================= */
-app.use("/admin", adminRoutes);
-app.use("/auditlogs", auditLogRoutes);
-app.use("/loginattempts", loginAttemptRoutes);
-app.use("/refreshtokens", refreshTokenRoutes);
-app.use("/verification-tokens", verificationTokenRoutes);
+// 404 handler
+app.use((req, res) => {
+  res.status(404).json({ error: "Route not found" });
+});
+
 export default app;

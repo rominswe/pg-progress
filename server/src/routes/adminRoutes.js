@@ -1,67 +1,66 @@
 import express from "express";
-const router = express.Router();
-
-/* ================= MIDDLEWARE ================= */
-import {protect} from "../middleware/authmiddleware.js";
-import {requireRole} from "../middleware/rbacMiddleware.js";
-
-/* ================= CONTROLLERS ================= */
 import {
+  // Student routes
+  createStudentAdmin,
   getAllStudentsAdmin,
   updateStudentAdmin,
   deleteStudentAdmin,
-
-  getAllSupervisorsAdmin,
-  getAllExaminersAdmin,
-  getAllVisitingStaffAdmin,
-
-  getAllDepartmentsAdmin,
-  updateDepartmentAdmin,
-
+  // Staff routes
+  createInternalStaffAdmin,
+  createExternalStaffAdmin,
+  getAllStaffAdmin,
+  updateStaffAdmin,
+  deleteStaffAdmin,
+  // Program routes
+  createProgramAdmin,
   getAllProgramsAdmin,
-  // getAllProgressAdmin,
-
+  updateProgramAdmin,
+  deleteProgramAdmin,
+  // Document routes
   getAllDocumentsAdmin,
-  deleteDocumentAdmin,
-
-  getAuditLogsAdmin,
-  getLoginAttemptsAdmin
+  updateDocumentAdmin,
+  deleteDocumentAdmin
 } from "../controllers/adminController.js";
 
-/* ================= ROUTE PROTECTION ================= */
-router.use(protect); // 🛡️ PROTECT ALL ROUTES
-router.use(requireRole("CGSADM")); // 🔐 ONLY CGS ADMIN
+import { protect } from "../middleware/authmiddleware.js";
+import { requireRole } from "../middleware/rbacMiddleware.js";
 
-/* ================= STUDENTS ================= */
-router.get("/students", getAllStudentsAdmin);
-router.put("/students/:master_id", updateStudentAdmin);
-router.delete("/students/:master_id", deleteStudentAdmin);
+const router = express.Router();
 
-/* ================= SUPERVISORS ================= */
-router.get("/supervisors", getAllSupervisorsAdmin);
+// ================= STUDENT =================
+const studentRouter = express.Router();
+studentRouter.post("/", createStudentAdmin);
+studentRouter.get("/", getAllStudentsAdmin);
+studentRouter.put("/:master_id", updateStudentAdmin);
+studentRouter.delete("/:master_id", deleteStudentAdmin);
 
-/* ================= EXAMINERS ================= */
-router.get("/examiners", getAllExaminersAdmin);
+router.use("/students", protect, requireRole("CGSADM"), studentRouter);
 
-/* ================= VISITING STAFF ================= */
-router.get("/visiting-staff", getAllVisitingStaffAdmin);
+// ================= STAFF =================
+const staffRouter = express.Router();
+staffRouter.post("/internal", createInternalStaffAdmin);
+staffRouter.post("/external", createExternalStaffAdmin);
+staffRouter.get("/", getAllStaffAdmin);
+staffRouter.put("/:target_role/:source/:id", updateStaffAdmin);
+staffRouter.delete("/:target_role/:source/:id", deleteStaffAdmin);
 
-/* ================= DEPARTMENTS ================= */
-router.get("/departments", getAllDepartmentsAdmin);
-router.put("/departments/:Dep_Code", updateDepartmentAdmin);
+router.use("/staff", protect, requireRole("CGSADM"), staffRouter);
 
-/* ================= PROGRAMS ================= */
-router.get("/programs", getAllProgramsAdmin);
+// ================= PROGRAM =================
+const programRouter = express.Router();
+programRouter.post("/", createProgramAdmin);
+programRouter.get("/", getAllProgramsAdmin);
+programRouter.put("/", updateProgramAdmin);
+programRouter.delete("/:Prog_Code", deleteProgramAdmin);
 
-/* ================= PROGRESS ================= */
-// router.get("/progress", getAllProgressAdmin);
+router.use("/programs", protect, requireRole("CGSADM"), programRouter);
 
-/* ================= DOCUMENTS ================= */
-router.get("/documents", getAllDocumentsAdmin);
-router.delete("/documents/:doc_up_id", deleteDocumentAdmin);
+// ================= DOCUMENT =================
+const documentRouter = express.Router();
+documentRouter.get("/", getAllDocumentsAdmin);
+documentRouter.put("/:doc_up_id", updateDocumentAdmin);
+documentRouter.delete("/:doc_up_id", deleteDocumentAdmin);
 
-/* ================= SECURITY / AUDIT ================= */
-router.get("/auditlogs", getAuditLogsAdmin);
-router.get("/loginattempts", getLoginAttemptsAdmin);
+router.use("/documents", protect, requireRole("CGSADM"), documentRouter);
 
 export default router;
