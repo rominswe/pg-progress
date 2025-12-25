@@ -90,6 +90,7 @@ export default class supervisor extends Model {
     sequelize,
     tableName: 'supervisor',
     timestamps: false,
+    freezeTableName: true,
     indexes: [
       {
         name: "PRIMARY",
