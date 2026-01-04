@@ -1,19 +1,12 @@
 import express from "express";
-import {
-  getAllEmployees,
-  getEmployeeById,
-  createEmployee,
-  updateEmployee,
-  deleteEmployee,
-} from "../controllers/empinfoController.js";
-import { protect } from '../middleware/authmiddleware.js';
+import { getAllEmployees, getEmployeeById } from "../controllers/empinfoController.js";
+import { protect } from "../middleware/authmiddleware.js";
+import { requireRole } from "../middleware/rbacMiddleware.js";
 
 const router = express.Router();
 
-// CRUD endpoints
-router.get("/", protect, getAllEmployees);
-router.get("/:emp_id", protect, getEmployeeById);
-router.post("/", protect, createEmployee);
-router.put("/:emp_id", protect, updateEmployee);
-router.delete("/:emp_id", protect, deleteEmployee);
+// Admin-only routes for employee info
+router.get("/", protect, requireRole("CGSADM"), getAllEmployees);
+router.get("/:id", protect, requireRole("CGSADM"), getEmployeeById);
+
 export default router;

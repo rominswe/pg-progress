@@ -1,19 +1,17 @@
-import jwt from "jsonwebtoken";
+// middleware/authmiddleware.js
 
-export const protect = (roles = []) => (req, res, next) => {
-  const token = req.cookies.accessToken;
-  if (!token) return res.status(401).json({ error: "Unauthorized Access" });
-
-  try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    req.user = decoded;
-
-    if (roles.length && !roles.includes(decoded.role)) {
-      return res.status(403).json({ error: "Forbidden" });
-    }
-
-    next();
-  } catch (err) {
-    res.status(401).json({ error: "Invalid token" });
+export const protect = (req, res, next) => {
+  if (!req.session?.user) {
+    return res.status(401).json({ error: "Unauthorized" });
   }
+
+  // Normalize user object
+  req.user = {
+    id: req.session.user.id,
+    email: req.session.user.email,
+    role_id: req.session.user.role_id,
+    table: req.session.user.table,
+  };
+
+  next();
 };

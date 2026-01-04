@@ -1,19 +1,14 @@
 import express from "express";
-import {
-  getAllStudinfo,
-  getStudinfoById,
-  createStudinfo,
-  updateStudinfo,
-  deleteStudinfo,
-} from "../controllers/studentInfoController.js";
+import { getAllStudentInfo, getStudentInfoById } from "../controllers/studentInfoController.js";
+import { protect } from "../middleware/authmiddleware.js";
+import { requireRole } from "../middleware/rbacMiddleware.js";
 
 const router = express.Router();
 
-// CRUD endpoints
-router.get("/", getAllStudinfo);
-router.get("/:stu_id", getStudinfoById);
-router.post("/", createStudinfo);
-router.put("/:stu_id", updateStudinfo);
-router.delete("/:stu_id", deleteStudinfo);
+// GET all student info (Admin only)
+router.get("/", protect, requireRole("CGSADM"), getAllStudentInfo);
+
+// GET single student info by ID (Admin only)
+router.get("/:id", protect, requireRole("CGSADM"), getStudentInfoById);
 
 export default router;

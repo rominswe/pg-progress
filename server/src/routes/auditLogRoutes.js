@@ -1,11 +1,11 @@
 import express from "express";
-import { getAllProgramInfo } from "../controllers/programInfoController.js";
+import { getAuditLogsAdmin } from "../controllers/auditLogController.js";
 import { protect } from "../middleware/authmiddleware.js";
 import { requireRole } from "../middleware/rbacMiddleware.js";
 
 const router = express.Router();
 
-// GET all program information (for admin or staff)
-router.get("/", protect, requireRole("CGSADM", "CGSS"), getAllProgramInfo);
+// Only CGS Admin can access audit logs
+router.get("/", protect, requireRole("CGSADM"), getAuditLogsAdmin);
 
 export default router;

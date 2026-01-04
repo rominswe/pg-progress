@@ -38,17 +38,6 @@ export const authService = {
     .post(roleMap[role], credentials)
     .then(res => res.data);
   },
-  // me: () => api.get("/me").then(res => res.data),
-//   me() {
-//   return api
-//   .get("/me", { headers: { 'Cache-Control': 'no-cache' } })
-//   .then(res => res.data);
-// },
-// me: async () => {
-//     const res = await api.get("/me", { headers: { "Cache-Control": "no-cache" } });
-//     return res.data;
-//   },
-
   me: async () => {
     const res = await api.get("/me", me);
     return res.data;
@@ -58,15 +47,6 @@ refresh: async () => {
     // Backend should set a new cookie if session expired
     return api.post("/refresh");
   },
-
-  // logout: async () => {
-  //   setIsLoggingOut(true);
-  //   try {
-  //     await api.post("/logout", {}, { withCredentials: true });
-  //   } finally {
-  //     setIsLoggingOut(false);
-  //   }
-  // },
 
   logout: async () => {
     setIsLoggingOut(true);
@@ -100,33 +80,6 @@ api.interceptors.response.use(
 
       originalRequest._retry = true;
       isRefreshing = true;
-
-      // try {
-      //   const { accessToken } = await authService.refresh();
-      //   api.defaults.headers['Authorization'] = `Bearer ${accessToken}`;
-      //   originalRequest.headers['Authorization'] = `Bearer ${accessToken}`;
-      //   processQueue(null);
-      //   return api(originalRequest);
-      // } catch (err) {
-      //   processQueue(err);
-      //   await authService.logout();
-      //   return Promise.reject(err);
-      // } finally {
-      //   isRefreshing = false;
-      // }
-
-      // try {
-      //   await api.post("/refresh");
-      //   processQueue();
-      //   return api(originalRequest);
-      // } catch (err) {
-      //   processQueue(err);
-      //   await authService.logout();
-      //   return Promise.reject(err);
-      // }
-      // finally {
-      //   isRefreshing = false;
-      // }
 
       try {
         await authService.refresh(); // refresh access token

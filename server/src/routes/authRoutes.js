@@ -1,14 +1,14 @@
 import express from "express";
-import { me, cgsLogin, supervisorLogin, studentLogin, refreshToken, logout } from "../controllers/authController.js";
-import { protect } from '../middleware/authmiddleware.js';
+import { login, verifyAccount, logout } from "../controllers/authController.js";
+import { resendVerificationToken, checkTokenStatus } from "../controllers/verificationTokenController.js";
+import { protect } from "../middleware/authmiddleware.js";
 
 const router = express.Router();
 
-router.post('/cgs/login', cgsLogin);
-router.post('/masterstu/login', studentLogin);
-router.post('/supervisors/login', supervisorLogin);
-router.post('/refresh', refreshToken);
-router.post('/logout', logout);
-router.get("/me", protect(), me);
+router.post("/login", login);
+router.get("/verify", verifyAccount); 
+router.post("/resend-verification", resendVerificationToken);
+router.get("/check-token/:token", checkTokenStatus);// expects query params: ?code=<vcode>&type=email
+router.post("/logout", protect, logout);
 
 export default router;

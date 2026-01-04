@@ -2,10 +2,10 @@ import bcrypt from 'bcryptjs';
 import _sequelize from 'sequelize';
 const { Model, Sequelize } = _sequelize;
 
-export default class cgs extends Model {
+export default class supervisor extends Model {
   static init(sequelize, DataTypes) {
   return super.init({
-    cgs_id: {
+    sup_id: {
       type: DataTypes.STRING(20),
       allowNull: false,
       primaryKey: true
@@ -31,7 +31,7 @@ export default class cgs extends Model {
       allowNull: false
     },
     Password: {
-      type: DataTypes.STRING(180),
+      type: DataTypes.STRING(500),
       allowNull: false
     },
     Phonenumber: {
@@ -72,14 +72,14 @@ export default class cgs extends Model {
       type: DataTypes.DATE,
       allowNull: false
     },
-    EndDate: {
-      type: DataTypes.DATE,
-      allowNull: false
-    },
     IsVerified: {
       type: DataTypes.BOOLEAN,
       allowNull: false,
       defaultValue: 0
+    },
+    EndDate: {
+      type: DataTypes.DATE,
+      allowNull: false
     },
     MustChangePassword: {
       type: DataTypes.BOOLEAN,
@@ -88,39 +88,41 @@ export default class cgs extends Model {
     }
   }, {
     sequelize,
-    tableName: 'cgs',
+    tableName: 'supervisor',
     timestamps: false,
+    freezeTableName: true,
     indexes: [
       {
         name: "PRIMARY",
         unique: true,
         using: "BTREE",
         fields: [
-          { name: "cgs_id" },
+          { name: "sup_id" },
         ]
       },
       {
-        name: "fk_emp_cgs",
+        name: "fk_emp_sup",
         using: "BTREE",
         fields: [
           { name: "emp_id" },
         ]
       },
       {
-        name: "fk_dep_code_cgs",
+        name: "fk_dep_code_sup",
         using: "BTREE",
         fields: [
           { name: "Dep_Code" },
         ]
       },
       {
-        name: "fk_role_cgs",
+        name: "fk_role_sup",
         using: "BTREE",
         fields: [
           { name: "role_id" },
         ]
       },
     ],
+
       // 🔐 Password hashing hooks
       hooks: {
         beforeCreate: async (user) => {

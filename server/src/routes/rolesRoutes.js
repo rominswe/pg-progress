@@ -1,19 +1,11 @@
 import express from "express";
-import {
-  getAllRoles,
-  getRoleById,
-  createRole,
-  updateRole,
-  deleteRole,
-} from "../controllers/rolesController.js";
+import { getAllRolesInfo } from "../controllers/rolesController.js";
+import { protect } from "../middleware/authmiddleware.js";
+import { requireRole } from "../middleware/rbacMiddleware.js";
 
 const router = express.Router();
 
-// CRUD endpoints
-router.get("/", getAllRoles);
-router.get("/:role_id", getRoleById);
-router.post("/", createRole);
-router.put("/:role_id", updateRole);
-router.delete("/:role_id", deleteRole);
+// GET all roles information (Admin only)
+router.get("/", protect, requireRole("CGSADM"), getAllRolesInfo);
 
 export default router;

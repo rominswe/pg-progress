@@ -1,11 +1,11 @@
 import express from "express";
-import { getAllProgramInfo } from "../controllers/programInfoController.js";
+import { getLoginAttempts } from "../controllers/loginAttemptController.js";
 import { protect } from "../middleware/authmiddleware.js";
 import { requireRole } from "../middleware/rbacMiddleware.js";
 
 const router = express.Router();
 
-// GET all program information (for admin or staff)
-router.get("/", protect, requireRole("CGSADM", "CGSS"), getAllProgramInfo);
+// Admin-only route to fetch login attempts
+router.get("/", protect, requireRole("CGSADM"), getLoginAttempts);
 
 export default router;

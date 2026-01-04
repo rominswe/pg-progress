@@ -1,66 +1,59 @@
 import { studentinfo } from "../config/config.js";
 
-// Get all students
-export const getAllStudinfo = async (req, res) => {
-  try {
-    const students = await studentinfo.findAll();
-    res.json(students);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
+const ensureStudentInfoAccess = (req) => {
+  if (req.user.role_id !== "CGSADM" && req.user.role_id !== "CGSS") {
+    const err = new Error("Forbidden: Admin and Staff access only");
+    err.status = 403;
+    throw err;
   }
 };
 
-// Get single student by stu_id
-export const getStudinfoById = async (req, res) => {
-  try {
-    const student = await studentinfo.findByPk(req.params.stu_id);
-    if (!student) {
-      return res.status(404).json({ message: "Student not found" });
-    }
-    res.json(student);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
+const allowedAttributes = [
+  "stud_id",
+  "FirstName",
+  "LastName",
+  "EmailId",
+  "Prog_Code",
+  "Phonenumber",
+  "Status",
+  "Gender",
+  "Acad_Year",
+  "Exp_GraduatedYear",
+  "Address",
+  "Dep_Code"
+];
+
+// Get all student info - CGS Staff only
+export const getAllStudentInfo  = async (req, res) => {
+  try{
+    ensureStudentInfoAccess(req);
+    const studentinfoaccess = await studentinfo.findAll({
+      where: {Dep_code: "CGS"},
+      attributes: allowedAttributes,
+      order: [["RegDate", "DESC"]]
+    });
+    res.status(200).json({
+      total: studentinfoaccess.length,
+      studentinfoaccess
+    });
+  } catch(error){
+    res.status(error.status || 500).json({
+      message: error.message || "Failed to fetch Student information"
+    });
   }
 };
 
-// Create a new student
-export const createStudinfo = async (req, res) => {
+export const getStudentInfoById = async (req, res) => {
   try {
-    // Password will automatically be hashed via the model hook
-    const newStudent = await studentinfo.create(req.body);
-    res.status(201).json(newStudent);
+    ensureStudentInfoAccess(req);
+    const studentinfoaccess = await studentinfo.findByPk(req.params.id, {
+      where: { Dep_Code: "CGS" },
+      attributes: allowedAttributes
+    });
+
+    res.status(200).json({studentinfoaccess});
   } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-};
-
-// Update a student
-export const updateStudinfo = async (req, res) => {
-  try {
-    const student = await studentinfo.findByPk(req.params.stu_id);
-    if (!student) {
-      return res.status(404).json({ message: "Student not found" });
-    }
-
-    // If password is included in update, it will automatically be hashed
-    await student.update(req.body);
-    res.json(student);
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
-};
-
-// Delete a student
-export const deleteStudinfo = async (req, res) => {
-  try {
-    const student = await studentinfo.findByPk(req.params.stu_id);
-    if (!student) {
-      return res.status(404).json({ message: "Student not found" });
-    }
-
-    await student.destroy();
-    res.json({ message: "Student deleted successfully" });
-  } catch (error) {
-    res.status(500).json({ error: error.message });
-  }
+    res.status(error.status || 500).json({ 
+      message: error.message || "Failed to fetch Student information" });
+  } 
 };

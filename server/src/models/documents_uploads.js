@@ -1,22 +1,18 @@
 import _sequelize from 'sequelize';
 const { Model, Sequelize } = _sequelize;
 
-export default class document_submissions extends Model {
+export default class documents_uploads extends Model {
   static init(sequelize, DataTypes) {
   return super.init({
-    document_id: {
+    doc_up_id: {
       autoIncrement: true,
       type: DataTypes.INTEGER,
       allowNull: false,
       primaryKey: true
     },
-    sup_id: {
+    uploaded_by: {
       type: DataTypes.STRING(20),
-      allowNull: false,
-      references: {
-        model: 'supervisor',
-        key: 'sup_id'
-      }
+      allowNull: false
     },
     master_id: {
       type: DataTypes.STRING(20),
@@ -26,6 +22,14 @@ export default class document_submissions extends Model {
         key: 'master_id'
       }
     },
+    role_id: {
+      type: DataTypes.STRING(100),
+      allowNull: false,
+      references: {
+        model: 'roles',
+        key: 'role_id'
+      }
+    },
     document_name: {
       type: DataTypes.STRING(255),
       allowNull: false
@@ -33,7 +37,7 @@ export default class document_submissions extends Model {
     document_type: {
       type: DataTypes.ENUM('Thesis Chapter','Research Proposal','Progress Report','Literature Review','Other'),
       allowNull: false,
-      defaultValue: "Thesis Chapter"
+      defaultValue: "Other"
     },
     file_path: {
       type: DataTypes.STRING(500),
@@ -44,45 +48,55 @@ export default class document_submissions extends Model {
       allowNull: false
     },
     status: {
-      type: DataTypes.ENUM('pending','approved','rejected'),
+      type: DataTypes.ENUM('Pending','Approved','Rejected'),
       allowNull: false,
-      defaultValue: "pending"
+      defaultValue: "Pending"
     },
     uploaded_at: {
       type: DataTypes.DATE,
       allowNull: false,
       defaultValue: Sequelize.Sequelize.literal('CURRENT_TIMESTAMP')
     },
-    reviewed_at: {
-      type: DataTypes.DATE,
+    Dep_Code: {
+      type: DataTypes.STRING(100),
       allowNull: false,
-      defaultValue: Sequelize.Sequelize.literal('CURRENT_TIMESTAMP')
+      references: {
+        model: 'tbldepartments',
+        key: 'Dep_Code'
+      }
     }
   }, {
     sequelize,
-    tableName: 'document_submissions',
-    timestamps: false,
+    tableName: 'documents_uploads',
+    timestamps: true,
     indexes: [
       {
         name: "PRIMARY",
         unique: true,
         using: "BTREE",
         fields: [
-          { name: "document_id" },
+          { name: "doc_up_id" },
         ]
       },
       {
-        name: "fk_sup_id_doc_submission",
+        name: "fk_role_doc_up",
         using: "BTREE",
         fields: [
-          { name: "sup_id" },
+          { name: "role_id" },
         ]
       },
       {
-        name: "fk_master_id_doc_submission",
+        name: "fk_master_doc_up",
         using: "BTREE",
         fields: [
           { name: "master_id" },
+        ]
+      },
+      {
+        name: "fk_dep_code_doc_up",
+        using: "BTREE",
+        fields: [
+          { name: "Dep_Code" },
         ]
       },
     ]
