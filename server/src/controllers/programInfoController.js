@@ -1,7 +1,7 @@
 import { programInfo } from "../config/config.js";
 
 const ensureProframInfoAccess = (req) => {
-  if (req.user.role_id !== "CGSADM" && req.user.role_id !== "EXCGS") {
+  if (req.user.role_id !== "CGSADM" && req.user.role_id !== "CGSS") {
     const err = new Error("Forbidden: Admin or Staff access only");
     err.status = 403;
     throw err;

@@ -80,7 +80,7 @@ export const reviewDocument = async (req, res) => {
     const { id, role_id } = req.user;
     const { doc_up_id, status, comments, score } = req.body;
 
-    if (!["SUV", "EXA", "EXCGS", "CGSADM"].includes(role_id)) {
+    if (!["SUV", "EXA", "CGSS", "CGSADM"].includes(role_id)) {
       return res.status(403).json({ error: "Not authorized to review documents" });
     }
 

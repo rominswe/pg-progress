@@ -14,7 +14,7 @@ const ROLE_MODEL_MAP = {
   CGSADM: cgs,
   SUV: supervisor,
   STU: master_stu,
-  EXCGS: cgs,
+  CGSS: cgs,
   EXA: examiner // Special handling for EXA/Visiting Staff below
 };
 

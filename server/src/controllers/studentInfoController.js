@@ -1,7 +1,7 @@
 import { studentinfo } from "../config/config.js";
 
 const ensureStudentInfoAccess = (req) => {
-  if (req.user.role_id !== "CGSADM" && req.user.role_id !== "EXCGS") {
+  if (req.user.role_id !== "CGSADM" && req.user.role_id !== "CGSS") {
     const err = new Error("Forbidden: Admin and Staff access only");
     err.status = 403;
     throw err;

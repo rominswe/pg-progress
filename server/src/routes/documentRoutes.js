@@ -12,6 +12,6 @@ router.post("/upload", protect, requireRole("STU"), uploadDocument);
 router.get("/my-documents", protect, requireRole("STU"), getMyDocuments);
 
 // Supervisors / Examiners review documents
-router.post("/review", protect, requireRole("SUV", "EXA", "EXCGS", "CGSADM"), reviewDocument);
+router.post("/review", protect, requireRole("SUV", "EXA", "CGSS", "CGSADM"), reviewDocument);
 
 export default router;

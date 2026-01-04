@@ -13,7 +13,7 @@ export const sendVerificationEmail = async (user, token, tempPassword, role_id) 
     let frontendUrl;
     switch (role_id) {
       case "CGSADM":
-      case "EXCGS":
+      case "CGSS":
         frontendUrl = process.env.FRONTEND_ADMIN_URL || "http://localhost:5174";
         break;
       default:

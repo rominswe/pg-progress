@@ -15,7 +15,7 @@ const ROLE_MODEL_MAP = {
   CGSADM: cgs,
   SUV: supervisor,
   STU: master_stu,
-  EXCGS: cgs,
+  CGSS: cgs,
   EXA: examiner
 };
 

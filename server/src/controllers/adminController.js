@@ -206,7 +206,7 @@ export const createInternalStaffAdmin = async (req, res) => {
     // Determine the target table/model
     let Model, prefix;
     switch(target_role) {
-      case "EXCGS": Model = cgs; prefix = "CGS"; break;
+      case "CGSS": Model = cgs; prefix = "CGS"; break;
       case "SUV": Model = supervisor; prefix = "SUV"; break;
       case "EXA": Model = examiner; prefix = "IEXA"; break;
       default: return res.status(400).json({ error: "Invalid target role" });
@@ -300,11 +300,11 @@ export const updateStaffAdmin = async (req, res) => {
   try {
     ensureCGSAdmin(req);
     
-    const { target_role, source, id } = req.params; // "EXCGS", "SUV", "IEXA or "EEXA"
+    const { target_role, source, id } = req.params; // "CGSS", "SUV", "IEXA or "EEXA"
 
     let Model;
     switch (target_role) {
-      case "EXCGS": Model = cgs; break;
+      case "CGSS": Model = cgs; break;
       case "SUV": Model = supervisor; break;
       case "EXA": if (source === "internal") Model = examiner; else if (source === "external") Model = visiting_staff; break;
       default: return res.status(400).json({ error: "Invalid target role" });
@@ -336,7 +336,7 @@ export const deleteStaffAdmin = async (req, res) => {
     const { target_role, source } = req.params; // "CGS", "SUV", "EXA"
     let Model;
     switch (target_role) {
-      case "EXCGS": Model = cgs; break;
+      case "CGSS": Model = cgs; break;
       case "SUV": Model = supervisor; break;
       case "EXA": if (source === "internal") Model = examiner; else if (source === "external") Model = visiting_staff; break;
       default: return res.status(400).json({ error: "Invalid target role" });

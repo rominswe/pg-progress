@@ -6,6 +6,6 @@ import { requireRole } from "../middleware/rbacMiddleware.js";
 const router = express.Router();
 
 // GET all program information (for admin or staff)
-router.get("/", protect, requireRole("CGSADM", "EXCGS"), getAllProgramInfo);
+router.get("/", protect, requireRole("CGSADM", "CGSS"), getAllProgramInfo);
 
 export default router;
