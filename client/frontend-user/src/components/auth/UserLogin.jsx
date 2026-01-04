@@ -1,20 +1,18 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Users, CheckCircle } from "lucide-react"; // Changed FileText to Users/CheckCircle
-// import { API_BASE_URL } from "../../services/api";
-// import { authService } from "../../services/api";
+import { Users, CheckCircle } from "lucide-react";
 import { useAuth } from "../../../../shared/auth/AuthContext";
 
 export default function UserLogin() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [role, setRole] = useState("student");
+  const [role, setRole] = useState("STU"); // STU | SUV | EXA
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  
+
   const navigate = useNavigate();
-  const {login, user} = useAuth();
+  const { login } = useAuth();
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -22,29 +20,59 @@ export default function UserLogin() {
     setError(null);
 
     try {
-       await login(role, { email, password });
+      const data = await login({
+        email,
+        password,
+        role_id: role,
+      });
 
-        // Redirect based on role
-        if (role === "student") navigate("/student/dashboard", {replace: true});
-        else if (role === "supervisor") navigate("/supervisor/dashboard", {replace: true});
-        else navigate("/login");
+      // 🔐 Temporary password enforcement
+      if (data?.mustChangePassword) {
+        navigate(data.redirectUrl, { replace: true });
+        return;
+      }
+
+      // 🚦 Redirect by role
+      if (role === "STU") navigate("/student/dashboard", { replace: true });
+      else if (role === "SUV") navigate("/supervisor/dashboard", { replace: true });
+      else if (role === "EXA") navigate("/examiner/dashboard", { replace: true });
+      else navigate("/login");
     } catch (err) {
       setError(err.response?.data?.error || "Login failed");
-}finally {
-      setLoading(false); 
+    } finally {
+      setLoading(false);
     }
   }
 
-   // Define transition for smooth list item appearance
   const itemVariants = {
     hidden: { opacity: 0, x: 20 },
     visible: { opacity: 1, x: 0, transition: { type: "spring", stiffness: 100 } },
   };
-  
-  // Dynamically set feature list based on selected role
-  const featureList = role === "student"
-    ? ["Thesis Status Tracking", "Supervisor Communication", "Document Submission", "Milestone Monitoring"]
-    : ["Student Progress Oversight", "Document Approval Workflow", "Feedback and Guidance Tools", "Reporting and Metrics"];
+
+  const featureList =
+    role === "STU"
+      ? [
+          "Thesis Status Tracking",
+          "Supervisor Communication",
+          "Document Submission",
+          "Milestone Monitoring",
+        ]
+      : role === "SUV"
+      ? [
+          "Student Progress Oversight",
+          "Document Approval Workflow",
+          "Feedback & Guidance Tools",
+          "Reporting & Metrics",
+        ]
+      : [
+          "Thesis Examination",
+          "Evaluation Reports",
+          "Academic Feedback",
+          "Assessment Management",
+        ];
+
+  const roleLabel =
+    role === "STU" ? "Student" : role === "SUV" ? "Supervisor" : "Examiner";
 
   return (
     <div
@@ -55,9 +83,8 @@ export default function UserLogin() {
         initial={{ opacity: 0, scale: 0.9 }}
         animate={{ opacity: 1, scale: 1 }}
         transition={{ duration: 0.5 }}
-        className="bg-white/95 backdrop-blur-sm shadow-xl rounded-xl w-full max-w-5xl flex overflow-hidden flex-col md:flex-row border border-gray-100" // Unified Card Style
+        className="bg-white/95 backdrop-blur-sm shadow-xl rounded-xl w-full max-w-5xl flex overflow-hidden flex-col md:flex-row border border-gray-100"
       >
-
         {/* LEFT - FORM */}
         <div className="w-full md:w-1/2 p-8 lg:p-14 flex flex-col justify-center">
           <motion.div
@@ -65,48 +92,43 @@ export default function UserLogin() {
             animate={{ opacity: 1, y: 0 }}
             className="text-center md:text-left mb-8"
           >
-            {/* Dynamic Icon */}
-            <Users className="w-10 h-10 text-blue-700 mx-auto md:mx-0 mb-3" /> 
-            
+            <Users className="w-10 h-10 text-blue-700 mx-auto md:mx-0 mb-3" />
             <h2 className="text-3xl font-extrabold text-gray-800">
               PG Monitoring System
             </h2>
             <p className="text-gray-500 mt-1 text-lg">
-              {role === "student" ? "Student Portal" : "Supervisor Portal"}
+              {roleLabel} Portal
             </p>
           </motion.div>
 
-          {/* Role Buttons */}
+          {/* ROLE BUTTONS */}
           <div className="flex justify-center gap-4 mb-8">
-            <button
-              type="button"
-              onClick={() => setRole("student")}
-              className={`px-6 py-2 rounded-lg font-semibold border-2 transition-all duration-300 shadow-sm ${
-                role === "student"
-                  ? "bg-blue-600 text-white border-blue-600"
-                  : "bg-white text-blue-600 border-blue-600 hover:bg-blue-50"
-              }`}
-            >
-              Student
-            </button>
-
-            <button
-              type="button"
-              onClick={() => setRole("supervisor")}
-              className={`px-6 py-2 rounded-lg font-semibold border-2 transition-all duration-300 shadow-sm ${
-                role === "supervisor"
-                  ? "bg-blue-600 text-white border-blue-600"
-                  : "bg-white text-blue-600 border-blue-600 hover:bg-blue-50"
-              }`}
-            >
-              Supervisor
-            </button>
+            {[
+              { id: "STU", label: "Student" },
+              { id: "SUV", label: "Supervisor" },
+              { id: "EXA", label: "Examiner" },
+            ].map((r) => (
+              <button
+                key={r.id}
+                type="button"
+                onClick={() => setRole(r.id)}
+                className={`px-6 py-2 rounded-lg font-semibold border-2 transition-all duration-300 shadow-sm ${
+                  role === r.id
+                    ? "bg-blue-600 text-white border-blue-600"
+                    : "bg-white text-blue-600 border-blue-600 hover:bg-blue-50"
+                }`}
+              >
+                {r.label}
+              </button>
+            ))}
           </div>
 
-          {/* Login Form */}
+          {/* LOGIN FORM */}
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
-              <label className="block mb-2 text-sm font-medium text-gray-700">Email</label>
+              <label className="block mb-2 text-sm font-medium text-gray-700">
+                Email
+              </label>
               <motion.input
                 type="email"
                 value={email}
@@ -115,12 +137,14 @@ export default function UserLogin() {
                 required
                 whileFocus={{ scale: 1.01 }}
                 className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-blue-500 focus:border-blue-500 outline-none transition duration-150"
-                placeholder={`Enter ${role} email`}
+                placeholder={`Enter ${roleLabel} email`}
               />
             </div>
 
             <div>
-              <label className="block mb-2 text-sm font-medium text-gray-700">Password</label>
+              <label className="block mb-2 text-sm font-medium text-gray-700">
+                Password
+              </label>
               <motion.input
                 type="password"
                 value={password}
@@ -138,29 +162,31 @@ export default function UserLogin() {
               disabled={loading}
               whileHover={{ scale: loading ? 1 : 1.02 }}
               className={`w-full py-3 px-4 bg-blue-600 text-white rounded-lg font-semibold transition duration-200 shadow-md ${
-                loading ? "opacity-60 cursor-not-allowed" : "hover:bg-blue-700 shadow-blue-300/50"
+                loading
+                  ? "opacity-60 cursor-not-allowed"
+                  : "hover:bg-blue-700 shadow-blue-300/50"
               }`}
             >
-              {loading ? "Signing in..." : `Sign In as ${role}`}
+              {loading ? "Signing in..." : `Sign In as ${roleLabel}`}
             </motion.button>
+
             {error && (
               <p className="text-red-600 text-sm mt-2 text-center">
                 {error}
-                </p>)}
+              </p>
+            )}
           </form>
         </div>
 
-        {/* RIGHT - BRAND PANEL (Subtle, White-based design) */}
+        {/* RIGHT - INFO PANEL */}
         <div className="relative w-full md:w-1/2 p-8 lg:p-14 bg-gray-50/50 border-l border-gray-200 flex flex-col justify-center items-start text-gray-800">
-          
-          {/* Subtle Background Image */}
           <img
             src="/aiu.jpg"
             alt="AIU Background"
             className="absolute inset-0 w-full h-full object-cover opacity-10 blur-sm"
           />
 
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, x: 20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ delay: 0.3 }}
@@ -169,30 +195,31 @@ export default function UserLogin() {
             <h3 className="text-2xl font-bold text-blue-700 mb-2 border-b-2 border-blue-200 pb-2">
               PG Monitoring System
             </h3>
+
             <p className="text-sm font-medium text-gray-600 mb-6">
-              Features for the **{role}** role:
+              Features for the selected role:
             </p>
 
-            <motion.ul 
+            <motion.ul
               initial="hidden"
               animate="visible"
               transition={{ staggerChildren: 0.1 }}
               className="space-y-3"
             >
               {featureList.map((item, index) => (
-                <motion.li 
+                <motion.li
                   key={index}
                   variants={itemVariants}
                   className="flex items-center text-gray-700 font-medium"
                 >
-                  <CheckCircle className="w-5 h-5 text-green-500 mr-3 flex-shrink-0" />
+                  <CheckCircle className="w-5 h-5 text-green-500 mr-3" />
                   {item}
                 </motion.li>
               ))}
             </motion.ul>
-            
+
             <p className="mt-8 text-xs text-gray-500">
-              Ensuring efficient and transparent management of postgraduate studies.
+              Secure access for postgraduate academic workflows.
             </p>
           </motion.div>
         </div>

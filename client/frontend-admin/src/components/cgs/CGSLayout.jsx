@@ -1,5 +1,5 @@
 // src/components/cgs/CGSLayout.jsx
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard,
@@ -14,16 +14,11 @@ import {
   ChevronDown,
   User,
 } from 'lucide-react';
-
 import { Button } from '../../../../shared/ui/button';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '../../../../shared/ui/dropdown-menu';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger} from '../../../../shared/ui/dropdown-menu';
 import { cn } from '../../lib/utils';
 import { authService } from '../../../../shared/services/api';
+import { useAuth } from '../../../../shared/auth/AuthContext';
 
 const navigation = [
   { name: 'Dashboard', href: '/cgs/dashboard', icon: LayoutDashboard },
@@ -33,48 +28,23 @@ const navigation = [
   { name: 'Form Builder', href: '/cgs/forms', icon: FileSignature },
 ];
 
-export default function CGSLayout({ onLogout }) {
+export default function CGSLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [user, setUser] = useState(null);
+  const { user, logout, loading } = useAuth();
   const [notifications, setNotifications] = useState(0);
-  const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
-  // 🔐 Fetch logged-in user
-  useEffect(() => {
-    const fetchUser = async () => {
-      try {
-        const data = await authService.me();
-        if (data?.user) {
-          setUser(data.user);
-          // setNotifications(...) if API exists
-        } else {
-          handleLogout();
-        }
-      } catch (err) {
-        console.error('Failed to fetch user', err);
-        handleLogout();
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchUser();
-  }, []);
-
-  // 🚪 Unified logout
+  // logout
   const handleLogout = async () => {
     try {
-      await authService.logout();
+      await logout();
+      navigate('/login', { replace: true });
     } catch (err) {
       console.error('Logout failed', err);
-    } finally {
-      setUser(null);
-      if (onLogout) onLogout();
-      navigate('/login', { replace: true });
     }
   };
-
+  
+  // If AuthContext is still fetching the user, show loading
   if (loading) {
     return (
       <div className="flex items-center justify-center h-screen text-lg font-semibold">

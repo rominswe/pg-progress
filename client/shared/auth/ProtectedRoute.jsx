@@ -1,4 +1,4 @@
-import { Navigate } from "react-router-dom";
+import { Navigate, useLocation } from "react-router-dom";
 
 /**
  * Protects routes based on authentication and allowed role.
@@ -8,29 +8,24 @@ import { Navigate } from "react-router-dom";
  * @param {string | string[]} allowedRole - Role(s) allowed to access the route
  * @param {ReactNode} children - Component(s) to render
  */
-
 export default function ProtectedRoute({ 
   isAuthenticated,
   loading,
   userRole, 
   allowedRole, 
-  children }) {
-    
-    if (loading) return null; 
-    
-    if (!isAuthenticated) {
-      return <Navigate to="/login " replace />;
-    }
+  children 
+}) {
+  const location = useLocation();
 
-    // Handle multiple allowed roles
-  const allowedRoles = Array.isArray(allowedRole) ? allowedRole : [allowedRole];
-  if (allowedRoles.length && !allowedRoles.includes(userRole)) {
+  if (loading) return <div className="flex justify-center items-center h-screen">Redirecting...</div>;
+  
+  if (!isAuthenticated) return <Navigate to="/login" state={{ from: location }} replace />;
+  
+  const roles = Array.isArray(allowedRole) ? allowedRole : [allowedRole];
+  if (roles.length > 0 && !roles.includes(userRole)) {
+    console.warn(`Access denied for role: ${userRole}. Required: ${roles.join(", ")}`);
     return <Navigate to="/login" replace />;
   }
-    
-    // if (userRole !== allowedRole) {
-    //   return <Navigate to="/login" replace />;
-    // }
-    
-    return children;
+
+  return children;
 }

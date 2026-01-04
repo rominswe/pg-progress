@@ -21,7 +21,6 @@ import {
   AlertDialogTitle,
 } from '../../../shared/ui/alert-dialog';
 import { toast } from 'sonner';
-import { mockDocuments } from '../data/mockUsers';
 import { CheckCircle, XCircle, Eye, FileText } from 'lucide-react';
 
 export default function CGSVerifyDocuments() {
