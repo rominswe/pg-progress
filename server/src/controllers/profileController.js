@@ -12,7 +12,7 @@ const ROLE_MODEL_MAP = {
 
 // Allowed attributes per role
 const allowedAttributes = {
-  EXA: ["FirstName","LastName","EmailId","Phonenumber","Status","Profile_Image","Affiliation","Bio_Text"],
+  EXA: ["FirstName","LastName","EmailId","Phonenumber","Status","Profile_Image","Affiliation","Expertise"],
   default: ["FirstName","LastName","EmailId","Phonenumber","Status","Profile_Image"]
 };
 
@@ -60,7 +60,7 @@ export const updateMe = async (req, res) => {
     if (!req.user) return res.status(401).json({ message: "Unauthorized", data: null });
 
     const { id, role_id } = req.user;
-    const { Password, Phonenumber, Profile_Image, Bio_Text, Affiliation } = req.body;
+    const { Password, Phonenumber, Profile_Image, Expertise, Affiliation } = req.body;
 
     let user;
     if (role_id === "EXA") {
@@ -81,7 +81,7 @@ export const updateMe = async (req, res) => {
     }
     if (Phonenumber) user.Phonenumber = Phonenumber;
     if (Profile_Image) user.Profile_Image = Profile_Image;
-    if (Bio_Text) user.Bio_Text = Bio_Text;
+    if (Expertise) user.Expertise = Expertise;
     if (Affiliation) user.Affiliation = Affiliation;
 
     await user.save({hooks: true});

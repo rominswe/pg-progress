@@ -276,7 +276,7 @@ export const getAllStaffAdmin = async (req, res) => {
       "RegDate",
       "Dep_Code",
       "Affiliation",
-      "Bio_Text",
+      "Expertise",
       "Phonenumber",
       "Status"
     ]
@@ -315,7 +315,7 @@ export const updateStaffAdmin = async (req, res) => {
     if (staff.Dep_Code !== 'CGS') return res.status(403).json({ error: "Unauthorized" });
     
     // Update only allowed fields (optional: whitelist)
-    const allowedFields = ["FirstName", "LastName", "Phonenumber", "Bio_Text", "Affiliation", "Status"];
+    const allowedFields = ["FirstName", "LastName", "Phonenumber", "Expertise", "Affiliation", "Status"];
     const updates = {};
     for (const field of allowedFields) {
       if (req.body[field] !== undefined) {

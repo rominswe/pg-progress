@@ -34,7 +34,7 @@ export default class visiting_staff extends Model {
       type: DataTypes.STRING(255),
       allowNull: true
     },
-    Bio_Text: {
+    Expertise: {
       type: DataTypes.TEXT,
       allowNull: false
     },
