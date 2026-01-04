@@ -2,123 +2,78 @@
 @tailwind components;
 @tailwind utilities;
 
-
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
-*/
-
+/* ============================================================
+   SECTION 1: YOUR ORIGINAL DESIGN SYSTEM (HSL)
+   This keeps your Login and Sidebar working perfectly.
+   ============================================================ */
 @layer base {
   :root {
     --background: 0 0% 100%;
     --foreground: 265 4% 12.9%;
-
     --card: 0 0% 100%;
     --card-foreground: 265 4% 12.9%;
-
     --popover: 0 0% 100%;
     --popover-foreground: 265 4% 12.9%;
-
     --primary: 266 4% 20.8%;
     --primary-foreground: 248 0.3% 98.4%;
-
     --secondary: 248 0.7% 96.8%;
     --secondary-foreground: 266 4% 20.8%;
-
     --muted: 248 0.7% 96.8%;
     --muted-foreground: 257 4.6% 55.4%;
-
     --accent: 248 0.7% 96.8%;
     --accent-foreground: 266 4% 20.8%;
-
     --destructive: 27 24.5% 57.7%;
     --destructive-foreground: 0 0% 100%;
-
     --border: 256 1.3% 92.9%;
     --input: 256 1.3% 92.9%;
     --ring: 257 4% 70.4%;
-
     --radius: 0.375rem;
-
     --sidebar-background: 0 0% 98%;
-
     --sidebar-foreground: 265 4% 12.9%;
-
     --sidebar-primary: 266 4% 20.8%;
-
     --sidebar-primary-foreground: 248 0.3% 98.4%;
-
     --sidebar-accent: 248 0.7% 96.8%;
-
     --sidebar-accent-foreground: 266 4% 20.8%;
-
     --sidebar-border: 256 1.3% 92.9%;
-
     --sidebar-ring: 257 4% 70.4%;
-
     --chart-1: 41 22.2% 64.6%;
-
     --chart-2: 185 11.8% 60%;
-
     --chart-3: 227 7% 39.8%;
-
     --chart-4: 84 18.9% 82.8%;
-
     --chart-5: 70 18.8% 76.9%;
-
     --sidebar: 248 0.3% 98.4%;
-
     --font-sans: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, 'Noto Sans', sans-serif, 'Apple Color Emoji', 'Segoe UI Emoji', 'Segoe UI Symbol', 'Noto Color Emoji';
-
     --font-serif: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
-
     --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;
-
     --shadow-2xs: 0 1px 3px 0px hsl(0 0% 0% / 0.05);
-
     --shadow-xs: 0 1px 3px 0px hsl(0 0% 0% / 0.05);
-
     --shadow-sm: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 1px 2px -1px hsl(0 0% 0% / 0.1);
-
     --shadow: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 1px 2px -1px hsl(0 0% 0% / 0.1);
-
     --shadow-md: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 2px 4px -1px hsl(0 0% 0% / 0.1);
-
     --shadow-lg: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 4px 6px -1px hsl(0 0% 0% / 0.1);
-
     --shadow-xl: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 8px 10px -1px hsl(0 0% 0% / 0.1);
-
     --shadow-2xl: 0 1px 3px 0px hsl(0 0% 0% / 0.25);
-
     --tracking-normal: 0em;
-
     --spacing: 0.25rem;
   }
 
   .dark {
     --background: 0 0% 15%;
     --foreground: 248 0.3% 98.4%;
-
     --card: 266 4% 20.8%;
     --card-foreground: 248 0.3% 98.4%;
-
     --popover: 266 4% 20.8%;
     --popover-foreground: 248 0.3% 98.4%;
-
     --primary: 256 1.3% 92.9%;
     --primary-foreground: 266 4% 20.8%;
-
     --secondary: 260 4.1% 27.9%;
     --secondary-foreground: 248 0.3% 98.4%;
-
     --muted: 260 4.1% 27.9%;
     --muted-foreground: 257 4% 70.4%;
-
     --accent: 260 4.1% 27.9%;
     --accent-foreground: 248 0.3% 98.4%;
-
     --destructive: 22 19.1% 70.4%;
     --destructive-foreground: 248 0.3% 98.4%;
-
     --border: 0 0% 100% / 10%;
     --input: 0 0% 100% / 15%;
     --ring: 264 2.7% 55.1%;
@@ -136,13 +91,263 @@ All colors MUST be HSL.
     --chart-4: 304 26.5% 62.7%;
     --chart-5: 16 24.6% 64.5%;
     --sidebar: 266 4% 20.8%;
-    --shadow-2xs: 0 1px 3px 0px hsl(0 0% 0% / 0.05);
-    --shadow-xs: 0 1px 3px 0px hsl(0 0% 0% / 0.05);
-    --shadow-sm: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 1px 2px -1px hsl(0 0% 0% / 0.1);
-    --shadow: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 1px 2px -1px hsl(0 0% 0% / 0.1);
-    --shadow-md: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 2px 4px -1px hsl(0 0% 0% / 0.1);
-    --shadow-lg: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 4px 6px -1px hsl(0 0% 0% / 0.1);
-    --shadow-xl: 0 1px 3px 0px hsl(0 0% 0% / 0.1), 0 8px 10px -1px hsl(0 0% 0% / 0.1);
-    --shadow-2xl: 0 1px 3px 0px hsl(0 0% 0% / 0.25);
   }
+}
+
+/* ============================================================
+   SECTION 2: FRIEND'S ACADEMIC THEME (SCOPED)
+   Wrapping these styles inside .academic-theme prevents them 
+   from breaking your Login page.
+   ============================================================ */
+
+.academic-theme {
+  /* Friend's Original Variables */
+  --primary-color: #002147;
+  --primary-light: #003366;
+  --secondary-color: #A41034;
+  --bg-primary: #F0F2F5;
+  --bg-card: #FFFFFF;
+  --bg-input: #FFFFFF;
+  --text-primary: #1A1A1A;
+  --text-secondary: #4A5568;
+  --text-muted: #718096;
+  --border-color: #E2E8F0;
+  --status-success: #2E7D32;
+  --status-error: #C62828;
+  --shadow-lg-academic: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+  --radius-lg-academic: 8px;
+  --radius-sm-academic: 4px;
+
+  /* Theme Container Rules (Fixes the "small page" issue) */
+  width: 100%;
+  min-height: 100vh;
+  background: var(--bg-primary);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: flex-start;
+  padding: 3rem 1rem;
+  position: relative;
+  isolation: isolate;
+  font-family: 'Roboto', sans-serif;
+}
+
+/* The Oxford Blue Stripe Header */
+.academic-theme::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 300px;
+  background: var(--primary-color);
+  z-index: -1;
+}
+
+/* Form Styling - Scoped to .academic-theme */
+.academic-theme .form-container {
+  width: 100%;
+  max-width: 900px;
+  background: var(--bg-card);
+  border-radius: var(--radius-lg-academic);
+  box-shadow: var(--shadow-lg-academic);
+  overflow: hidden;
+  border-top: 5px solid var(--secondary-color);
+  margin-top: 2rem;
+  text-align: left; /* Counteracts global centering */
+}
+
+.academic-theme .form-header {
+  padding: 3rem 2rem 1.5rem;
+  text-align: center;
+  border-bottom: 1px solid var(--border-color);
+}
+
+.academic-theme .form-header h1 {
+  font-family: 'Merriweather', serif;
+  font-size: 2rem;
+  color: var(--primary-color);
+  font-weight: 700;
+  margin-bottom: 0.5rem;
+}
+
+.academic-theme .form-body {
+  padding: 2.5rem 2rem;
+}
+
+.academic-theme .form-group {
+  margin-bottom: 1.5rem;
+}
+
+/* Update the label class to center text */
+.academic-theme .form-label {
+  display: block;
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-bottom: 0.5rem;
+  text-align: center; /* This puts the labels in the middle */
+}
+
+/* Optional: If you want the text inside the inputs/selects centered too */
+.academic-theme .form-input, 
+.academic-theme .form-select, 
+.academic-theme .form-textarea {
+  width: 100%;
+  padding: 0.75rem;
+  border: 1px solid var(--border-color);
+  border-radius: var(--radius-sm-academic);
+  font-size: 1rem;
+  text-align: center; /* Centers the placeholder and typed text */
+}
+
+/* Ensure the button is also centered if it's inside a form-group */
+.academic-theme .form-actions {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  margin-top: 2rem;
+}
+
+.academic-theme .btn-primary {
+  background: var(--primary-color);
+  color: white;
+  padding: 0.75rem 1.5rem;
+  border-radius: var(--radius-sm-academic);
+  font-weight: 500;
+  transition: 0.2s;
+  cursor: pointer;
+}
+
+.academic-theme .btn-primary:hover {
+  background: var(--primary-light);
+}
+
+.academic-theme .role-card {
+  background: white;
+  padding: 2.5rem;
+  border-radius: 8px;
+  cursor: pointer;
+  border: 1px solid var(--border-color);
+  width: 240px;
+  transition: transform 0.2s, box-shadow 0.2s;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.1);
+  text-align: center;
+}
+
+.academic-theme .role-card:hover {
+  transform: translateY(-5px);
+  box-shadow: var(--shadow-lg-academic);
+  border-color: var(--primary-color);
+}
+
+/* ============================================================
+   SECTION 3: EVALUATION PORTAL (New Glassmorphism Styles)
+   Scoped to .evaluation-portal to prevent "leakage"
+   ============================================================ */
+.evaluation-portal {
+  /* Evaluation Variables */
+  --eval-bg: linear-gradient(135deg, #0f172a 0%, #172554 50%, #1e1b4b 100%);
+  --glass-bg: rgba(255, 255, 255, 0.07);
+  --glass-border: rgba(255, 255, 255, 0.12);
+  --primary-accent: #3b82f6;
+  --secondary-accent: #ec4899;
+  --text-main: #f8fafc;
+  --text-muted: #94a3b8;
+  --success: #10b981;
+  --danger: #ef4444;
+
+  /* Layout for the Evaluation Section */
+  width: 100%;
+  min-height: 100vh;
+  background: var(--eval-bg);
+  color: var(--text-main);
+  font-family: 'Outfit', sans-serif;
+  padding: 4rem 2rem;
+}
+
+/* Scoped Glass Panels */
+.evaluation-portal .glass-panel {
+  background: var(--glass-bg);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid var(--glass-border);
+  border-radius: 20px;
+  padding: 2rem;
+  margin-bottom: 2rem;
+  box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.2);
+}
+
+.evaluation-portal .form-header h1 {
+  font-size: 2.5rem;
+  font-weight: 700;
+  background: linear-gradient(to right, #60a5fa, #c084fc);
+  -webkit-background-clip: text;
+  background-clip: text;
+  color: transparent;
+}
+
+/* Scoped Rating Chips */
+.evaluation-portal .rating-chip {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(255, 255, 255, 0.05);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.evaluation-portal .rating-chip.selected {
+  background: var(--primary-accent);
+  box-shadow: 0 0 15px rgba(59, 130, 246, 0.5);
+}
+
+/* Scoped Radio Pills */
+.evaluation-portal .radio-pill {
+  padding: 0.6rem 2rem;
+  background: rgba(0,0,0,0.2);
+  border-radius: 50px;
+  cursor: pointer;
+  border: 1px solid var(--glass-border);
+}
+
+.evaluation-portal .active-yes {
+  background: rgba(239, 68, 68, 0.2);
+  border-color: var(--danger);
+}
+
+.evaluation-portal .active-no {
+  background: rgba(16, 185, 129, 0.2);
+  border-color: var(--success);
+}
+
+/* Scoped Inputs */
+.evaluation-portal input, 
+.evaluation-portal textarea, 
+.evaluation-portal select {
+  background: rgba(0, 0, 0, 0.2);
+  border: 1px solid var(--glass-border);
+  color: white;
+  border-radius: 10px;
+  padding: 0.8rem;
+}
+
+/* Scoped Submit Button */
+.evaluation-portal .submit-btn {
+  width: 100%;
+  padding: 1rem;
+  border-radius: 15px;
+  background: linear-gradient(135deg, var(--primary-accent), var(--secondary-accent));
+  color: white;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+/* Scoped Table */
+.evaluation-portal .request-table {
+    width: 100%;
+    color: var(--text-main);
 }
