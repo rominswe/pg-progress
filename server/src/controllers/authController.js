@@ -94,7 +94,10 @@ export const login = async (req, res) => {
         redirectUrl: "/api/profile/me" // Frontend uses this to force redirect
       });
     }
-    res.json({message: "Login successful"});
+    res.json({
+      message: "Login successful",
+      user: req.session.user
+    });
   } catch (err) {
     res.status(403).json({ error: err.message });
   }

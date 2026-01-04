@@ -10,7 +10,6 @@ import {
   TableHeader,
   TableRow,
 } from '../../../shared/ui/table';
-import { mockProgress } from '../data/mockUsers';
 
 export default function CGSMonitoring() {
   const getStatusBadge = (status) => {
