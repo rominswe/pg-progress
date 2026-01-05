@@ -14,17 +14,18 @@ export default function UserLogin() {
   const navigate = useNavigate();
   const { login } = useAuth();
 
+  const roleLabel =
+    role === "STU" ? "Student" : 
+    role === "SUV" ? "Supervisor" : 
+    "Examiner";
+
   async function handleSubmit(e) {
     e.preventDefault();
     setLoading(true);
     setError(null);
 
     try {
-      const data = await login({
-        email,
-        password,
-        role_id: role,
-      });
+      const data = await login(role, { email, password });
 
       // 🔐 Temporary password enforcement
       if (data?.mustChangePassword) {
@@ -33,21 +34,19 @@ export default function UserLogin() {
       }
 
       // 🚦 Redirect by role
-      if (role === "STU") navigate("/student/dashboard", { replace: true });
-      else if (role === "SUV") navigate("/supervisor/dashboard", { replace: true });
-      else if (role === "EXA") navigate("/examiner/dashboard", { replace: true });
-      else navigate("/login");
+      const dashboardMap = {
+        STU: "/student/dashboard",
+        SUV: "/supervisor/dashboard",
+        EXA: "/examiner/dashboard",
+      };
+      navigate(dashboardMap[role] || "/login", { replace: true });
     } catch (err) {
-      setError(err.response?.data?.error || "Login failed");
+      const errorMessage = err.response?.data?.error || err.message || "Login failed";
+      setError(errorMessage);
     } finally {
       setLoading(false);
     }
   }
-
-  const itemVariants = {
-    hidden: { opacity: 0, x: 20 },
-    visible: { opacity: 1, x: 0, transition: { type: "spring", stiffness: 100 } },
-  };
 
   const featureList =
     role === "STU"
@@ -71,8 +70,13 @@ export default function UserLogin() {
           "Assessment Management",
         ];
 
-  const roleLabel =
-    role === "STU" ? "Student" : role === "SUV" ? "Supervisor" : "Examiner";
+  const itemVariants = {
+    hidden: { opacity: 0, x: 20 },
+    visible: { 
+      opacity: 1, 
+      x: 0, 
+      transition: { type: "spring", stiffness: 100 } },
+  };
 
   return (
     <div
@@ -94,10 +98,10 @@ export default function UserLogin() {
           >
             <Users className="w-10 h-10 text-blue-700 mx-auto md:mx-0 mb-3" />
             <h2 className="text-3xl font-extrabold text-gray-800">
-              PG Monitoring System
+              AIU PG Progress
             </h2>
             <p className="text-gray-500 mt-1 text-lg">
-              {roleLabel} Portal
+              Welcome to the {roleLabel} Portal
             </p>
           </motion.div>
 
@@ -112,6 +116,7 @@ export default function UserLogin() {
                 key={r.id}
                 type="button"
                 onClick={() => setRole(r.id)}
+                disabled={loading}
                 className={`px-6 py-2 rounded-lg font-semibold border-2 transition-all duration-300 shadow-sm ${
                   role === r.id
                     ? "bg-blue-600 text-white border-blue-600"
@@ -127,7 +132,7 @@ export default function UserLogin() {
           <form onSubmit={handleSubmit} className="space-y-6">
             <div>
               <label className="block mb-2 text-sm font-medium text-gray-700">
-                Email
+                Email Address
               </label>
               <motion.input
                 type="email"
@@ -152,8 +157,8 @@ export default function UserLogin() {
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 whileFocus={{ scale: 1.01 }}
-                className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-blue-500 focus:border-blue-500 outline-none transition duration-150"
                 placeholder="Enter your password"
+                className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-blue-500 focus:border-blue-500 outline-none transition duration-150"
               />
             </div>
 

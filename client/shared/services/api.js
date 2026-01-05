@@ -36,7 +36,7 @@ export const authService = {
       };
     }
 
-    return data;
+    return data.data;
   },
   
   // Get currently logged-in user

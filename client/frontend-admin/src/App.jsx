@@ -1,6 +1,5 @@
 // src/App.jsx
 import { BrowserRouter as Router, Routes, Route, Navigate, useNavigate, useLocation } from "react-router-dom";
-import { useState } from "react";
 
 // React Query
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
@@ -12,11 +11,10 @@ import { TooltipProvider } from "../../shared/ui/tooltip";
 
 // Auth
 import ProtectedRoute from "../../shared/auth/ProtectedRoute";
-import { authService } from "../../shared/services/api";
 import { useAuth, AuthProvider } from "../../shared/auth/AuthContext";
+import AdminLogin from "./components/auth/AdminLogin";
 
 // Pages
-import AdminLogin from "./components/auth/AdminLogin";
 import CGSLayout from "./components/cgs/CGSLayout";
 import CGSDashboard from "./pages/CGSDashboard";
 import CGSRegisterUsers from "./pages/CGSRegisterUsers";
