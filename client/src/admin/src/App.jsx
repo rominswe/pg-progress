@@ -12,15 +12,15 @@ import { TooltipProvider } from "../../shared/ui/tooltip";
 // Auth
 import ProtectedRoute from "../../shared/auth/ProtectedRoute";
 import { useAuth, AuthProvider } from "../../shared/auth/AuthContext";
-import AdminLogin from "./components/auth/AdminLogin";
+import AdminLogin from "../../components/auth/AdminLogin";
 
 // Pages
-import CGSLayout from "./components/cgs/CGSLayout";
-import CGSDashboard from "./pages/CGSDashboard";
-import CGSRegisterUsers from "./pages/CGSRegisterUsers";
-import CGSMonitoring from "./pages/CGSMonitoring";
-import CGSVerifyDocuments from "./pages/CGSVerifyDocuments";
-import FormBuilder from "./pages/FormBuilder";
+import CGSLayout from "../../components/layout/StaffLayout";
+import CGSDashboard from "../../pages/staff/CGSDashboard";
+import CGSRegisterUsers from "../../pages/staff/CGSRegisterUsers";
+import CGSMonitoring from "../../pages/staff/CGSMonitoring";
+import CGSVerifyDocuments from "../../pages/staff/CGSVerifyDocuments";
+import FormBuilder from "../../pages/staff/FormBuilder";
 
 // Query client
 const queryClient = new QueryClient();

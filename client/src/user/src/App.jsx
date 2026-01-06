@@ -15,7 +15,7 @@ import { useAuth, AuthProvider } from "../../shared/auth/AuthContext";
 import UserLogin from "./components/auth/UserLogin";
 
 // Student pages
-import StudentLayout from "./components/student/StudentLayout";
+import StudentLayout from "./components/layout/StudentLayout";
 import Dashboard from "./pages/student/Dashboard";
 import Uploads from "./pages/student/Uploads";
 import ThesisSubmission from "./pages/student/ThesisSubmission";
@@ -25,7 +25,7 @@ import Analytics from "./pages/student/Analytics";
 import ServiceRequest from "./pages/student/ServiceRequest";
 
 // Supervisor pages
-import SupervisorLayout from "./components/supervisor/SupervisorLayout";
+import SupervisorLayout from "./components/layout/SupervisorLayout";
 import SupervisorDashboard from "./pages/supervisor/Dashboard";
 import StudentList from "./pages/supervisor/StudentList";
 import ReviewSubmissions from "./pages/supervisor/ReviewSubmissions";
