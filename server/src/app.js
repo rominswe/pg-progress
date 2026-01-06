@@ -4,9 +4,6 @@ import dotenv from "dotenv";
 import path  from "node:path";
 import cookieParser from "cookie-parser";
 import { logger } from "./utils/logger.js";
-import session from "express-session";
-import { RedisStore } from "connect-redis";
-import redisClient from "./config/redis.js";
 
 /* ================= ROUTES ================= */
 import authRoutes from "./routes/authRoutes.js";
@@ -43,22 +40,22 @@ app.use(
         credentials: true
     }));
 
-app.use(
-  session({
-    store: new RedisStore({ client: redisClient }),
-    name: "sid", // cookie name
-    secret: process.env.SESSION_SECRET || "supersecretkey",
-    resave: false,
-    saveUninitialized: false,
-    rolling: true,
-    cookie: {
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      maxAge: 1000 * 60 * 60 * 3, // 3 hours
-      sameSite: process.env.NODE_ENV === "production" ? "strict" : "lax",
-    },
-  })
-);
+// app.use(
+//   session({
+//     store: new RedisStore({ client: redisClient }),
+//     name: "sid", // cookie name
+//     secret: process.env.SESSION_SECRET || "supersecretkey",
+//     resave: false,
+//     saveUninitialized: false,
+//     rolling: true,
+//     cookie: {
+//       httpOnly: true,
+//       secure: process.env.NODE_ENV === "production",
+//       maxAge: 1000 * 60 * 60 * 3, // 3 hours
+//       sameSite: process.env.NODE_ENV === "production" ? "strict" : "lax",
+//     },
+//   })
+// );
 
 /* ================= API ROUTES ================= */
 app.use("/api/auth", authRoutes);
