@@ -14,6 +14,7 @@ import { createVerificationToken } from "../utils/verification.js";
 import { sendVerificationEmail } from "../utils/email.js";
 import crypto from "node:crypto";
 import { sendSuccess, sendError } from "../utils/responseHandler.js";
+import validator from "validator";
 
 /* ================= HELPER LOGIC ================= */
 const ensureCGSAdmin = (req) => {
@@ -34,7 +35,9 @@ const generateUniqueId = async (Model, prefix, length = 6) => {
   return id;
 };
 
-const validateEmail = (email) => /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
+const validateEmail = (email) => {
+  return typeof email === 'string' && validator.isEmail(email, { allow_utf8_local_part: false });
+};
 
 const sendVerificationSafe = async (user, token, tempPassword, role) => {
   try {
