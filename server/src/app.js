@@ -67,7 +67,14 @@ export const sessionMiddleware = session({
 app.use(sessionMiddleware);
 
 // CSRF protection for routes that rely on cookie-based sessions
-// app.use(csrf());
+app.use((req, res, next) => {
+  // Skip CSRF checks for safe methods and health check endpoint
+  const safeMethods = new Set(["GET", "HEAD", "OPTIONS"]);
+  if (safeMethods.has(req.method) || req.path === "/health") {
+    return next();
+  }
+  return csrf()(req, res, next);
+});
 
 /* ================= API ROUTES ================= */
 app.use("/api/auth", authRoutes);
