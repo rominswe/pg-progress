@@ -16,6 +16,7 @@ import AdminLogin from "@/components/auth/AdminLogin";
 
 // Pages
 import CGSLayout from "@/components/layout/StaffLayout";
+import Profile from "@/components/layout/Profile";
 import CGSDashboard from "@/pages/staff/CGSDashboard";
 import CGSRegisterUsers from "@/pages/staff/CGSRegisterUsers";
 import CGSMonitoring from "@/pages/staff/CGSMonitoring";
@@ -66,6 +67,7 @@ function AppWrapper() {
         <Route path="monitoring" element={<CGSMonitoring />} />
         <Route path="documents" element={<CGSVerifyDocuments />} />
         <Route path="forms" element={<FormBuilder />} />
+        <Route path="profile" element={<Profile />} />
       </Route>
 
       {/* ===== FALLBACK ===== */}
