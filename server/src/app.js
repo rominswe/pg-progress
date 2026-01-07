@@ -7,7 +7,7 @@ import { RedisStore } from "connect-redis";
 import redisClient from "./config/redis.js";
 import cookieParser from "cookie-parser";
 import { logger } from "./utils/logger.js";
-import { csrf } from "lusca";
+import lusca from "lusca";
 
 /* ================= ROUTES ================= */
 import authRoutes from "./routes/authRoutes.js";
@@ -24,12 +24,8 @@ import tblDepartmentsRoutes from "./routes/tblDepartmentsRoutes.js";
 
 dotenv.config({ path: path.resolve(process.cwd(), "../.env") });
 const app = express();
+const { csrf } = lusca;
 const allowedOrigins = new Set([process.env.FRONTEND_USER_URL, process.env.FRONTEND_ADMIN_URL]);
-
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-app.use(cookieParser());
-app.use(logger);
 
 app.use(
     cors({
@@ -41,8 +37,15 @@ app.use(
         callback(new Error("CORS policy: This origin is not allowed"));
       }
     }, 
-        credentials: true
+        credentials: true,
+        methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+        allowedHeaders: ['Content-Type', 'Authorization', 'X-CSRF-Token']
     }));
+
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(cookieParser());
+app.use(logger);
 
 /* ================= SESSION (SHARED) ================= */
 export const sessionMiddleware = session({
@@ -64,7 +67,14 @@ export const sessionMiddleware = session({
 app.use(sessionMiddleware);
 
 // CSRF protection for routes that rely on cookie-based sessions
-app.use(csrf());
+app.use((req, res, next) => {
+  // Skip CSRF checks for safe methods and health check endpoint
+  const safeMethods = new Set(["GET", "HEAD", "OPTIONS"]);
+  if (safeMethods.has(req.method) || req.path === "/health") {
+    return next();
+  }
+  return csrf()(req, res, next);
+});
 
 /* ================= API ROUTES ================= */
 app.use("/api/auth", authRoutes);

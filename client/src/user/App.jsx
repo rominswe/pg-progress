@@ -31,6 +31,7 @@ import StudentList from "@/pages/supervisor/StudentList";
 import ReviewSubmissions from "@/pages/supervisor/ReviewSubmissions";
 import ReviewRequest from '@/pages/supervisor/ReviewRequest';
 import ProgressEvaluation from "@/pages/supervisor/ProgressEvaluation";
+import Profile from "@/components/layout/Profile";
 
 // QueryClient
 const queryClient = new QueryClient();
@@ -85,6 +86,7 @@ function AppWrapper() {
         <Route path="feedback" element={<Feedback />} />
         <Route path="analytics" element={<Analytics />} />
         <Route path="service-request" element={<ServiceRequest />} /> {/* ✅ NEW */}
+        <Route path="profile" element={<Profile />} />
       </Route>
 
       {/* ===== SUPERVISOR ===== */}
@@ -107,6 +109,7 @@ function AppWrapper() {
         <Route path="review" element={<ReviewSubmissions />} />
         <Route path="review-request" element={<ReviewRequest />} />
         <Route path="evaluate" element={<ProgressEvaluation />} />
+        <Route path="profile" element={<Profile />} />
       </Route>
 
       {/* ===== FALLBACK ===== */}

@@ -1,5 +1,6 @@
 // src/components/student/StudentLayout.jsx
 import Layout from '@/components/layout/Layout';
+import { useNavigate } from 'react-router-dom';
 import { LayoutDashboard, Upload, FileText, TrendingUp, MessageSquare, BarChart3, FilePlus } from 'lucide-react';
 
 const studentNav = [
@@ -16,13 +17,18 @@ const studentNotifications = [
   { id: 1, label: 'New Feedback Received', link: '/student/feedback' },
 ];
 
-export default function StudentLayout() {
+export default function StudentLayout({ onLogout }) {
+  const navigate = useNavigate();
   return (
     <Layout
       navigation={studentNav}
       title="Student Portal"
       logoIcon={FileText}
       notifications={studentNotifications}
+      profileLinks={[
+        { label: 'Profile Settings', action: () => navigate('/student/profile') },
+        { label: 'Logout', action: onLogout, destructive: true },
+      ]}
     />
   );
 }
