@@ -27,7 +27,8 @@
     "sequelize": "^6.37.7",
     "sequelize-cli": "^6.6.3",
     "socket.io": "^4.8.3",
-    "lusca": "^1.7.0"
+    "lusca": "^1.7.0",
+    "express-rate-limit": "^8.2.1"
   },
   "devDependencies": {
     "nodemon": "^3.1.0",
