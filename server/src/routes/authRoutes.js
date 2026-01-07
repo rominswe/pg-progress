@@ -11,8 +11,13 @@ const loginLimiter = rateLimit({
   max: 100, // limit each IP to 100 login requests per window
 });
 
+const verifyLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // limit each IP to 100 verify requests per window
+});
+
 router.post("/login", loginLimiter, login);
-router.get("/verify", verifyAccount); 
+router.get("/verify", verifyLimiter, verifyAccount); 
 router.post("/resend-verification", resendVerificationToken);
 router.get("/check-token/:token", checkTokenStatus);// expects query params: ?code=<vcode>&type=email
 router.post("/logout", protect, logout);
