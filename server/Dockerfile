@@ -1,7 +1,21 @@
 FROM node:22-alpine
+
 WORKDIR /app
+
+# Copy dependencies
 COPY package*.json ./
-RUN npm ci
+
+# Install all dependencies
+RUN npm install
+
+# Install any utilities needed
 RUN apk add --no-cache netcat-openbsd
+
+# Copy app files
 COPY . .
-CMD ["npm", "run", "dev"]
+
+# Expose your API port
+EXPOSE 5000
+
+# Start backend (use 'npm start' for production or stable run)
+CMD ["npm", "start"]

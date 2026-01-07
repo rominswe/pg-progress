@@ -1,0 +1,17 @@
+{
+  "name": "aiu-pg-progress",
+  "private": true,
+  "type": "module",
+  "workspaces": [
+    "client",
+    "server"
+  ],
+  "scripts": {
+    "start": "docker-compose up",
+    "build": "docker-compose build",
+    "clean": "rimraf node_modules client/node_modules server/node_modules"
+  },
+  "devDependencies": {
+    "rimraf": "^6.0.0"
+  }
+}

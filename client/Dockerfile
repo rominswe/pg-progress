@@ -1,8 +1,21 @@
 FROM node:22-alpine
+
 WORKDIR /app
+
+# Copy package.json and package-lock.json
 COPY package*.json ./
-RUN npm ci
+
+# Install all dependencies (use npm install to ensure new ones are fetched)
+RUN npm install
+
+# Copy the rest of the app
 COPY . .
-CMD ["npm", "run", "dev"]
+
+# Install any needed system packages
 RUN apk add --no-cache netcat-openbsd
-EXPOSE 5173
+
+# Expose Vite's dev port
+EXPOSE 5173 5174
+
+# Start the Vite dev server
+CMD ["npm", "run", "dev"]
