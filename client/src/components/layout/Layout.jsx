@@ -1,5 +1,6 @@
 // src/components/shared/Layout.jsx
 import { useState } from 'react';
+import { createPortal } from 'react-dom';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { LogOut, Bell, Menu, X, ChevronDown, User } from 'lucide-react';
 import { Button } from '../../components/ui/button';
@@ -20,6 +21,46 @@ import { useAuth } from '../../components/auth/AuthContext';
  * - notifications: Array<{ id, label, link }> (optional)
  * - profileLinks: Array<{ label, action, destructive? }> (optional)
  */
+
+/* ================= MODAL COMPONENT ================= */
+const LogoutModal = ({ isOpen, onClose, onConfirm }) => {
+  if (!isOpen) return null;
+
+  return createPortal(
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-black/50 backdrop-blur-sm">
+      <div className="bg-white rounded-lg shadow-xl w-full max-w-sm mx-4 p-6 animate-in zoom-in-95 duration-200">
+        <div className="flex items-center space-x-3 mb-4">
+          <div className="p-2 bg-red-100 rounded-full">
+            <LogOut className="w-6 h-6 text-red-600" />
+          </div>
+          <h3 className="text-lg font-bold text-gray-900">Confirm Logout</h3>
+        </div>
+
+        <p className="text-gray-600 mb-6">
+          Are you sure you want to log out of the PG Progress Portal?
+        </p>
+
+        <div className="flex justify-end space-x-3">
+          <button
+            onClick={onClose}
+            className="px-4 py-2 text-sm font-medium text-gray-700 bg-gray-100 rounded-md hover:bg-gray-200 transition-colors"
+          >
+            Cancel
+          </button>
+          <button
+            onClick={onConfirm}
+            className="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-md hover:bg-red-700 transition-colors shadow-sm"
+          >
+            Log Out
+          </button>
+        </div>
+      </div>
+    </div>,
+    document.body
+  );
+};
+
+/* ================= MAIN LAYOUT ================= */
 export default function Layout({
   navigation,
   title,
@@ -28,12 +69,13 @@ export default function Layout({
   profileLinks: profileLinksProp = [],
 }) {
   const [sidebarOpen, setSidebarOpen] = useState(false);
+  const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
   const { user, logout, loading } = useAuth();
   const navigate = useNavigate();
 
   const notificationsCount = notificationsProp.length;
 
-  const handleLogout = async () => {
+  const handleLogoutConfirm = async () => {
     try {
       await logout();
       navigate('/login', { replace: true });
@@ -43,15 +85,15 @@ export default function Layout({
   };
 
   const profileLinks = profileLinksProp.length
-    ? profileLinksProp
+    ? profileLinksProp.map(link => link.destructive ? { ...link, action: () => setIsLogoutModalOpen(true) } : link)
     : [
         {
           label: 'Profile Settings',
-          action: () => navigate('/profile'),
+          action: () => navigate('profile'),
         },
         {
           label: 'Logout',
-          action: handleLogout,
+          action: () => setIsLogoutModalOpen(true),
           destructive: true,
         },
       ];
@@ -66,6 +108,13 @@ export default function Layout({
 
   return (
     <div className="min-h-screen bg-muted/30">
+      {/* Modal at the top level */}
+      <LogoutModal 
+        isOpen={isLogoutModalOpen} 
+        onClose={() => setIsLogoutModalOpen(false)} 
+        onConfirm={handleLogoutConfirm} 
+      />
+      
       {/* Sidebar Overlay */}
       {sidebarOpen && (
         <div
@@ -125,7 +174,7 @@ export default function Layout({
           {/* Logout */}
           <div className="border-t border-border p-3">
             <button
-              onClick={handleLogout}
+              onClick={() => setIsLogoutModalOpen(true)}
               className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-destructive hover:bg-destructive/10 transition-colors"
             >
               <LogOut className="h-5 w-5" />
@@ -134,7 +183,7 @@ export default function Layout({
           </div>
         </div>
       </aside>
-
+      
       {/* Main Content */}
       <div className="lg:pl-64">
         <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-border bg-card px-4 shadow-sm lg:px-6">

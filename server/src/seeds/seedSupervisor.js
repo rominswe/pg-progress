@@ -23,7 +23,7 @@ async function seedSupervisor() {
       Password: "Supervisor@123",
       Gender: "Male",
       Dob: "1975-10-20",
-      Dep_Code: "SOCS",
+      Dep_Code: "CGS",
       Address: "Faculty Office 10",
       Phonenumber: "0198887776",
       Status: 1,
