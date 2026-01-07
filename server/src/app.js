@@ -7,6 +7,7 @@ import { RedisStore } from "connect-redis";
 import redisClient from "./config/redis.js";
 import cookieParser from "cookie-parser";
 import { logger } from "./utils/logger.js";
+import { csrf } from "lusca";
 
 /* ================= ROUTES ================= */
 import authRoutes from "./routes/authRoutes.js";
@@ -61,6 +62,9 @@ export const sessionMiddleware = session({
 
 // Attach session to Express
 app.use(sessionMiddleware);
+
+// CSRF protection for routes that rely on cookie-based sessions
+app.use(csrf());
 
 /* ================= API ROUTES ================= */
 app.use("/api/auth", authRoutes);
