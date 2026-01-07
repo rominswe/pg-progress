@@ -1,9 +1,9 @@
 import React from 'react';
 import PropTypes from 'prop-types';
 import { User, Mail, Building, Briefcase, CheckCircle, XCircle } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '../../../../shared/ui/card';
-import { Button } from '../../../../shared/ui/button';
-import { Badge } from '../../../../shared/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
+import { Button } from '../../components/ui/button';
+import { Badge } from '../../components/ui/badge';
 
 export default function UserDetailCard({ user, onRegister }) {
   const isRegistered = user?.status === 'Registered';

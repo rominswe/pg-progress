@@ -1,5 +1,5 @@
 //src/components/supervisor/SupervisorLayout.jsx
-import Layout from '../shared/Layout';
+import Layout from '@/components/layout/Layout';
 import { LayoutDashboard, Users, FileText, FilePlus, ClipboardCheck } from 'lucide-react';
 
 const supervisorNav = [

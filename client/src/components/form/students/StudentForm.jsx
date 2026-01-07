@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react'
-import '../App.css'
+import '@/user/App.css'
 
 function StudentForm({ onSubmit }) {
     const [currentStep, setCurrentStep] = useState(1)

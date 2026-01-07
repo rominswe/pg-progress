@@ -1,5 +1,5 @@
 // src/components/student/StudentLayout.jsx
-import Layout from '../shared/Layout';
+import Layout from '@/components/layout/Layout';
 import { LayoutDashboard, Upload, FileText, TrendingUp, MessageSquare, BarChart3, FilePlus } from 'lucide-react';
 
 const studentNav = [

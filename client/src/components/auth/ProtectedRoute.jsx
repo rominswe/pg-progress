@@ -24,7 +24,7 @@ export default function ProtectedRoute({
   const roles = Array.isArray(allowedRole) ? allowedRole : [allowedRole];
   if (roles.length > 0 && !roles.includes(userRole)) {
     console.warn(`Access denied for role: ${userRole}. Required: ${roles.join(", ")}`);
-    return <Navigate to="/login" replace />;
+    return <div className="p-8 text-center">Unauthorized: You do not have access to this portal.</div>;
   }
 
   return children;

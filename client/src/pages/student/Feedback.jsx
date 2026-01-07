@@ -1,9 +1,7 @@
 import { useState, useEffect } from 'react';
 import { MessageSquare, User, Clock, Star } from 'lucide-react';
 import axios from 'axios';
-import { AuthProvider } from "../../../../shared/auth/AuthContext"
-// import { AuthProvider } from "../../../shared/auth/AuthContext"
-// import { API_BASE_URL } from '../../services/api';
+import { AuthProvider } from "@/components/auth/AuthContext"
 
 const Feedback = () => {
   // ===============================

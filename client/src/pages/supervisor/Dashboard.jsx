@@ -1,6 +1,6 @@
 import { Users, FileCheck, CheckCircle, FileText } from "lucide-react";
-import Card from "./ui/Card";
-import { dashboardStats, students } from "../../data/supervisorData";
+import { Card } from "@/components/ui/card";
+// import { dashboardStats, students } from "../../data/supervisorData";
 
 export default function SupervisorDashboard() {
   const stats = [

@@ -1,16 +1,16 @@
 import { useState, useMemo } from 'react';
 import { Search, Loader2, UserPlus } from 'lucide-react';
 
-import { Button } from '../../../../shared/ui/button';
-import { Label } from '../../../../shared/ui/label';
+import { Button } from '../../components/ui/button';
+import { Label } from '../../components/ui/label';
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '../../../../shared/ui/select';
-import { Input } from '../../../../shared/ui/input';
+} from '../../components/ui/select';
+import { Input } from '../../components/ui/input';
 
 const NO_SELECTION = 'placeholder';
 

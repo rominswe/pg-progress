@@ -1,4 +1,4 @@
-import Layout from '../shared/Layout';
+import Layout from '../layout/Layout';
 import { LayoutDashboard, UserPlus, Activity, FileCheck, FileSignature } from 'lucide-react';
 
 // Navigation for CGS portal

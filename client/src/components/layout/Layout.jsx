@@ -2,15 +2,15 @@
 import { useState } from 'react';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { LogOut, Bell, Menu, X, ChevronDown, User } from 'lucide-react';
-import { Button } from '../../../shared/ui/button';
+import { Button } from '../../components/ui/button';
 import { 
   DropdownMenu, 
   DropdownMenuContent, 
   DropdownMenuItem, 
   DropdownMenuTrigger 
-} from '../../../shared/ui/dropdown-menu';
+} from '../../components/ui/dropdown-menu';
 import { cn } from '../../lib/utils';
-import { useAuth } from '../../../shared/auth/AuthContext';
+import { useAuth } from '../../components/auth/AuthContext';
 
 /**
  * Props:

@@ -2,7 +2,7 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { Lock, CheckCircle } from "lucide-react";
-import { useAuth } from "../../../../shared/auth/AuthContext";
+import { useAuth } from "../../components/auth/AuthContext";
 
 export default function AdminLogin() {
   const [email, setEmail] = useState("");
@@ -32,6 +32,7 @@ export default function AdminLogin() {
     } catch (err) {
       const errorMessage = err.response?.data?.error || err.message || "Login failed";
       setError(errorMessage);
+      console.error("Login Debug:", err);
     } finally {
       setLoading(false);
     }

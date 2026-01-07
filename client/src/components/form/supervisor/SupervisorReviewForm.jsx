@@ -1,5 +1,5 @@
 import { useState, useRef, useEffect } from 'react';
-import '../App.css';
+import '@/user/App.css';
 
 // Added onBack to the props so we can return to the table
 function SupervisorReviewForm({ studentData, onDecision, onBack }) {

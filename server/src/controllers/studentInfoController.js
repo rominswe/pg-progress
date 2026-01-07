@@ -28,7 +28,7 @@ export const getAllStudentInfo  = async (req, res) => {
   try{
     ensureStudentInfoAccess(req);
     const studentinfoaccess = await studentinfo.findAll({
-      where: {Dep_code: "CGS"},
+      where: {Dep_Code: "CGS"},
       attributes: allowedAttributes,
       order: [["RegDate", "DESC"]]
     });

@@ -9,7 +9,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from './alert-dialog'; // adjust path if needed
+} from '@/components/ui/alert-dialog'; // adjust path if needed
 export default function ConfirmRegisterModal({
   open,
   onOpenChange,

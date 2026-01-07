@@ -1,36 +1,16 @@
 import http from "http";
 import app from "./app.js";
-import session from "express-session";
-import { RedisStore } from "connect-redis";
-import redisClient from "./config/redis.js";
 import { Server } from "socket.io";
 import { sequelize } from "./config/config.js";
-
-/* ================= SESSION (SHARED) ================= */
-const sessionMiddleware = session({
-  store: new RedisStore({ client: redisClient }),
-  name: "sid",
-  secret: process.env.SESSION_SECRET || "supersecretkey",
-  resave: false,
-  saveUninitialized: false,
-  rolling: true,
-  cookie: {
-    httpOnly: true,
-    secure: process.env.NODE_ENV === "production",
-    maxAge: 1000 * 60 * 60 * 3, // 3 hours
-    sameSite: process.env.NODE_ENV === "production" ? "strict" : "lax",
-  },
-});
-
-// Attach session to Express
-app.use(sessionMiddleware);
+import { sessionMiddleware } from "./app.js";
+import redisClient from "./config/redis.js";
 
 /* ================= HTTP + SOCKET ================= */
 const server = http.createServer(app);
 
 const io = new Server(server, {
   cors: {
-    origin: ["http://localhost:5173", "http://localhost:5174"],
+    origin: [process.env.FRONTEND_USER_URL, process.env.FRONTEND_ADMIN_URL],
     credentials: true,
   },
 });
@@ -44,12 +24,13 @@ io.use((socket, next) => {
 io.on("connection", async (socket) => {
   const session = socket.request.session;
 
-  if (!session?.userId) {
+  if (!session?.user?.id) {
     console.log("❌ Unauthorized socket connection");
     return socket.disconnect();
   }
 
-  const stateKey = `ws_state:${session.userId}`;
+  const userId = session.user.id;
+  const stateKey = `ws_state:${userId}`;
 
   console.log(`🔌 Socket connected: user ${session.userId}`);
 
@@ -73,7 +54,7 @@ io.on("connection", async (socket) => {
 });
 
 /* ================= START SERVER ================= */
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT;
 
 let retries = 5;
 

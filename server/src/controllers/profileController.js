@@ -1,6 +1,6 @@
 import { cgs, supervisor, master_stu, examiner, visiting_staff } from "../config/config.js";
 import { logAuthEvent } from "../utils/authSecurity.js";
-
+import { sendSuccess, sendError } from "../utils/responseHandler.js";
 // Map role_id to model
 const ROLE_MODEL_MAP = {
   CGSADM: cgs,
@@ -48,9 +48,9 @@ export const me = async (req, res) => {
     }
     response.role_id = role_id;
 
-    res.status(200).json({ message: "Profile fetched successfully", data: response });
+    return sendSuccess(res, "Profile fetched successfully", response);
   } catch (err) {
-    res.status(500).json({ message: err.message, data: null });
+    return sendError(res, err.message, 500);
   }
 };
 
@@ -87,8 +87,8 @@ export const updateMe = async (req, res) => {
     await user.save({hooks: true});
     await logAuthEvent(user.EmailId, role_id, "UPDATE_PROFILE");
 
-    res.status(200).json({ message: "Profile updated successfully", data: null });
+    return sendSuccess(res, "Profile updated successfully", response);
   } catch (err) {
-    res.status(500).json({ message: err.message, data: null });
+    return sendError(res, err.message, 500);
   }
 };

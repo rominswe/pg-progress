@@ -1,7 +1,7 @@
 import React from "react";
-import { Card, CardContent, CardHeader, CardTitle } from '../../../shared/ui/card';
-import { Progress } from '../../../shared/ui/progress';
-import { Badge } from '../../../shared/ui/badge';
+import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
+import { Progress } from '../../components/ui/progress';
+import { Badge } from '../../components/ui/badge';
 import {
   Table,
   TableBody,
@@ -9,7 +9,7 @@ import {
   TableHead,
   TableHeader,
   TableRow,
-} from '../../../shared/ui/table';
+} from '../../components/ui/table';
 
 export default function CGSMonitoring() {
   const getStatusBadge = (status) => {

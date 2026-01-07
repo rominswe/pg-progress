@@ -7,13 +7,15 @@ import {
   doc_up,
   empinfo,
   cgs,
-  studentinfo as stud_info
+  studentinfo
 } from "../config/config.js";
 import { logAuthEvent } from "../utils/authSecurity.js";
 import { createVerificationToken } from "../utils/verification.js";
 import { sendVerificationEmail } from "../utils/email.js";
 import crypto from "node:crypto";
+import { sendSuccess, sendError } from "../utils/responseHandler.js";
 
+/* ================= HELPER LOGIC ================= */
 const ensureCGSAdmin = (req) => {
   if (req.user?.role_id !== "CGSADM") {
     const err = new Error("Forbidden: Admin access only");
@@ -42,14 +44,6 @@ const sendVerificationSafe = async (user, token, tempPassword, role) => {
   }
 };
 
-const assertEnum = (value, allowed, fieldName) => {
-  if (value !== undefined && !allowed.includes(value)) {
-    const err = new Error(`Invalid ${fieldName}`);
-    err.status = 400;
-    throw err;
-  }
-};
-
 const exaExistsAnywhere = async (email) => {
   return (
     await empinfo.findOne({ where: { EmailId: email } }) ||
@@ -59,16 +53,10 @@ const exaExistsAnywhere = async (email) => {
 };
 
 const adminLog = (req, action) => {
-  return logAuthEvent(
-    req.user.email,
-    "CGSADM",
-    action,
-    req,
-    { table: req.user.table }
-  );
+  return logAuthEvent(req.user.email, "CGSADM", action, req, { table: req.user.table });
 };
 
-// ========================== Generic CRUD ==========================
+/* ========================== Generic CRUD ========================== */
 const createUser = async ({ Model, prefix, sourceData, role_id, dep = "CGS", emailField = "EmailId" }, req) => {
   const tempPassword = crypto.randomBytes(6).toString("hex");
   const endate = new Date();
@@ -91,7 +79,6 @@ const createUser = async ({ Model, prefix, sourceData, role_id, dep = "CGS", ema
     RegDate: new Date()
   });
 
-  // Optional verification token
   const token = await createVerificationToken(Model.tableName, newUser[pkField]);
   await sendVerificationSafe(newUser, token, tempPassword, role_id);
   await adminLog(req, `CREATE_${role_id}`);
@@ -105,7 +92,7 @@ const updateEntity = async (entity, allowedFields, req, logLabel) => {
   }
   if (Object.keys(updates).length > 0) {
     await entity.update(updates);
-    await logAuthEvent(req.user.email, "CGSADM", logLabel, req, { table: req.user.table });
+    await adminLog(req, logLabel);
   }
   return entity;
 };
@@ -113,38 +100,28 @@ const updateEntity = async (entity, allowedFields, req, logLabel) => {
 const softDeleteEntity = async (entity, logLabel, req) => {
   entity.Status = "Inactive";
   await entity.save();
-  await logAuthEvent(req.user.email, "CGSADM", logLabel, req, { table: req.user.table });
+  await adminLog(req, logLabel);
   return entity;
 };
 
- // Student Management
+/* ================= STUDENT MANAGEMENT ================= */
 export const createStudentAdmin = async (req, res) => {
   try {
     ensureCGSAdmin(req);
     const { stu_id } = req.body;
-    if (!stu_id) return res.status(400).json({ error: "Missing student ID" });
+    if (!stu_id) return sendError(res, "Missing student ID", 400);
 
-    // Fetch student from master record
-    const studentRecord = await stud_info.findByPk(stu_id);
-    if (!studentRecord) return res.status(404).json({ error: "Student not found" });
-    if (studentRecord.Dep_Code !== "CGS") return res.status(403).json({ error: "Cannot add student from another department" });
+    const studentRecord = await studentinfo.findByPk(stu_id);
+    if (!studentRecord) return sendError(res, "Student not found", 404);
+    if (studentRecord.Dep_Code !== "CGS") return sendError(res, "Unauthorized department", 403);
 
-    // Check if student already exists in master_stu
     const existing = await master_stu.findOne({ where: { stu_id } });
-    if (existing) return res.status(409).json({ error: "Student already exists in master_stu" });
-    
-    const result = await createUser(
-      { Model: master_stu, prefix: "MSTU", sourceData: studentRecord.get(), role_id: "STU" },
-      req
-    );
+    if (existing) return sendError(res, "Student already exists in system", 409);
 
-    res.status(201).json({
-      message: "Student added successfully. Temporary password sent via email.",
-      student: result
-    });
-
+    const result = await createUser({ Model: master_stu, prefix: "MSTU", sourceData: studentRecord.get(), role_id: "STU" }, req);
+    return sendSuccess(res, "Student added successfully. Temporary password sent via email.", result, 201);
   } catch (err) {
-    res.status(err.status || 500).json({ error: err.message });
+    return sendError(res, err.message, 500);
   }
 };
 
@@ -156,9 +133,9 @@ export const getAllStudentsAdmin = async (req, res) => {
       attributes: ["stu_id","FirstName","LastName","EmailId","Prog_Code","Status","RegDate","role_id"],
       order: [["RegDate","DESC"]]
     });
-    res.json(students);
+    return sendSuccess(res, "Students fetched successfully", students);
   } catch (err) {
-    res.status(err.status || 500).json({ error: err.message });
+    return sendError(res, err.message, 500);
   }
 };
 
@@ -166,14 +143,13 @@ export const updateStudentAdmin = async (req, res) => {
   try {
     ensureCGSAdmin(req);
     const student = await master_stu.findByPk(req.params.master_id);
-    if (!student) return res.status(404).json({ error: "Student not found" });
-    if (student.Dep_Code !== "CGS") return res.status(403).json({ error: "Unauthorized" });
+    if (!student) return sendError(res, "Student not found", 404);
+    if (student.Dep_Code !== "CGS") return sendError(res, "Unauthorized", 403);
 
-    // Update only allowed fields (optional: whitelist)
     const updated = await updateEntity(student, ["FirstName","LastName","Status","Prog_Code"], req, "UPDATE_STUDENT");
-    res.json(updated);
+    return sendSuccess(res, "Student info updated successfully", updated);
   } catch (err) {
-    res.status(err.status || 500).json({ error: err.message });
+    return sendError(res, err.message, 500);
   }
 };
 
@@ -181,46 +157,42 @@ export const deleteStudentAdmin = async (req, res) => {
   try {
     ensureCGSAdmin(req);
     const student = await master_stu.findByPk(req.params.master_id);
-    if (!student) return res.status(404).json({ error: "Student not found" });
-    if (student.Dep_Code !== "CGS") return res.status(403).json({ error: "Unauthorized" });
+    if (!student) return sendError(res, "Student not found", 404);
+    if (student.Dep_Code !== "CGS") return sendError(res, "Unauthorized", 403);
 
     await softDeleteEntity(student, "DELETE_STUDENT", req);
-    res.json({ message: "Student soft-deleted successfully" });
+    return sendSuccess(res, "Student has been deactivated successfully");
   } catch (err) {
-    res.status(err.status || 500).json({ error: err.message });
+    return sendError(res, err.message, 500);
   }
 };
 
-// Supervisors / Examiners / CGS Staff Management
+/* ================= STAFF MANAGEMENT ================= */
 export const createInternalStaffAdmin = async (req, res) => {
   try {
     ensureCGSAdmin(req);
     const { emp_id, target_role } = req.body;
-    if (!emp_id || !target_role) return res.status(400).json({ error: "Missing fields" });
+    if (!emp_id || !target_role) return sendError(res, "Missing fields", 400);
 
-    // Fetch employee from empinfo
     const emp = await empinfo.findByPk(emp_id);
-    if (!emp) return res.status(404).json({ error: "Employee not found" });
-    if (emp.Dep_Code !== "CGS") return res.status(403).json({ error: "Unauthorized" });
+    if (!emp) return sendError(res, "Employee not found", 404);
+    if (emp.Dep_Code !== "CGS") return sendError(res, "Unauthorized", 403);
 
-    // Determine the target table/model
     let Model, prefix;
     switch(target_role) {
       case "CGSS": Model = cgs; prefix = "CGS"; break;
       case "SUV": Model = supervisor; prefix = "SUV"; break;
       case "EXA": Model = examiner; prefix = "IEXA"; break;
-      default: return res.status(400).json({ error: "Invalid target role" });
+      default: return sendError(res, "Invalid target role", 400);
     }
 
-    // Check if already exists
     const existing = await Model.findOne({ where: { emp_id } });
-    if (existing) return res.status(409).json({ error: "Employee already exists" });
+    if (existing) return sendError(res, "Staff already exists", 409);
 
-    // Generate temporary password
     const result = await createUser({ Model, prefix, sourceData: emp.get(), role_id: target_role }, req);
-    res.status(201).json({ message: "Staff created successfully.", staff: result });
+    return sendSuccess(res, "Internal staff created successfully", result, 201);
   } catch (err) {
-    res.status(err.status || 500).json({ error: err.message });
+    return sendError(res, err.message, 500);
   }
 };
 
@@ -228,164 +200,123 @@ export const createExternalStaffAdmin = async (req, res) => {
   try {
     ensureCGSAdmin(req);
     const { EmailId } = req.body;
-    if (!EmailId) return res.status(400).json({ error: "Missing email" });
+    if (!EmailId) return sendError(res, "Missing email", 400);
+    if (!validateEmail(EmailId)) return sendError(res, "Invalid email format", 400);
 
-    // Email format valudation 
-   if (!validateEmail(EmailId)) {
-      return res.status(400).json({ error: "Invalid email format" });
-    }
-    
-    // Fetch visiting staff
     const visitor = await visiting_staff.findOne({ where: { EmailId } });
-    if (!visitor) return res.status(404).json({ error: "User not found" });
-    if (visitor.Dep_Code !== "CGS") return res.status(403).json({ error: "Unauthorized" });
+    if (!visitor) return sendError(res, "User not found", 404);
+    if (visitor.Dep_Code !== "CGS") return sendError(res, "Unauthorized", 403);
 
-    // Check if already exists
     const exists = await exaExistsAnywhere(EmailId);
-    if (exists) {
-      return res.status(409).json({ error: "User already exists in EXA system" });
-    }
-
+    if (exists) return sendError(res, "User already exists in EXA system", 409);
 
     const result = await createUser({ Model: visiting_staff, prefix: "EEXA", sourceData: visitor.get(), role_id: "EXA" }, req);
-    res.status(201).json({ message: "External staff created successfully.", staff: result });
+    return sendSuccess(res, "External staff created successfully", result, 201);
   } catch (err) {
-    res.status(err.status || 500).json({ error: err.message });
+    return sendError(res, err.message, 500);
   }
 };
 
 export const getAllStaffAdmin = async (req, res) => {
   try {
     ensureCGSAdmin(req);
-    const internalattributes = [
-      "emp_id",
-      "FirstName",
-      "LastName",
-      "EmailId",
-      "role_id",
-      "RegDate",
-      "Dep_Code",
-      "Phonenumber",
-      "Status"
-    ];
-    const externalattributes = [
-      "FirstName",
-      "LastName",
-      "EmailId",
-      "role_id",
-      "RegDate",
-      "Dep_Code",
-      "Affiliation",
-      "Expertise",
-      "Phonenumber",
-      "Status"
-    ]
-    const cgsStaff = await cgs.findAll({ where: { Dep_Code: 'CGS' }, attributes: internalattributes });
-    const supervisors = await supervisor.findAll({ where: { Dep_Code: 'CGS' }, attributes: internalattributes });
-    const internalExaminers = await examiner.findAll({ where: { Dep_Code: 'CGS' }, attributes: internalattributes });
-    const externalExaminers = await visiting_staff.findAll({ where: { Dep_Code: 'CGS', role_id: 'EXA' }, attributes: externalattributes });
 
-    res.json({
-      cgsStaff,
-      supervisors,
-      internalExaminers,
-      externalExaminers
-    });
+    const internalAttributes = ["emp_id","FirstName","LastName","EmailId","role_id","RegDate","Dep_Code","Phonenumber","Status"];
+    const externalAttributes = ["FirstName","LastName","EmailId","role_id","RegDate","Dep_Code","Affiliation","Expertise","Phonenumber","Status"];
+
+    const data = {
+      cgsStaff: await cgs.findAll({ where: { Dep_Code: "CGS" }, attributes: internalAttributes }),
+      supervisors: await supervisor.findAll({ where: { Dep_Code: "CGS" }, attributes: internalAttributes }),
+      internalExaminers: await examiner.findAll({ where: { Dep_Code: "CGS" }, attributes: internalAttributes }),
+      externalExaminers: await visiting_staff.findAll({ where: { Dep_Code: "CGS", role_id: "EXA" }, attributes: externalAttributes })
+    };
+
+    return sendSuccess(res, "Staff list fetched successfully", data);
   } catch (err) {
-    res.status(err.status || 500).json({ error: err.message });
+    return sendError(res, err.message, 500);
   }
 };
 
+// Staff update/delete
 export const updateStaffAdmin = async (req, res) => {
   try {
     ensureCGSAdmin(req);
-    
-    const { target_role, source, id } = req.params; // "CGSS", "SUV", "IEXA or "EEXA"
+    const { target_role, source, id } = req.params;
 
     let Model;
-    switch (target_role) {
+    switch(target_role) {
       case "CGSS": Model = cgs; break;
       case "SUV": Model = supervisor; break;
-      case "EXA": if (source === "internal") Model = examiner; else if (source === "external") Model = visiting_staff; break;
-      default: return res.status(400).json({ error: "Invalid target role" });
+      case "EXA": Model = source === "internal" ? examiner : visiting_staff; break;
+      default: return sendError(res, "Invalid target role", 400);
     }
 
     const staff = await Model.findByPk(id);
-    if (!staff) return res.status(404).json({ error: "Staff not found" });
-    if (staff.Dep_Code !== 'CGS') return res.status(403).json({ error: "Unauthorized" });
-    
-    // Update only allowed fields (optional: whitelist)
-    const allowedFields = ["FirstName", "LastName", "Phonenumber", "Expertise", "Affiliation", "Status"];
-    const updates = {};
-    for (const field of allowedFields) {
-      if (req.body[field] !== undefined) {
-        updates[field] = req.body[field];
-      }
-    }
-    await staff.update(updates);
-    await adminLog(req, `UPDATE_${target_role}`);
-    res.json(staff);
+    if (!staff) return sendError(res, "Staff not found", 404);
+    if (staff.Dep_Code !== "CGS") return sendError(res, "Unauthorized", 403);
+
+    const allowedFields = ["FirstName","LastName","Phonenumber","Expertise","Affiliation","Status"];
+    const updated = await updateEntity(staff, allowedFields, req, `UPDATE_${target_role}`);
+
+    return sendSuccess(res, "Staff updated successfully", updated);
   } catch (err) {
-    res.status(err.status || 500).json({ error: err.message });
+    return sendError(res, err.message, 500);
   }
 };
 
 export const deleteStaffAdmin = async (req, res) => {
   try {
     ensureCGSAdmin(req);
-    const { target_role, source } = req.params; // "CGS", "SUV", "EXA"
+    const { target_role, source } = req.params;
+
     let Model;
-    switch (target_role) {
+    switch(target_role) {
       case "CGSS": Model = cgs; break;
       case "SUV": Model = supervisor; break;
-      case "EXA": if (source === "internal") Model = examiner; else if (source === "external") Model = visiting_staff; break;
-      default: return res.status(400).json({ error: "Invalid target role" });
+      case "EXA": Model = source === "internal" ? examiner : visiting_staff; break;
+      default: return sendError(res, "Invalid target role", 400);
     }
+
     const staff = await Model.findByPk(req.params.id);
-    if (!staff) return res.status(404).json({ error: "Staff not found" });
-    if (staff.Dep_Code !== 'CGS') return res.status(403).json({ error: "Unauthorized" }); 
-    
+    if (!staff) return sendError(res, "Staff not found", 404);
+    if (staff.Dep_Code !== "CGS") return sendError(res, "Unauthorized", 403);
+
     await softDeleteEntity(staff, `DELETE_${target_role}`, req);
-    await adminLog(req, `UPDATE_${target_role}`);
-    res.json({ message: "Staff deleted successfully" });
+    return sendSuccess(res, "Staff deleted successfully");
   } catch (err) {
-    res.status(err.status || 500).json({ error: err.message });
+    return sendError(res, err.message, 500);
   }
 };
 
-// Program Management
+/* ================= PROGRAM MANAGEMENT ================= */
 export const createProgramAdmin = async (req, res) => {
   try {
     ensureCGSAdmin(req);
     const { Prog_Code, prog_name } = req.body;
-    if (!Prog_Code || !prog_name) return res.status(400).json({ error: "Missing required fields" });
+    if (!Prog_Code || !prog_name) return sendError(res, "Missing required fields", 400);
 
     const existingProgram = await programInfo.findOne({ where: { Prog_Code, Dep_Code: "CGS" } });
-    if (existingProgram) return res.status(409).json({ error: "Program code already exists" });
+    if (existingProgram) return sendError(res, "Program code already exists", 409);
 
     const newProgram = await programInfo.create({ Prog_Code, Dep_Code: "CGS", prog_name, Creation_Date: new Date() });
-    await logAuthEvent(req.user.email, "CGSADM", "CREATE_PROGRAM", req, { table: req.user.table });
-    res.status(201).json({ message: "Program created successfully", program: newProgram });
+    await adminLog(req, "CREATE_PROGRAM");
+    return sendSuccess(res, "Program created successfully", newProgram, 201);
   } catch (err) {
-    res.status(err.status || 500).json({ error: err.message });
+    return sendError(res, err.message, 500);
   }
 };
 
 export const getAllProgramsAdmin = async (req, res) => {
   try {
     ensureCGSAdmin(req);
-
-    const programs = await programInfo.findAll({ 
-      where: { Dep_Code: 'CGS' },
-      order: [['Creation_Date', 'DESC']],
-      attributes: [
-        'Prog_Code', 
-        'prog_name', 
-        'Creation_Date']
+    const programs = await programInfo.findAll({
+      where: { Dep_Code: "CGS" },
+      order: [["Creation_Date","DESC"]],
+      attributes: ["Prog_Code","prog_name","Creation_Date","Status"]
     });
-    res.json(programs);
+    return sendSuccess(res, "Programs fetched successfully", programs);
   } catch (err) {
-    res.status(err.status || 500).json({ error: err.message || "Failed to fetch programs" });
+    return sendError(res, err.message, 500);
   }
 };
 
@@ -393,16 +324,16 @@ export const updateProgramAdmin = async (req, res) => {
   try {
     ensureCGSAdmin(req);
     const { Prog_Code, prog_name, Status } = req.body;
-    if (!Prog_Code || !prog_name) return res.status(400).json({ error: "Missing program code or name" });
+    if (!Prog_Code || !prog_name) return sendError(res, "Missing program code or name", 400);
 
     const program = await programInfo.findByPk(Prog_Code);
-    if (!program) return res.status(404).json({ error: "Program not found" });
-    if (program.Dep_Code !== "CGS") return res.status(403).json({ error: "Unauthorized" });
+    if (!program) return sendError(res, "Program not found", 404);
+    if (program.Dep_Code !== "CGS") return sendError(res, "Unauthorized", 403);
 
     const updated = await updateEntity(program, ["prog_name","Status"], req, "UPDATE_PROGRAM");
-    res.json({ message: "Program updated successfully", program: updated });
+    return sendSuccess(res, "Program updated successfully", updated);
   } catch (err) {
-    res.status(err.status || 500).json({ error: err.message });
+    return sendError(res, err.message, 500);
   }
 };
 
@@ -410,33 +341,28 @@ export const deleteProgramAdmin = async (req, res) => {
   try {
     ensureCGSAdmin(req);
     const program = await programInfo.findByPk(req.params.Prog_Code);
-    if (!program) return res.status(404).json({ error: "Program not found" });
-    if (program.Dep_Code !== "CGS") return res.status(403).json({ error: "Unauthorized" });
+    if (!program) return sendError(res, "Program not found", 404);
+    if (program.Dep_Code !== "CGS") return sendError(res, "Unauthorized", 403);
 
     await softDeleteEntity(program, "DELETE_PROGRAM", req);
-    res.json({ message: "Program soft-deleted successfully" });
+    return sendSuccess(res, "Program soft-deleted successfully");
   } catch (err) {
-    res.status(err.status || 500).json({ error: err.message });
+    return sendError(res, err.message, 500);
   }
 };
 
-// Document Management
+/* ================= DOCUMENT MANAGEMENT ================= */
 export const getAllDocumentsAdmin = async (req, res) => {
   try {
     ensureCGSAdmin(req);
-
-    const documents = await doc_up.findAll({ 
-      where: { Dep_Code: 'CGS' },
-      order: [['uploaded_at', 'DESC']],
-      attributes:[
-        "doc_up_id",
-        "document_type",
-        "status"
-      ]
+    const documents = await doc_up.findAll({
+      where: { Dep_Code: "CGS" },
+      order: [["uploaded_at","DESC"]],
+      attributes: ["doc_up_id","document_type","status"]
     });
-    res.json(documents);
+    return sendSuccess(res, "Documents fetched successfully", documents);
   } catch (err) {
-    res.status(err.status || 500).json({ error: err.message || "Failed to fetch documents" });
+    return sendError(res, err.message, 500);
   }
 };
 
@@ -444,13 +370,13 @@ export const updateDocumentAdmin = async (req, res) => {
   try {
     ensureCGSAdmin(req);
     const document = await doc_up.findByPk(req.params.doc_up_id);
-    if (!document) return res.status(404).json({ error: "Document not found" });
-    if (document.Dep_Code !== "CGS") return res.status(403).json({ error: "Unauthorized" });
+    if (!document) return sendError(res, "Document not found", 404);
+    if (document.Dep_Code !== "CGS") return sendError(res, "Unauthorized", 403);
 
     const updated = await updateEntity(document, ["document_type","status"], req, "UPDATE_DOCUMENT");
-    res.json({ message: "Document updated successfully", document: updated });
+    return sendSuccess(res, "Document updated successfully", updated);
   } catch (err) {
-    res.status(err.status || 500).json({ error: err.message });
+    return sendError(res, err.message, 500);
   }
 };
 
@@ -458,12 +384,12 @@ export const deleteDocumentAdmin = async (req, res) => {
   try {
     ensureCGSAdmin(req);
     const document = await doc_up.findByPk(req.params.doc_up_id);
-    if (!document) return res.status(404).json({ error: "Document not found" });
-    if (document.Dep_Code !== "CGS") return res.status(403).json({ error: "Unauthorized" });
+    if (!document) return sendError(res, "Document not found", 404);
+    if (document.Dep_Code !== "CGS") return sendError(res, "Unauthorized", 403);
 
     await softDeleteEntity(document, "DELETE_DOCUMENT", req);
-    res.json({ message: "Document soft-deleted successfully" });
+    return sendSuccess(res, "Document soft-deleted successfully");
   } catch (err) {
-    res.status(err.status || 500).json({ error: err.message });
+    return sendError(res, err.message, 500);
   }
 };

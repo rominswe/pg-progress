@@ -2,7 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Users, CheckCircle } from "lucide-react";
-import { useAuth } from "../../../../shared/auth/AuthContext";
+import { useAuth } from "@/components/auth/AuthContext";
 
 export default function UserLogin() {
   const [email, setEmail] = useState("");

@@ -1,7 +1,7 @@
 import React from "react";
 import { Users, UserCheck, Clock, FileText } from 'lucide-react';
-import { Card, CardContent, CardHeader, CardTitle } from '../../../shared/ui/card';
-import { socket } from "../../../shared/services/socket";
+import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
+import { socket } from "../../services/socket";
 const stats = [
   {
     title: 'Total Students',

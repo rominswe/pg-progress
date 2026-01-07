@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Search, Mail, TrendingUp, Calendar } from 'lucide-react';
-import Card from './ui/Card';
-import { students } from '../../data/supervisorData';
+import { Card } from '@/components/ui/card';
+// import { students } from '../../data/supervisorData';
 
 export default function StudentList() {
   const [searchTerm, setSearchTerm] = useState('');

@@ -2,6 +2,9 @@ import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 import path  from "node:path";
+import session from "express-session";
+import { RedisStore } from "connect-redis";
+import redisClient from "./config/redis.js";
 import cookieParser from "cookie-parser";
 import { logger } from "./utils/logger.js";
 
@@ -20,7 +23,7 @@ import tblDepartmentsRoutes from "./routes/tblDepartmentsRoutes.js";
 
 dotenv.config({ path: path.resolve(process.cwd(), "../.env") });
 const app = express();
-const allowedOrigins = new Set(["http://localhost:5173", "http://localhost:5174"]);
+const allowedOrigins = new Set([process.env.FRONTEND_USER_URL, process.env.FRONTEND_ADMIN_URL]);
 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
@@ -40,22 +43,24 @@ app.use(
         credentials: true
     }));
 
-// app.use(
-//   session({
-//     store: new RedisStore({ client: redisClient }),
-//     name: "sid", // cookie name
-//     secret: process.env.SESSION_SECRET || "supersecretkey",
-//     resave: false,
-//     saveUninitialized: false,
-//     rolling: true,
-//     cookie: {
-//       httpOnly: true,
-//       secure: process.env.NODE_ENV === "production",
-//       maxAge: 1000 * 60 * 60 * 3, // 3 hours
-//       sameSite: process.env.NODE_ENV === "production" ? "strict" : "lax",
-//     },
-//   })
-// );
+/* ================= SESSION (SHARED) ================= */
+export const sessionMiddleware = session({
+  store: new RedisStore({ client: redisClient }),
+  name: "sid",
+  secret: process.env.SESSION_SECRET,
+  resave: false,
+  saveUninitialized: false,
+  rolling: true,
+  cookie: {
+    httpOnly: true,
+    secure: process.env.NODE_ENV === "production",
+    maxAge: 1000 * 60 * 60 * 3, // 3 hours
+    sameSite: process.env.NODE_ENV === "production" ? "strict" : "lax",
+  },
+});
+
+// Attach session to Express
+app.use(sessionMiddleware);
 
 /* ================= API ROUTES ================= */
 app.use("/api/auth", authRoutes);

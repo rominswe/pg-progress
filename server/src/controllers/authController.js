@@ -9,7 +9,7 @@ import {
 } from "../config/config.js";
 import { verifyToken } from "../utils/verification.js";
 import { logAuthEvent, handleLockout, recordLoginAttempt } from "../utils/authSecurity.js";
-
+import { sendSuccess, sendError } from "../utils/responseHandler.js";
 /* ================= ROLE MODEL MAPPING ================= */
 const ROLE_MODEL_MAP = {
   CGSADM: cgs,
@@ -88,18 +88,15 @@ export const login = async (req, res) => {
     
     // Temporary password check
     if (user.MustChangePassword) {
-      return res.status(200).json({
-        message: "Please update your temporary password.",
+      return sendSuccess(res, "Please update your temporary password", {
         mustChangePassword: true,
-        redirectUrl: "/api/profile/me" // Frontend uses this to force redirect
+        redirectUrl: "/api/profile/me" // Updated to a frontend-friendly route
       });
     }
-    res.json({
-      message: "Login successful",
-      user: req.session.user
-    });
+    
+    return sendSuccess(res, "Login successful", req.session.user);
   } catch (err) {
-    res.status(403).json({ error: err.message });
+    return sendError(res, err.message, 403);
   }
 };
 

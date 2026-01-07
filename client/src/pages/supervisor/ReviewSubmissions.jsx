@@ -1,8 +1,8 @@
 import { useState } from "react";
 import { FileText, CheckCircle, XCircle, Eye, Clock } from "lucide-react";
-import Card from "./ui/Card";
-import Button from "./ui/Button";
-import Modal from "../../ui/modal";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import Modal from "@/components/ui/modal";
 
 export default function ReviewSubmissions() {
   // ✅ Hardcoded dummy submissions

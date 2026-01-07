@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { documentService, authService } from "../../services/api";
+import { authService } from "../../services/api";
 
 export default function Uploads() {
   const [user, setUser] = useState(null);

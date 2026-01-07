@@ -16,22 +16,34 @@ services:
       - app-network
 
   frontend-user:
-    build: ./client/frontend-user
+    build: 
+      context: ./client
+      dockerfile: Dockerfile
+    command: npm run dev:user
     ports:
       - "5173:5173"
     stdin_open: true
     tty: true
+    volumes:
+      - ./client:/app
+      - /app/node_modules
     depends_on:
       - server
     networks:
       - app-network
 
   frontend-admin:
-    build: ./client/frontend-admin
+    build:
+      context: ./client
+      dockerfile: Dockerfile
+    command: npm run dev:admin
     ports:
       - "5174:5174"
     stdin_open: true
     tty: true
+    volumes:
+      - ./client:/app
+      - /app/node_modules
     depends_on:
       - server
     networks:
@@ -62,7 +74,7 @@ services:
     image: phpmyadmin:latest
     restart: always
     ports:
-      - "8080:80" # Access via http://localhost:8080
+      - "8080:80"
     environment:
       PMA_HOST: mysql
       PMA_PORT: 3306

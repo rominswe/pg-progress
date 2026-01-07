@@ -8,7 +8,7 @@ import {
   CardDescription,
   CardHeader,
   CardTitle,
-} from '../../../shared/ui/card';
+} from '../../components/ui/card';
 
 import SearchUserForm from '../../components/users/SearchUserForm';
 import UserDetailCard from '../../components/users/UserDetailCard';
