@@ -1,13 +1,14 @@
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
-import path  from "node:path";
+import path from "node:path";
 import session from "express-session";
 import { RedisStore } from "connect-redis";
 import redisClient from "./config/redis.js";
 import cookieParser from "cookie-parser";
 import { logger } from "./utils/logger.js";
 import lusca from "lusca";
+import crypto from "node:crypto";
 
 /* ================= ROUTES ================= */
 import authRoutes from "./routes/authRoutes.js";
@@ -23,31 +24,39 @@ import studentInfoRoutes from "./routes/studentInfoRoutes.js";
 import tblDepartmentsRoutes from "./routes/tblDepartmentsRoutes.js";
 
 dotenv.config({ path: path.resolve(process.cwd(), "../.env") });
+
 const app = express();
 const { csrf } = lusca;
-const allowedOrigins = new Set([process.env.FRONTEND_USER_URL, process.env.FRONTEND_ADMIN_URL]);
 
+const allowedOrigins = new Set([
+  process.env.FRONTEND_USER_URL,
+  process.env.FRONTEND_ADMIN_URL,
+]);
+
+/* ================= CORS ================= */
 app.use(
-    cors({
-        origin: function (origin, callback){
-          if (!origin) return callback(null, true);
-          if (allowedOrigins.has(origin)) {
-            callback(null, true);
-          } else {
+  cors({
+    origin: function (origin, callback) {
+      if (!origin) return callback(null, true);
+      if (allowedOrigins.has(origin)) {
+        callback(null, true);
+      } else {
         callback(new Error("CORS policy: This origin is not allowed"));
       }
-    }, 
-        credentials: true,
-        methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-        allowedHeaders: ['Content-Type', 'Authorization', 'X-CSRF-Token']
-    }));
+    },
+    credentials: true,
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization", "X-CSRF-Token"],
+  })
+);
 
+/* ================= MIDDLEWARE ================= */
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 app.use(logger);
 
-/* ================= SESSION (SHARED) ================= */
+/* ================= SESSION (REDIS) ================= */
 export const sessionMiddleware = session({
   store: new RedisStore({ client: redisClient }),
   name: "sid",
@@ -58,22 +67,49 @@ export const sessionMiddleware = session({
   cookie: {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
-    maxAge: 1000 * 60 * 60 * 3, // 3 hours
     sameSite: process.env.NODE_ENV === "production" ? "strict" : "lax",
+    maxAge: 1000 * 60 * 60 * 3, // 3 hours
   },
 });
 
-// Attach session to Express
 app.use(sessionMiddleware);
 
-// CSRF protection for routes that rely on cookie-based sessions
+/* ================= SECURE CSRF TOKEN ================= */
+// Middleware to generate CSRF token per session and set cookie
 app.use((req, res, next) => {
-  // Skip CSRF checks for safe methods and health check endpoint
+  // Generate token only once per session
+  if (!req.session.csrfToken) {
+    req.session.csrfToken = crypto.randomBytes(32).toString("hex");
+  }
+
+  // Expose token to frontend via cookie
+  res.cookie("XSRF-TOKEN", req.session.csrfToken, {
+    httpOnly: false, // frontend JS can read
+    secure: process.env.NODE_ENV === "production",
+    sameSite: "strict",
+  });
+
+  next();
+});
+
+// CSRF validation middleware for mutating routes
+app.use((req, res, next) => {
   const safeMethods = new Set(["GET", "HEAD", "OPTIONS"]);
-  if (safeMethods.has(req.method) || req.path === "/health") {
+
+  if (
+    safeMethods.has(req.method) ||
+    req.path === "/health" ||
+    req.path.startsWith("/api/auth")
+  ) {
     return next();
   }
-  return csrf()(req, res, next);
+
+  const csrfHeader = req.headers["x-csrf-token"];
+  if (!csrfHeader || csrfHeader !== req.session.csrfToken) {
+    return res.status(403).json({ message: "CSRF token invalid or missing" });
+  }
+
+  next();
 });
 
 /* ================= API ROUTES ================= */
@@ -97,7 +133,7 @@ app.get("/health", (req, res) => {
   });
 });
 
-// 404 handler
+/* ================= 404 ================= */
 app.use((req, res) => {
   res.status(404).json({ error: "Route not found" });
 });

@@ -1,114 +1,90 @@
-import { useState, useMemo } from 'react';
-import { Search, Loader2, UserPlus } from 'lucide-react';
-
-import { Button } from '../../components/ui/button';
-import { Label } from '../../components/ui/label';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '../../components/ui/select';
-import { Input } from '../../components/ui/input';
+import { useState } from 'react';
+import api from '@/services/api';
+import { toast } from 'sonner';
+import { Search, Loader2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Input } from '@/components/ui/input';
 
 const NO_SELECTION = 'placeholder';
 
-// Minimal department list for frontend usage
-const HARDCODED_DEPARTMENTS = [
-  { code: 'CS', name: 'Computer Science' },
-  { code: 'MATH', name: 'Mathematics' },
-  { code: 'OTHERS', name: 'Others' },
-];
+export default function SearchUserForm({ onResult }) {
+  const [role, setRole] = useState(''); // Student / Academic Staff
+  const [staffType, setStaffType] = useState(NO_SELECTION); // internal / external
+  const [identifier, setIdentifier] = useState('');
+  const [isSearching, setIsSearching] = useState(false);
 
-export default function SearchUserForm({ onSearch, isSearching }) {
-  const [role, setRole] = useState('');
-  const [idValue, setIdValue] = useState('');
-  const [departmentCode, setDepartmentCode] = useState('');
-  const [examinerType, setExaminerType] = useState(NO_SELECTION);
+  const isAcademicStaff = role === 'Academic Staff';
+  const isExternal = staffType === 'external';
+  const isFormValid =
+    role && identifier.trim() && (!isAcademicStaff || staffType !== NO_SELECTION);
 
-  // --- Conditional Logic ---
-  const isExaminer = role === 'Examiner';
-  const hasExaminerTypeSelected = examinerType !== NO_SELECTION;
-  const isInternalExaminer = isExaminer && examinerType === 'internal';
-  const isExternalExaminer = isExaminer && examinerType === 'external';
-  const isEmailSearch = isExaminer;
-  const isSearchFieldsEnabled = !isExaminer || hasExaminerTypeSelected;
-
-  // --- Handlers ---
-  const handleRoleChange = (newRole) => {
-    setRole(newRole);
-    setIdValue('');
-    setDepartmentCode('');
-    setExaminerType(newRole === 'Examiner' ? NO_SELECTION : '');
-  };
-
-  const handleExaminerTypeChange = (newType) => {
-    setExaminerType(newType);
-    setIdValue('');
-    setDepartmentCode('');
-
-    if (newType === 'internal') {
-      setDepartmentCode('OTHERS');
-    }
-  };
-
-  const getIdPlaceholder = useMemo(() => {
-    if (!role) return 'Select a role first';
-    if (isEmailSearch) return 'Enter Email Address (e.g., jane.doe@university.com)';
-    if (role === 'Student') return 'Enter Student ID (e.g., STU001)';
-    return 'Enter Employee ID (e.g., EMP001)';
-  }, [role, isEmailSearch]);
-
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    if (!isFormValid) return;
 
-    if (isExaminer && !hasExaminerTypeSelected) {
-      alert('Please select the Examiner Type (Internal or External) first.');
-      return;
+    setIsSearching(true);
+
+    try {
+      const res = await api.get('/api/admin/search-info', {
+        params: {
+          role,
+          type: staffType, // internal / external, only relevant for Academic Staff
+          query: identifier.trim(),
+        },
+      });
+
+      if (res.data?.success) {
+        onResult(res.data.data);
+      } else {
+        toast.error('No matching user found.');
+        onResult(null);
+      }
+    } catch (err) {
+      const message =
+        err.response?.data?.message ||
+        'Unable to retrieve user information. Please try again.';
+      toast.error(message);
+      onResult(null);
+    } finally {
+      setIsSearching(false);
     }
-
-    onSearch(
-      role,
-      idValue.trim(),
-      departmentCode,
-      isExaminer ? examinerType : undefined
-    );
   };
 
   return (
     <form onSubmit={handleSubmit} className="space-y-4">
-      <div className={`grid gap-4 md:grid-cols-${isExaminer ? 4 : 3}`}>
+      <div className={`grid gap-4 md:grid-cols-${isAcademicStaff ? 3 : 2}`}>
         {/* Role */}
         <div className="space-y-2">
-          <Label htmlFor="role">Select Role</Label>
-          <Select value={role} onValueChange={handleRoleChange}>
-            <SelectTrigger id="role" className="bg-background">
+          <Label>Role</Label>
+          <Select
+            value={role}
+            onValueChange={(v) => {
+              setRole(v);
+              setStaffType(NO_SELECTION);
+              setIdentifier('');
+            }}
+          >
+            <SelectTrigger>
               <SelectValue placeholder="Select role..." />
             </SelectTrigger>
-            <SelectContent className="bg-popover">
+            <SelectContent>
               <SelectItem value="Student">Student</SelectItem>
-              <SelectItem value="Supervisor">Supervisor</SelectItem>
-              <SelectItem value="Examiner">Examiner</SelectItem>
-              <SelectItem value="CGS Staff">CGS Staff</SelectItem>
+              <SelectItem value="Academic Staff">Academic Staff</SelectItem>
             </SelectContent>
           </Select>
         </div>
 
-        {/* Examiner Type */}
-        {isExaminer && (
+        {/* Staff Type */}
+        {isAcademicStaff && (
           <div className="space-y-2">
-            <Label htmlFor="examinerType">Examiner Type</Label>
-            <Select value={examinerType} onValueChange={handleExaminerTypeChange}>
-              <SelectTrigger id="examinerType" className="bg-background">
+            <Label>Staff Type</Label>
+            <Select value={staffType} onValueChange={setStaffType}>
+              <SelectTrigger>
                 <SelectValue placeholder="Select type..." />
               </SelectTrigger>
-              <SelectContent className="bg-popover">
-                {examinerType === NO_SELECTION && (
-                  <SelectItem value={NO_SELECTION} disabled>
-                    Select type...
-                  </SelectItem>
-                )}
+              <SelectContent>
                 <SelectItem value="internal">Internal</SelectItem>
                 <SelectItem value="external">External</SelectItem>
               </SelectContent>
@@ -116,68 +92,37 @@ export default function SearchUserForm({ onSearch, isSearching }) {
           </div>
         )}
 
-        {/* ID / Email */}
+        {/* Identifier */}
         <div className="space-y-2">
-          <Label htmlFor="idValue">{isEmailSearch ? 'Email' : 'ID'}</Label>
+          <Label>{isExternal ? 'Email Address' : 'ID'}</Label>
           <Input
-            id="idValue"
-            type={isEmailSearch ? 'email' : 'text'}
-            value={idValue}
-            onChange={(e) => setIdValue(e.target.value)}
-            placeholder={getIdPlaceholder}
-            disabled={!role || (isExaminer && !hasExaminerTypeSelected)}
-            required={isExaminer}
-            className="bg-background"
+            value={identifier}
+            onChange={(e) => setIdentifier(e.target.value)}
+            placeholder={
+              !role
+                ? 'Select role first'
+                : isExternal
+                ? 'Enter email address'
+                : role === 'Student'
+                ? 'Enter student ID'
+                : 'Enter employee ID'
+            }
+            disabled={!role || (isAcademicStaff && staffType === NO_SELECTION)}
+            required
           />
         </div>
-
-        {/* Department */}
-        {!isExternalExaminer && (
-          <div className="space-y-2">
-            <Label htmlFor="departmentCode">Department Code</Label>
-            <Select
-              value={departmentCode}
-              onValueChange={setDepartmentCode}
-              disabled={!isSearchFieldsEnabled || isInternalExaminer}
-            >
-              <SelectTrigger id="departmentCode" className="bg-background">
-                <SelectValue placeholder="Select department..." />
-              </SelectTrigger>
-              <SelectContent className="bg-popover">
-                {HARDCODED_DEPARTMENTS.map((dept) => (
-                  <SelectItem key={dept.code} value={dept.code}>
-                    {dept.code}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
-        )}
       </div>
 
-      <Button
-        type="submit"
-        disabled={
-          isSearching ||
-          !role ||
-          (isExaminer && !hasExaminerTypeSelected) ||
-          (isExaminer && !idValue)
-        }
-        className="w-full md:w-auto"
-      >
+      <Button type="submit" disabled={!isFormValid || isSearching}>
         {isSearching ? (
           <>
             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-            {isExaminer ? 'Registering...' : 'Searching...'}
+            Searching...
           </>
         ) : (
           <>
-            {isExaminer ? (
-              <UserPlus className="mr-2 h-4 w-4" />
-            ) : (
-              <Search className="mr-2 h-4 w-4" />
-            )}
-            {isExaminer ? 'Register' : 'Search'}
+            <Search className="mr-2 h-4 w-4" />
+            Search
           </>
         )}
       </Button>

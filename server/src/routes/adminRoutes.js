@@ -1,5 +1,9 @@
 import express from "express";
 import {
+  // Search User
+  searchUserInfo,
+  // REGISTER USER
+  registerSearchedUser,
   // Student routes
   createStudentAdmin,
   getAllStudentsAdmin,
@@ -26,6 +30,12 @@ import { protect } from "../middleware/authmiddleware.js";
 import { requireRole } from "../middleware/rbacMiddleware.js";
 
 const router = express.Router();
+
+// ================= SEARCH USER =================
+router.get("/search-info", protect, requireRole("CGSADM"), searchUserInfo);
+
+// ================= REGISTER USER =================
+router.post('/register-user', protect, requireRole("CGSADM"), registerSearchedUser);
 
 // ================= STUDENT =================
 const studentRouter = express.Router();

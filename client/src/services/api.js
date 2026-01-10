@@ -6,11 +6,29 @@ export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localho
 // Axios instance
 const api = axios.create({
   baseURL: API_BASE_URL,
-  withCredentials: true,  // 🔑 send session cookie
+  withCredentials: true,  // 🔑 sends session cookie
   headers: { "Content-Type": "application/json" },
 });
 
-// Queuing for multiple simultaneous 401 requests
+// ===================== CSRF INTERCEPTOR =====================
+// Automatically attach CSRF token from cookie for mutating requests
+api.interceptors.request.use(
+  (config) => {
+    const csrfToken = document.cookie
+      .split("; ")
+      .find((row) => row.startsWith("XSRF-TOKEN="))
+      ?.split("=")[1];
+
+    if (csrfToken && config.method !== "get") {
+      config.headers["X-CSRF-Token"] = csrfToken;
+    }
+
+    return config;
+  },
+  (error) => Promise.reject(error)
+);
+
+// ===================== REQUEST QUEUE FOR 401 =====================
 let failedQueue = [];
 let isLoggingOut = false;
 
@@ -23,7 +41,7 @@ export const setIsLoggingOut = (value) => {
   isLoggingOut = value;
 };
 
-// Auth service
+// ===================== AUTH SERVICE =====================
 export const authService = {
   login: async (role, credentials) => {
     const response = await api.post("/api/auth/login", {
@@ -49,16 +67,8 @@ export const authService = {
     }
 
     return result;
-  },catch (err) {
-    // If the server sent a specific error message, throw that
-    const serverMessage = err.response?.data?.message || err.response?.data?.error;
-    if (serverMessage) throw new Error(serverMessage);
-    
-    // Otherwise throw the original error
-    throw err;
   },
 
-  // Get currently logged-in user
   me: async () => {
     const res = await api.get("/api/profile/me");
     return res.data;
