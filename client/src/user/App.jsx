@@ -33,11 +33,14 @@ import ReviewRequest from '@/pages/supervisor/ReviewRequest';
 import ProgressEvaluation from "@/pages/supervisor/ProgressEvaluation";
 import Profile from "@/components/layout/Profile";
 
+import ExaminerDashboard from "@/pages/examiner/ExaminerDashboard";
 // QueryClient
 const queryClient = new QueryClient();
 
 function AppWrapper() {
+  
   const { user, loading, logout } = useAuth();
+console.log("AppWrapper user:", user, "loading:", loading);
 
   if (loading) {
     return (
@@ -49,20 +52,29 @@ function AppWrapper() {
 
   return (
       <Routes>
-      {/* ===== LOGIN PAGES ===== */}
-     <Route
-        path="/login"
-        element={
-          user && ["STU", "SUV", "EXM"].includes(user.role_id) ? (
-            <Navigate 
-              to={user.role_id === "STU" ? "/student/dashboard" : user.role_id === "SUV" ? "/supervisor/dashboard" : "/examiner/dashboard"} 
-              replace 
-            />
-          ) : (
-            <UserLogin />
-          )
+      {/* ===== LOGIN PAGE ===== */}
+<Route
+  path="/login"
+  element={
+    // Show login page while loading or if no user
+    loading || !user ? (
+      <UserLogin />
+    ) : (
+      // Only redirect if user exists and loading is done
+      <Navigate
+        to={
+          user.role_id === "STU"
+            ? "/student/dashboard"
+            : user.role_id === "SUV"
+            ? "/supervisor/dashboard"
+            : "/examiner/dashboard"
         }
+        replace
       />
+    )
+  }
+/>
+
 
       {/* ===== STUDENT ===== */}
       <Route
@@ -111,6 +123,21 @@ function AppWrapper() {
         <Route path="evaluate" element={<ProgressEvaluation />} />
         <Route path="profile" element={<Profile />} />
       </Route>
+
+{/* ===== EXAMINER ===== */}
+      <Route
+        path="/examiner/dashboard"
+        element={
+          <ProtectedRoute 
+            isAuthenticated={!!user} 
+            loading={loading}
+            userRole={user?.role_id} 
+            allowedRole="EXA"
+          >
+            <ExaminerDashboard />
+          </ProtectedRoute>
+        }
+      />
 
       {/* ===== FALLBACK ===== */}
       <Route path="*" element={<Navigate to="/login" replace />} />

@@ -1,6 +1,52 @@
 import { Users, FileCheck, CheckCircle, FileText } from "lucide-react";
 import { Card } from "@/components/ui/card";
-// import { dashboardStats, students } from "../../data/supervisorData";
+
+// --- DATA DEFINED DIRECTLY HERE ---
+const dashboardStats = {
+  totalStudents: 12,
+  pendingReviews: 3,
+  thesisApproved: 45,
+  proposalsReviewed: 8,
+};
+
+const students = [
+  {
+    id: 1,
+    name: "Ali Ahmad",
+    progress: 75,
+    researchTitle: "AI in Healthcare",
+    lastSubmissionDate: "2023-10-01",
+  },
+  {
+    id: 2,
+    name: "Siti Sarah",
+    progress: 45,
+    researchTitle: "Sustainable Energy",
+    lastSubmissionDate: "2023-09-28",
+  },
+  {
+    id: 3,
+    name: "John Doe",
+    progress: 90,
+    researchTitle: "Blockchain Security",
+    lastSubmissionDate: "2023-10-05",
+  },
+  {
+    id: 4,
+    name: "Jane Smith",
+    progress: 20,
+    researchTitle: "Cloud Computing",
+    lastSubmissionDate: "2023-10-02",
+  },
+  {
+    id: 5,
+    name: "Wong Wei",
+    progress: 60,
+    researchTitle: "Data Mining",
+    lastSubmissionDate: "2023-09-15",
+  },
+];
+// ----------------------------------
 
 export default function SupervisorDashboard() {
   const stats = [
@@ -129,9 +175,7 @@ export default function SupervisorDashboard() {
                   </p>
                   <p className="text-xs text-gray-400 mt-1">
                     Last submission:{" "}
-                    {new Date(
-                      student.lastSubmissionDate
-                    ).toLocaleDateString()}
+                    {new Date(student.lastSubmissionDate).toLocaleDateString()}
                   </p>
                 </div>
               </div>

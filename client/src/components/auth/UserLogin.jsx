@@ -19,7 +19,9 @@ export default function UserLogin() {
     role === "SUV" ? "Supervisor" : 
     "Examiner";
 
-  async function handleSubmit(e) {
+  // client/src/components/auth/UserLogin.jsx
+
+async function handleSubmit(e) {
     e.preventDefault();
     setLoading(true);
     setError(null);
@@ -27,19 +29,16 @@ export default function UserLogin() {
     try {
       const data = await login(role, { email, password });
 
-      // 🔐 Temporary password enforcement
+      // 🛑 REMOVE MANUAL NAVIGATION HERE
+      // The App.jsx will detect the 'user' change and redirect automatically.
+      
+      // Only keep the password change logic if necessary
       if (data?.mustChangePassword) {
-        navigate(data.redirectUrl, { replace: true });
-        return;
+         navigate(data.redirectUrl, { replace: true });
       }
-
-      // 🚦 Redirect by role
-      const dashboardMap = {
-        STU: "/student/dashboard",
-        SUV: "/supervisor/dashboard",
-        EXA: "/examiner/dashboard",
-      };
-      navigate(dashboardMap[role] || "/login", { replace: true });
+      
+      // logic ends here; the component will unmount when App.jsx redirects.
+      
     } catch (err) {
       const errorMessage = err.response?.data?.error || err.message || "Login failed";
       setError(errorMessage);
@@ -47,7 +46,6 @@ export default function UserLogin() {
       setLoading(false);
     }
   }
-
   const featureList =
     role === "STU"
       ? [

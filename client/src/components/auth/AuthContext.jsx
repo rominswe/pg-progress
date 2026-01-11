@@ -30,24 +30,26 @@ export const AuthProvider = ({ children }) => {
     try {
       const res = await authService.login(role, credentials);
       
-      // Case 1: Force Password Change
-      if (res.data?.mustChangePassword) {
-        return res.data; 
-      }
+      console.log("API RESPONSE:", res); // 👈 Check this in Console!
+
+      // Ensure we are setting the correct object
+      // If res.data contains { user: {...}, token: ... }, we might need res.data.user
+      // Check your API response structure carefully.
       
-      // Case 2: Normal Successful Login
       if (res.success && res.data) {
-        setUser(res.data);
+        // ⚠️ COMMON BUG: Does res.data HAVE the role_id? 
+        // Or is it inside res.data.user?
+        const userData = res.data.user || res.data; 
+        
+        setUser(userData); 
         return res.data;
       }
       
-      // Case 3: Backend returned success: false or missing data
       throw new Error(res.error || "Login failed");
-    } catch (err) { // <--- Added the closing brace for 'try' here
+    } catch (err) {
       throw err;
     }
-  };
-
+};
   // Logout function
   const logout = async () => {
     try {

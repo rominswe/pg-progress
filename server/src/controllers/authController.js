@@ -63,7 +63,8 @@ export const login = async (req, res) => {
     }
 
     if (!user.role || user.role.role_id !== role_id)
-      throw new Error("Role mismatch");
+  throw new Error("Role mismatch");
+
 
     enforceAccountRules(user);
 
