@@ -4,11 +4,11 @@ import { createPortal } from 'react-dom';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { LogOut, Bell, Menu, X, ChevronDown, User } from 'lucide-react';
 import { Button } from '../../components/ui/button';
-import { 
-  DropdownMenu, 
-  DropdownMenuContent, 
-  DropdownMenuItem, 
-  DropdownMenuTrigger 
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger
 } from '../../components/ui/dropdown-menu';
 import { cn } from '../../lib/utils';
 import { useAuth } from '../../components/auth/AuthContext';
@@ -87,16 +87,16 @@ export default function Layout({
   const profileLinks = profileLinksProp.length
     ? profileLinksProp.map(link => link.destructive ? { ...link, action: () => setIsLogoutModalOpen(true) } : link)
     : [
-        {
-          label: 'Profile Settings',
-          action: () => navigate('profile'),
-        },
-        {
-          label: 'Logout',
-          action: () => setIsLogoutModalOpen(true),
-          destructive: true,
-        },
-      ];
+      {
+        label: 'Profile Settings',
+        action: () => navigate('profile'),
+      },
+      {
+        label: 'Logout',
+        action: () => setIsLogoutModalOpen(true),
+        destructive: true,
+      },
+    ];
 
   if (loading) {
     return (
@@ -109,12 +109,12 @@ export default function Layout({
   return (
     <div className="min-h-screen bg-muted/30">
       {/* Modal at the top level */}
-      <LogoutModal 
-        isOpen={isLogoutModalOpen} 
-        onClose={() => setIsLogoutModalOpen(false)} 
-        onConfirm={handleLogoutConfirm} 
+      <LogoutModal
+        isOpen={isLogoutModalOpen}
+        onClose={() => setIsLogoutModalOpen(false)}
+        onConfirm={handleLogoutConfirm}
       />
-      
+
       {/* Sidebar Overlay */}
       {sidebarOpen && (
         <div
@@ -124,25 +124,26 @@ export default function Layout({
       )}
 
       {/* Sidebar */}
+      {/* Sidebar */}
       <aside
         className={cn(
-          'fixed inset-y-0 left-0 z-50 w-64 transform bg-card shadow-lg transition-transform duration-300 ease-in-out lg:translate-x-0',
+          'fixed inset-y-0 left-0 z-50 w-64 transform bg-white border-r border-slate-200 text-slate-700 shadow-xl transition-transform duration-300 ease-in-out lg:translate-x-0',
           sidebarOpen ? 'translate-x-0' : '-translate-x-full'
         )}
       >
         <div className="flex h-full flex-col">
           {/* Logo */}
-          <div className="flex h-16 items-center justify-between border-b border-border px-6">
-            <div className="flex items-center gap-2">
-              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-blue-600">
+          <div className="flex h-16 items-center justify-between border-b border-slate-100 px-6">
+            <div className="flex items-center gap-3">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-blue-600 shadow-lg shadow-blue-200">
                 {LogoIcon && <LogoIcon className="h-5 w-5 text-white" />}
               </div>
-              <span className="text-lg font-bold text-foreground">{title}</span>
+              <span className="text-lg font-extrabold tracking-tight text-slate-900">{title}</span>
             </div>
             <Button
               variant="ghost"
               size="icon"
-              className="lg:hidden"
+              className="lg:hidden text-slate-500 hover:bg-slate-100"
               onClick={() => setSidebarOpen(false)}
             >
               <X className="h-5 w-5" />
@@ -150,7 +151,7 @@ export default function Layout({
           </div>
 
           {/* Navigation */}
-          <nav className="flex-1 space-y-1 px-3 py-4">
+          <nav className="flex-1 space-y-2 px-4 py-6">
             {navigation.map((item) => (
               <NavLink
                 key={item.name}
@@ -158,10 +159,10 @@ export default function Layout({
                 onClick={() => setSidebarOpen(false)}
                 className={({ isActive }) =>
                   cn(
-                    'flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors',
+                    'flex items-center gap-3 rounded-xl px-4 py-3 text-sm font-bold transition-all duration-200',
                     isActive
-                      ? 'bg-primary text-primary-foreground'
-                      : 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                      ? 'bg-blue-600 text-white shadow-md shadow-blue-200 translate-x-1'
+                      : 'text-slate-500 hover:bg-slate-50 hover:text-slate-900 hover:translate-x-1'
                   )
                 }
               >
@@ -172,10 +173,10 @@ export default function Layout({
           </nav>
 
           {/* Logout */}
-          <div className="border-t border-border p-3">
+          <div className="border-t border-slate-100 p-4">
             <button
               onClick={() => setIsLogoutModalOpen(true)}
-              className="flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium text-destructive hover:bg-destructive/10 transition-colors"
+              className="flex w-full items-center gap-3 rounded-xl px-4 py-3 text-sm font-bold text-red-500 hover:bg-red-50 transition-colors"
             >
               <LogOut className="h-5 w-5" />
               Logout
@@ -183,10 +184,10 @@ export default function Layout({
           </div>
         </div>
       </aside>
-      
+
       {/* Main Content */}
       <div className="lg:pl-64">
-        <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-border bg-card px-4 shadow-sm lg:px-6">
+        <header className="sticky top-0 z-30 flex h-16 items-center justify-between border-b border-border bg-white px-4 shadow-sm lg:px-6">
           <Button
             variant="ghost"
             size="icon"

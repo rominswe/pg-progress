@@ -42,17 +42,17 @@ export const login = async (req, res) => {
 
     if (role_id === "EXA") {
       // Internal EXA
-      user = await examiner.findOne({ where: { EmailId: email }, include: [{ model: role }] });
+      user = await examiner.findOne({ where: { EmailId: email }, include: [{ model: role, as: 'role' }] });
       modelUsed = "examiner";
       // External EXA
       if (!user) {
-        user = await visiting_staff.findOne({ where: { EmailId: email }, include: [{ model: role }] });
+        user = await visiting_staff.findOne({ where: { EmailId: email }, include: [{ model: role, as: 'role' }] });
         modelUsed = "visiting_staff";
       }
     } else {
       const Model = ROLE_MODEL_MAP[role_id];
       if (!Model) throw new Error("Invalid role");
-      user = await Model.findOne({ where: { EmailId: email }, include: [{ model: role }] });
+      user = await Model.findOne({ where: { EmailId: email }, include: [{ model: role, as: 'role' }] });
       modelUsed = Model.tableName;
     }
 
@@ -82,10 +82,11 @@ export const login = async (req, res) => {
       table: modelUsed,
       Status: user.Status,
       MustChangePassword: user.MustChangePassword,
+      Dep_Code: user.Dep_Code,
     };
 
     await logAuthEvent(email, role_id, "LOGIN_SUCCESS", req, { table: modelUsed });
-    
+
     // Temporary password check
     if (user.MustChangePassword) {
       return sendSuccess(res, "Please update your temporary password", {
@@ -93,7 +94,7 @@ export const login = async (req, res) => {
         redirectUrl: "/api/profile/me" // Updated to a frontend-friendly route
       });
     }
-    
+
     return sendSuccess(res, "Login successful", req.session.user);
   } catch (err) {
     return sendError(res, err.message, 403);

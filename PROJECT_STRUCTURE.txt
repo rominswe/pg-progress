@@ -1,0 +1,126 @@
+================================================================================
+PROJECT FILE STRUCTURE: pg-progress
+================================================================================
+
+This document outlines the detailed file structure of the `pg-progress` project,
+including both the client (frontend) and server (backend) applications.
+
+================================================================================
+1. VISUAL TREE OVERVIEW
+================================================================================
+
+pg-progress/
+├── .env                    # Environment variables
+├── docker-compose.yaml     # Docker orchestration
+├── package.json            # Root scripts
+├── PROJECT_STRUCTURE.txt   # This file
+├── client/                 # Frontend (Vite + React)
+│   ├── admin.html          # Admin entry point
+│   ├── user.html           # User entry point
+│   ├── vite.config.js      # Bundler config
+│   ├── tailwind.config.js  # Styling config
+│   └── src/
+│       ├── admin/          # Admin app logic
+│       ├── user/           # User app logic
+│       ├── components/     # Reusable UI components
+│       │   ├── auth/       # Login & Protection
+│       │   ├── form/       # Business Forms
+│       │   ├── layout/     # Page layouts
+│       │   └── ui/         # Shadcn UI primitives
+│       └── pages/          # Application Screens
+│           ├── staff/      # Staff/CGS Dashboard & tools
+│           ├── student/    # Student Dashboard & submissions
+│           └── supervisor/ # Supervisor Dashboard & reviews
+└── server/                 # Backend (Node.js + Express)
+    ├── package.json
+    ├── uploads/            # Storage for uploaded files
+    └── src/
+        ├── app.js          # App setup
+        ├── server.js       # Entry point
+        ├── config/         # DB & Redis config
+        ├── controllers/    # Business logic endpoints
+        ├── middleware/     # Auth & RBAC
+        ├── models/         # Database schemas
+        ├── routes/         # API endpoints
+        ├── seeds/          # Data population
+        └── utils/          # Helpers (Email, Logger)
+
+================================================================================
+2. DETAILED DIRECTORY DESCRIPTIONS
+================================================================================
+
+## Root Directory (/)
+- .env: Environment variables configuration.
+- .gitignore: Specifies intentionally untracked files to ignore.
+- docker-compose.yaml: Docker orchestration configuration for running services (db, redis, server, client, etc.).
+- LICENSE: License information.
+- README.md: Project documentation.
+- package.json: Root level scripts and dependencies.
+- package-lock.json: Dependency tree lock file.
+
+## Client Application (/client)
+Built with Vite and React.
+
+### Configuration Files
+- admin.html: Entry point for the Admin application.
+- user.html: Entry point for the User application.
+- vite.config.js: Vite bundler configuration.
+- tailwind.config.js: Tailwind CSS configuration.
+- postcss.config.js: PostCSS configuration.
+- jsconfig.json: JavaScript path aliasing configuration.
+- eslint.config.js: Linting rules.
+
+### Source Code (/client/src)
+- admin/: Admin-specific application logic.
+  - App.jsx, main.jsx, index.css: Entry files for admin portal.
+- user/: User-specific application logic.
+  - App.jsx, main.jsx, index.css: Entry files for user portal.
+- components/: Reusable React components.
+  - auth/: Authentication forms and context (Login, ProtectedRoute, AuthContext).
+  - form/: Detailed business forms (StudentForm, SupervisorAssessmentForm, etc.).
+  - layout/: Page layouts (Layout, StaffLayout, StudentLayout, SupervisorLayout).
+  - modal/: Modal dialogs (ConfirmRegisterModal).
+  - ui/: Shadcn/UI primitive components (button, card, input, etc.).
+- hooks/: Custom React hooks.
+- pages/: Application page views.
+  - staff/: Pages for CGS/Staff users (Dashboard, RegisterUsers, VerifyDocuments, etc.).
+  - student/: Pages for Student users (Dashboard, ThesisSubmission, Uploads, ProgressUpdates).
+  - supervisor/: Pages for Supervisors (Dashboard, ReviewSubmissions, ProgressEvaluation).
+- services/: API integration services.
+- lib/: Utility libraries.
+
+## Server Application (/server)
+Built with Node.js and Express.
+
+### Configuration & Root Files
+- app.js: Express application instance setup.
+- server.js: Server entry point (starts listening on ports).
+- Dockerfile: Docker build instructions for the server.
+- package.json: Server-specific dependencies.
+- uploads/: Directory for storing uploaded files (theses, documents).
+
+### Source Code (/server/src)
+- config/: Configuration modules.
+  - config.js: Database configuration.
+  - redis.js: Redis client configuration.
+- controllers/: Request handlers (Business logic).
+  - authController.js: Authentication logic.
+  - studentInfoController.js: Student data management.
+  - documentController.js: File upload and implementation.
+  - adminController.js, profileController.js, etc.
+- middleware/: Express middleware.
+  - authmiddleware.js: JWT verification.
+  - rbacMiddleware.js: Role-Based Access Control.
+  - upload.js: Multer configuration for file uploads.
+- models/: Sequelize database models.
+  - studinfo.js, empinfo.js, supervisor.js: User tables.
+  - documents_uploads.js, documents_reviews.js: Document tracking.
+  - index.js, init-models.js: Model associations.
+- routes/: API route definitions.
+  - Maps endpoints (e.g., /api/auth) to controllers.
+- seeds/: Scripts to populate the database with initial data.
+  - seedAdmin.js, createSupervisorUser.js, etc.
+- utils/: Helper utility functions.
+  - email.js: Email sending implementation.
+  - logger.js: Logging utility.
+  - authSecurity.js, responseHandler.js.

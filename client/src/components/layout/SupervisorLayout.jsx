@@ -6,13 +6,14 @@ import { LayoutDashboard, Users, FileText, FilePlus, ClipboardCheck } from 'luci
 const supervisorNav = [
   { name: 'Dashboard', href: '/supervisor/dashboard', icon: LayoutDashboard },
   { name: 'My Students', href: '/supervisor/students', icon: Users },
-  { name: 'Past Reviews', href: '/supervisor/reviews', icon: FileText },
-  { name: 'Review Requests', href: '/supervisor/review-request', icon: FilePlus },
-  { name: 'Evaluation', href: '/supervisor/evaluate', icon: ClipboardCheck },
+  { name: 'Review Submission', href: '/supervisor/review', icon: FileText },
+  { name: 'PG-Form Approval', href: '/supervisor/review-request', icon: FilePlus },
+  { name: 'Student Progress Update', href: '/supervisor/evaluate', icon: ClipboardCheck },
+  { name: 'Evaluation', href: '/supervisor/evaluate-2', icon: ClipboardCheck },
 ];
 
 const supervisorNotifications = [
-  { id: 1, label: 'New Review Request', link: '/supervisor/review-request' },
+  { id: 1, label: 'New PG-Form Approval', link: '/supervisor/review-request' },
 ];
 
 export default function SupervisorLayout({ onLogout }) {

@@ -49,13 +49,6 @@ export const authService = {
     }
 
     return result;
-  },catch (err) {
-    // If the server sent a specific error message, throw that
-    const serverMessage = err.response?.data?.message || err.response?.data?.error;
-    if (serverMessage) throw new Error(serverMessage);
-    
-    // Otherwise throw the original error
-    throw err;
   },
 
   // Get currently logged-in user
@@ -75,6 +68,124 @@ export const authService = {
       setIsLoggingOut(false);
     }
   },
+};
+
+export const documentService = {
+  upload: async (formData) => {
+    return api.post("/api/documents/upload", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+  },
+  getMyDocuments: async () => {
+    const res = await api.get("/api/documents/my-documents");
+    return res.data;
+  },
+  getSupervisorDocuments: async () => {
+    const res = await api.get("/api/documents/supervisor/list");
+    return res.data;
+  },
+  review: async (data) => {
+    return api.post("/api/documents/review", data);
+  },
+  getDashboardStats: async () => {
+    const res = await api.get("/api/documents/student/stats");
+    return res.data;
+  },
+  delete: async (id) => {
+    return api.delete(`/api/documents/${id}`);
+  }
+};
+
+export const progressService = {
+  // Fetch logs
+  getUpdates: async (studentId = null) => {
+    // Optional studentId for supervisors
+    const url = studentId ? `/api/progress?student_id=${studentId}` : '/api/progress';
+    const res = await api.get(url);
+    return res.data;
+  },
+
+  // Create new log (with optional file upload)
+  createUpdate: async (data) => {
+    const formData = new FormData();
+    formData.append('title', data.title);
+    formData.append('description', data.description || '');
+    formData.append('achievements', data.achievements);
+    formData.append('challenges', data.challenges || '');
+    formData.append('nextSteps', data.nextSteps);
+
+    // Add document if present
+    if (data.document) {
+      formData.append('document', data.document);
+    }
+
+    const res = await api.post("/api/progress", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+    return res.data;
+  },
+
+  // Fetch pending evaluations (for supervisors)
+  getPendingEvaluations: async () => {
+    const res = await api.get("/api/progress/pending-evaluations");
+    return res.data;
+  },
+
+  // Review a progress update (for supervisors)
+  reviewProgressUpdate: async (data) => {
+    const res = await api.post("/api/progress/review", data);
+    return res.data;
+  },
+
+  // Fetch all students assigned to supervisor
+  getMyStudents: async () => {
+    const res = await api.get("/api/progress/my-students");
+    return res.data;
+  }
+};
+export const serviceRequestService = {
+  create: async (data) => {
+    return api.post("/api/service-requests", data);
+  },
+  getAll: async (status) => {
+    const url = status ? `/api/service-requests?status=${status}` : '/api/service-requests';
+    return api.get(url);
+  },
+  updateStatus: async (id, status, comments) => {
+    return api.put(`/api/service-requests/${id}`, { status, comments });
+  }
+};
+
+export const evaluationService = {
+  // Submit a new defense evaluation
+  submitEvaluation: async (data) => {
+    const res = await api.post("/api/evaluations", data);
+    return res.data;
+  },
+
+  // Get evaluations for a specific student (for feedback page)
+  getStudentEvaluations: async (studentId) => {
+    const res = await api.get(`/api/evaluations/student/${studentId}`);
+    return res.data;
+  },
+
+  // Get all evaluations (for supervisors/admin)
+  getAllEvaluations: async () => {
+    const res = await api.get("/api/evaluations");
+    return res.data;
+  },
+  // Find student by ID
+  getStudentById: async (id) => {
+    const res = await api.get(`/api/evaluations/find-student/${id}`);
+    return res.data;
+  }
+};
+
+export const dashboardService = {
+  getSupervisorStats: async () => {
+    const res = await api.get("/api/dashboard/supervisor/stats");
+    return res.data;
+  }
 };
 
 export default api;

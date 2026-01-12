@@ -18,10 +18,8 @@ import UserLogin from "@/components/auth/UserLogin";
 import StudentLayout from "@/components/layout/StudentLayout";
 import Dashboard from "@/pages/student/Dashboard";
 import Uploads from "@/pages/student/Uploads";
-import ThesisSubmission from "@/pages/student/ThesisSubmission";
 import ProgressUpdates from "@/pages/student/ProgressUpdates";
 import Feedback from "@/pages/student/Feedback";
-import Analytics from "@/pages/student/Analytics";
 import ServiceRequest from "@/pages/student/ServiceRequest";
 
 // Supervisor pages
@@ -31,6 +29,7 @@ import StudentList from "@/pages/supervisor/StudentList";
 import ReviewSubmissions from "@/pages/supervisor/ReviewSubmissions";
 import ReviewRequest from '@/pages/supervisor/ReviewRequest';
 import ProgressEvaluation from "@/pages/supervisor/ProgressEvaluation";
+import ProgressEvaluation2 from "@/pages/supervisor/ProgressEvaluation2";
 import Profile from "@/components/layout/Profile";
 
 // QueryClient
@@ -48,15 +47,15 @@ function AppWrapper() {
   }
 
   return (
-      <Routes>
+    <Routes>
       {/* ===== LOGIN PAGES ===== */}
-     <Route
+      <Route
         path="/login"
         element={
           user && ["STU", "SUV", "EXM"].includes(user.role_id) ? (
-            <Navigate 
-              to={user.role_id === "STU" ? "/student/dashboard" : user.role_id === "SUV" ? "/supervisor/dashboard" : "/examiner/dashboard"} 
-              replace 
+            <Navigate
+              to={user.role_id === "STU" ? "/student/dashboard" : user.role_id === "SUV" ? "/supervisor/dashboard" : "/examiner/dashboard"}
+              replace
             />
           ) : (
             <UserLogin />
@@ -68,10 +67,10 @@ function AppWrapper() {
       <Route
         path="/student/*"
         element={
-          <ProtectedRoute 
-            isAuthenticated={!!user} 
+          <ProtectedRoute
+            isAuthenticated={!!user}
             loading={loading}
-            userRole={user?.role_id} 
+            userRole={user?.role_id}
             allowedRole="STU"
           >
             <StudentLayout onLogout={logout} />
@@ -81,10 +80,8 @@ function AppWrapper() {
         <Route index element={<Navigate to="dashboard" replace />} />
         <Route path="dashboard" element={<Dashboard />} />
         <Route path="uploads" element={<Uploads />} />
-        <Route path="thesis-submission" element={<ThesisSubmission />} />
         <Route path="progress-updates" element={<ProgressUpdates />} />
         <Route path="feedback" element={<Feedback />} />
-        <Route path="analytics" element={<Analytics />} />
         <Route path="service-request" element={<ServiceRequest />} /> {/* ✅ NEW */}
         <Route path="profile" element={<Profile />} />
       </Route>
@@ -93,10 +90,10 @@ function AppWrapper() {
       <Route
         path="/supervisor/*"
         element={
-          <ProtectedRoute 
-            isAuthenticated={!!user} 
+          <ProtectedRoute
+            isAuthenticated={!!user}
             loading={loading}
-            userRole={user?.role_id} 
+            userRole={user?.role_id}
             allowedRole="SUV"
           >
             <SupervisorLayout onLogout={logout} />
@@ -109,6 +106,7 @@ function AppWrapper() {
         <Route path="review" element={<ReviewSubmissions />} />
         <Route path="review-request" element={<ReviewRequest />} />
         <Route path="evaluate" element={<ProgressEvaluation />} />
+        <Route path="evaluate-2" element={<ProgressEvaluation2 />} />
         <Route path="profile" element={<Profile />} />
       </Route>
 

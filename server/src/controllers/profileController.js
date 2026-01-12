@@ -12,8 +12,8 @@ const ROLE_MODEL_MAP = {
 
 // Allowed attributes per role
 const allowedAttributes = {
-  EXA: ["FirstName","LastName","EmailId","Phonenumber","Status","Profile_Image","Affiliation","Expertise"],
-  default: ["FirstName","LastName","EmailId","Phonenumber","Status","Profile_Image"]
+  EXA: ["FirstName", "LastName", "EmailId", "Phonenumber", "Status", "Profile_Image", "Affiliation", "Expertise"],
+  default: ["FirstName", "LastName", "EmailId", "Phonenumber", "Status", "Profile_Image"]
 };
 
 // Helper to get EXA user across tables
@@ -47,6 +47,8 @@ export const me = async (req, res) => {
       response[attr] = user[attr] ?? null;
     }
     response.role_id = role_id;
+    response.id = id; // Ensure ID is sent
+    response.name = `${user.FirstName} ${user.LastName}`;
 
     return sendSuccess(res, "Profile fetched successfully", response);
   } catch (err) {
@@ -84,7 +86,7 @@ export const updateMe = async (req, res) => {
     if (Expertise) user.Expertise = Expertise;
     if (Affiliation) user.Affiliation = Affiliation;
 
-    await user.save({hooks: true});
+    await user.save({ hooks: true });
     await logAuthEvent(user.EmailId, role_id, "UPDATE_PROFILE");
 
     return sendSuccess(res, "Profile updated successfully", response);
