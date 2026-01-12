@@ -102,10 +102,10 @@ export default function SearchUserForm({ onResult }) {
               !role
                 ? 'Select role first'
                 : isExternal
-                ? 'Enter email address'
-                : role === 'Student'
-                ? 'Enter student ID'
-                : 'Enter employee ID'
+                  ? 'Enter email address'
+                  : role === 'Student'
+                    ? 'Enter student ID'
+                    : 'Enter employee ID'
             }
             disabled={!role || (isAcademicStaff && staffType === NO_SELECTION)}
             required

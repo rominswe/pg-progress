@@ -7,9 +7,8 @@ import {
   visiting_staff,
   role
 } from "../config/config.js";
-import { verifyToken } from "../utils/verification.js";
-import { logAuthEvent, handleLockout, recordLoginAttempt } from "../utils/authSecurity.js";
 import { sendSuccess, sendError } from "../utils/responseHandler.js";
+import { verifyActivationToken } from "../utils/activationToken.js";
 /* ================= ROLE MODEL MAPPING ================= */
 const ROLE_MODEL_MAP = {
   CGSADM: cgs,
@@ -35,8 +34,6 @@ export const login = async (req, res) => {
     return res.status(400).json({ error: "Missing fields" });
 
   try {
-    await handleLockout(email);
-
     let user = null;
     let modelUsed = null;
 
@@ -57,20 +54,25 @@ export const login = async (req, res) => {
     }
 
     if (!user) {
-      await recordLoginAttempt(email);
-      await logAuthEvent(email, role_id, "LOGIN_FAIL", req, { table: modelUsed });
       throw new Error("Invalid Email");
     }
 
     if (!user.role || user.role.role_id !== role_id)
       throw new Error("Role mismatch");
 
+    if (!user.IsVerified || user.Status !== "Active") {
+      const tempToken = generateActivationToken(user[user.constructor.primaryKeyAttribute]);
+      await sendVerificationSafe(user, tempToken, user.Password, user.role.role_id);
+
+      return res.status(403).json({
+        message: "Account not verified. Activation email resent."
+      });
+    }
+
     enforceAccountRules(user);
 
     const valid = await bcrypt.compare(password, user.Password);
     if (!valid) {
-      await recordLoginAttempt(email);
-      await logAuthEvent(email, role_id, "LOGIN_FAIL", req, { table: modelUsed });
       throw new Error("Invalid Password");
     }
 
@@ -84,8 +86,6 @@ export const login = async (req, res) => {
       MustChangePassword: user.MustChangePassword,
     };
 
-    await logAuthEvent(email, role_id, "LOGIN_SUCCESS", req, { table: modelUsed });
-    
     // Temporary password check
     if (user.MustChangePassword) {
       return sendSuccess(res, "Please update your temporary password", {
@@ -93,10 +93,13 @@ export const login = async (req, res) => {
         redirectUrl: "/api/profile/me" // Updated to a frontend-friendly route
       });
     }
-    
+
     return sendSuccess(res, "Login successful", req.session.user);
   } catch (err) {
-    return sendError(res, err.message, 403);
+    console.error("[LOGIN_ERROR]", err);
+    // Return 401 for known auth errors, 500 for others
+    const status = err.message.includes("Invalid") || err.message.includes("mismatch") ? 401 : 500;
+    return sendError(res, err.message, status);
   }
 };
 
@@ -104,39 +107,28 @@ export const login = async (req, res) => {
 export const verifyAccount = async (req, res) => {
   try {
     const { token } = req.query;
-    if (!token) return res.status(400).json({ error: "Invalid verification token" });
+    if (!token) return res.status(400).json({ error: "Token required" });
 
-    const record = await verifyToken(token);
-    if (!record) return res.status(400).json({ error: "Invalid or expired token" });
+    const userId = verifyActivationToken(token);
 
-    let Model;
-    if (record.user_table === "examiner") Model = examiner;
-    else if (record.user_table === "visiting_staff") Model = visiting_staff;
-    else Model = ROLE_MODEL_MAP[record.role_id];
+    // Find user by ID
+    let user = await master_stu.findByPk(userId)
+      || await cgs.findByPk(userId)
+      || await examiner.findByPk(userId)
+      || await visiting_staff.findByPk(userId);
 
-    const user = await Model.findByPk(record.user_id);
     if (!user) return res.status(404).json({ error: "User not found" });
 
-    // Activate user
+    // Activate account
     user.IsVerified = 1;
     user.Status = "Active";
+    user.MustChangePassword = 1; // force password update
     await user.save();
 
-    await record.destroy();
-    await logAuthEvent(
-      user.EmailId,
-      user.role_id,
-      "VERIFY",
-      req,
-      { table: Model.tableName }
-    );
-
-    res.json({
-      message: "Account verified successfully. You can now log in using your credentials.",
-    });
+    return res.json({ message: "Account verified. Please log in." });
   } catch (err) {
     console.error(err);
-    res.status(500).json({ error: err.message });
+    res.status(400).json({ error: err.message });
   }
 };
 

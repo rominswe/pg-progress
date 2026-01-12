@@ -1,25 +1,19 @@
 import _sequelize from "sequelize";
 const DataTypes = _sequelize.DataTypes;
-import _audit_log from  "./audit_log.js";
-import _login_attempt from  "./login_attempt.js";
-import _verification_token from  "./verification_token.js";
-import _cgs from  "./cgs.js";
-import _documents_reviews from  "./documents_reviews.js";
-import _documents_uploads from  "./documents_uploads.js";
-import _empinfo from  "./empinfo.js";
-import _examiner from  "./examiner.js";
-import _master_stu from  "./master_stu.js";
-import _program_info from  "./program_info.js";
-import _roles from  "./roles.js";
-import _studinfo from  "./studinfo.js";
-import _supervisor from  "./supervisor.js";
-import _tbldepartments from  "./tbldepartments.js";
-import _visiting_staff from  "./visiting_staff.js";
+import _cgs from  "../temp/cgs.js";
+import _documents_reviews from  "../temp/documents_reviews.js";
+import _documents_uploads from  "../temp/documents_uploads.js";
+import _empinfo from  "../temp/empinfo.js";
+import _examiner from  "../temp/examiner.js";
+import _master_stu from  "../temp/master_stu.js";
+import _program_info from  "../temp/program_info.js";
+import _roles from  "../temp/roles.js";
+import _studinfo from  "../temp/studinfo.js";
+import _supervisor from  "../temp/supervisor.js";
+import _tbldepartments from  "../temp/tbldepartments.js";
+import _visiting_staff from  "../temp/visiting_staff.js";
 
 export default function initModels(sequelize) {
-  const audit_log = _audit_log.init(sequelize, DataTypes);
-  const login_attempt = _login_attempt.init(sequelize, DataTypes);
-  const verification_token = _verification_token.init(sequelize, DataTypes);
   const cgs = _cgs.init(sequelize, DataTypes);
   const documents_reviews = _documents_reviews.init(sequelize, DataTypes);
   const documents_uploads = _documents_uploads.init(sequelize, DataTypes);
@@ -75,11 +69,12 @@ export default function initModels(sequelize) {
   tbldepartments.hasMany(supervisor, { as: "supervisors", foreignKey: "Dep_Code"});
   visiting_staff.belongsTo(tbldepartments, { as: "Dep_Code_tbldepartment", foreignKey: "Dep_Code"});
   tbldepartments.hasMany(visiting_staff, { as: "visiting_staffs", foreignKey: "Dep_Code"});
+  examiner.belongsTo(visiting_staff, { as: "visiting", foreignKey: "visiting_id"});
+  visiting_staff.hasMany(examiner, { as: "examiners", foreignKey: "visiting_id"});
+  supervisor.belongsTo(visiting_staff, { as: "visiting", foreignKey: "visiting_id"});
+  visiting_staff.hasMany(supervisor, { as: "supervisors", foreignKey: "visiting_id"});
 
   return {
-    audit_log,
-    login_attempt,
-    verification_token,
     cgs,
     documents_reviews,
     documents_uploads,

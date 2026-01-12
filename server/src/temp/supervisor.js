@@ -1,62 +1,53 @@
 import _sequelize from 'sequelize';
 const { Model, Sequelize } = _sequelize;
 
-export default class visiting_staff extends Model {
+export default class supervisor extends Model {
   static init(sequelize, DataTypes) {
   return super.init({
-    visiting_id: {
+    suv_id: {
       type: DataTypes.STRING(20),
       allowNull: false,
       primaryKey: true
     },
+    emp_id: {
+      type: DataTypes.STRING(20),
+      allowNull: true,
+      references: {
+        model: 'empinfo',
+        key: 'emp_id'
+      }
+    },
+    visiting_id: {
+      type: DataTypes.STRING(20),
+      allowNull: true,
+      references: {
+        model: 'visiting_staff',
+        key: 'visiting_id'
+      }
+    },
     FirstName: {
-      type: DataTypes.STRING(255),
+      type: DataTypes.STRING(150),
       allowNull: false
     },
     LastName: {
-      type: DataTypes.STRING(255),
+      type: DataTypes.STRING(150),
       allowNull: false
     },
     EmailId: {
-      type: DataTypes.STRING(255),
-      allowNull: false,
-      unique: "visiting_staff__email_id"
-    },
-    Gender: {
-      type: DataTypes.STRING(100),
+      type: DataTypes.STRING(200),
       allowNull: false
     },
-    Country: {
-      type: DataTypes.STRING(300),
-      allowNull: false
-    },
-    Passport: {
-      type: DataTypes.STRING(30),
-      allowNull: true
-    },
-    Dob: {
-      type: DataTypes.DATEONLY,
-      allowNull: false
-    },
-    Address: {
-      type: DataTypes.STRING(255),
+    Password: {
+      type: DataTypes.STRING(500),
       allowNull: false
     },
     Phonenumber: {
-      type: DataTypes.STRING(20),
+      type: DataTypes.CHAR(20),
       allowNull: false
     },
     Profile_Image: {
       type: DataTypes.STRING(255),
       allowNull: true
-    },
-    Expertise: {
-      type: DataTypes.STRING(255),
-      allowNull: false
-    },
-    Affiliation: {
-      type: DataTypes.STRING(255),
-      allowNull: false
     },
     role_id: {
       type: DataTypes.STRING(100),
@@ -64,6 +55,19 @@ export default class visiting_staff extends Model {
       references: {
         model: 'roles',
         key: 'role_id'
+      }
+    },
+    role_type: {
+      type: DataTypes.ENUM('Internal','External'),
+      allowNull: false,
+      defaultValue: "Internal"
+    },
+    Dep_Code: {
+      type: DataTypes.STRING(100),
+      allowNull: false,
+      references: {
+        model: 'tbldepartments',
+        key: 'Dep_Code'
       }
     },
     Status: {
@@ -76,21 +80,27 @@ export default class visiting_staff extends Model {
       allowNull: false,
       defaultValue: Sequelize.Sequelize.literal('CURRENT_TIMESTAMP')
     },
+    StartDate: {
+      type: DataTypes.DATE,
+      allowNull: false
+    },
+    IsVerified: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: 0
+    },
     EndDate: {
       type: DataTypes.DATE,
       allowNull: false
     },
-    Dep_Code: {
-      type: DataTypes.STRING(100),
+    MustChangePassword: {
+      type: DataTypes.BOOLEAN,
       allowNull: false,
-      references: {
-        model: 'tbldepartments',
-        key: 'Dep_Code'
-      }
+      defaultValue: 1
     }
   }, {
     sequelize,
-    tableName: 'visiting_staff',
+    tableName: 'supervisor',
     timestamps: false,
     indexes: [
       {
@@ -98,51 +108,56 @@ export default class visiting_staff extends Model {
         unique: true,
         using: "BTREE",
         fields: [
-          { name: "visiting_id" },
+          { name: "suv_id" },
         ]
       },
       {
-        name: "visiting_staff_visiting_id",
-        unique: true,
+        name: "fk_emp_suv",
         using: "BTREE",
         fields: [
-          { name: "visiting_id" },
+          { name: "emp_id" },
         ]
       },
       {
-        name: "visiting_staff__email_id",
-        unique: true,
-        using: "BTREE",
-        fields: [
-          { name: "EmailId" },
-        ]
-      },
-      {
-        name: "fk_role_visiting_staff",
-        using: "BTREE",
-        fields: [
-          { name: "role_id" },
-        ]
-      },
-      {
-        name: "fk_dep_code_visiting_staff",
+        name: "fk_dep_code_suv",
         using: "BTREE",
         fields: [
           { name: "Dep_Code" },
         ]
       },
       {
-        name: "visiting_staff_role_id",
+        name: "fk_visiting_suv",
+        using: "BTREE",
+        fields: [
+          { name: "visiting_id" },
+        ]
+      },
+      {
+        name: "fk_role_suv",
         using: "BTREE",
         fields: [
           { name: "role_id" },
         ]
       },
       {
-        name: "visiting_staff__dep__code",
+        name: "fk_emp_suv",
+        using: "BTREE",
+        fields: [
+          { name: "emp_id" },
+        ]
+      },
+      {
+        name: "fk_dep_code_sup",
         using: "BTREE",
         fields: [
           { name: "Dep_Code" },
+        ]
+      },
+      {
+        name: "fk_role_sup",
+        using: "BTREE",
+        fields: [
+          { name: "role_id" },
         ]
       },
     ]

@@ -1,11 +1,11 @@
 import { studentinfo } from "../config/config.js";
 
 const ensureStudentInfoAccess = (req) => {
-  if (req.user.role_id !== "CGSADM" && req.user.role_id !== "CGSS") {
-    const err = new Error("Forbidden: Admin and Staff access only");
-    err.status = 403;
-    throw err;
-  }
+  //   if (req.user.role_id !== "CGSADM" && req.user.role_id !== "CGSS") {
+  //     const err = new Error("Forbidden: Admin and Staff access only");
+  //     err.status = 403;
+  //     throw err;
+  //   }
 };
 
 const allowedAttributes = [
@@ -24,11 +24,11 @@ const allowedAttributes = [
 ];
 
 // Get all student info - CGS Staff only
-export const getAllStudentInfo  = async (req, res) => {
-  try{
-    ensureStudentInfoAccess(req);
+export const getAllStudentInfo = async (req, res) => {
+  try {
+    //     ensureStudentInfoAccess(req);
     const studentinfoaccess = await studentinfo.findAll({
-      where: {Dep_Code: "CGS"},
+      where: { Dep_Code: "CGS" },
       attributes: allowedAttributes,
       order: [["RegDate", "DESC"]]
     });
@@ -36,7 +36,7 @@ export const getAllStudentInfo  = async (req, res) => {
       total: studentinfoaccess.length,
       studentinfoaccess
     });
-  } catch(error){
+  } catch (error) {
     res.status(error.status || 500).json({
       message: error.message || "Failed to fetch Student information"
     });
@@ -45,15 +45,16 @@ export const getAllStudentInfo  = async (req, res) => {
 
 export const getStudentInfoById = async (req, res) => {
   try {
-    ensureStudentInfoAccess(req);
+    //     ensureStudentInfoAccess(req);
     const studentinfoaccess = await studentinfo.findByPk(req.params.id, {
       where: { Dep_Code: "CGS" },
       attributes: allowedAttributes
     });
 
-    res.status(200).json({studentinfoaccess});
+    res.status(200).json({ studentinfoaccess });
   } catch (error) {
-    res.status(error.status || 500).json({ 
-      message: error.message || "Failed to fetch Student information" });
-  } 
+    res.status(error.status || 500).json({
+      message: error.message || "Failed to fetch Student information"
+    });
+  }
 };

@@ -1,5 +1,4 @@
 import { cgs, supervisor, master_stu, examiner, visiting_staff } from "../config/config.js";
-import { logAuthEvent } from "../utils/authSecurity.js";
 import { sendSuccess, sendError } from "../utils/responseHandler.js";
 // Map role_id to model
 const ROLE_MODEL_MAP = {
@@ -85,8 +84,6 @@ export const updateMe = async (req, res) => {
     if (Affiliation) user.Affiliation = Affiliation;
 
     await user.save({hooks: true});
-    await logAuthEvent(user.EmailId, role_id, "UPDATE_PROFILE");
-
     return sendSuccess(res, "Profile updated successfully", response);
   } catch (err) {
     return sendError(res, err.message, 500);

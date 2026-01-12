@@ -13,10 +13,8 @@ import crypto from "node:crypto";
 /* ================= ROUTES ================= */
 import authRoutes from "./routes/authRoutes.js";
 import adminRoutes from "./routes/adminRoutes.js";
-import auditLogRoutes from "./routes/auditLogRoutes.js";
 import documentRoutes from "./routes/documentRoutes.js";
 import empinfoRoutes from "./routes/empinfoRoutes.js";
-import loginAttemptRoutes from "./routes/loginAttemptRoutes.js";
 import profileRoutes from "./routes/profileRoutes.js";
 import programInfoRoutes from "./routes/programInfoRoutes.js";
 import rolesRoutes from "./routes/rolesRoutes.js";
@@ -67,6 +65,7 @@ export const sessionMiddleware = session({
   cookie: {
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
+    // sameSite: process.env.NODE_ENV === "production" ? "none" : "lax",
     sameSite: process.env.NODE_ENV === "production" ? "strict" : "lax",
     maxAge: 1000 * 60 * 60 * 3, // 3 hours
   },
@@ -86,11 +85,22 @@ app.use((req, res, next) => {
   res.cookie("XSRF-TOKEN", req.session.csrfToken, {
     httpOnly: false, // frontend JS can read
     secure: process.env.NODE_ENV === "production",
-    sameSite: "strict",
+    sameSite: process.env.NODE_ENV === "production" ? "strict" : "lax",
+    // sameSite: "strict",
   });
 
   next();
 });
+
+// ================= CSRF BOOTSTRAP =================
+app.get("/api/csrf-token", (req, res) => {
+  // Session + CSRF token already created by middleware
+  res.status(200).json({
+    success: true,
+    message: "CSRF token initialized",
+  });
+});
+
 
 // CSRF validation middleware for mutating routes
 app.use((req, res, next) => {
@@ -115,10 +125,8 @@ app.use((req, res, next) => {
 /* ================= API ROUTES ================= */
 app.use("/api/auth", authRoutes);
 app.use("/api/admin", adminRoutes);
-app.use("/api/audit-logs", auditLogRoutes);
 app.use("/api/documents", documentRoutes);
 app.use("/api/employees", empinfoRoutes);
-app.use("/api/login-attempts", loginAttemptRoutes);
 app.use("/api/profile", profileRoutes);
 app.use("/api/program-info", programInfoRoutes);
 app.use("/api/roles", rolesRoutes);

@@ -1,25 +1,15 @@
 import { tbldepartments } from "../config/config.js";
 
-const ensureDepartmentInformationAccess = (req) => {
-  if (req.user.role_id !== "CGSADM") {
-    const err = new Error("Forbidden: Admin access only");
-    err.status = 403;
-    throw err;
-  }
-};
-
 const allowedAttributes = [
   "DepartmentName",
   "Dep_Code"
 ];
 
-// Get all Deparment - Admin only
-export const getAllDepartmentInfo =  async (req, res) => {
+// Get all Deparment
+export const getAllDepartmentInfo = async (req, res) => {
   try {
-    ensureDepartmentInformationAccess(req);
-
     const departmentInfoAccess = await tbldepartments.findAll({
-      where: {Dep_Code: "CGS"},
+      where: { Dep_Code: ["CGS", "SCI", "SEHS", "SBSS"] },
       attributes: allowedAttributes,
       order: [["CreationDate", "DESC"]],
     });
@@ -28,7 +18,8 @@ export const getAllDepartmentInfo =  async (req, res) => {
       departmentInfoAccess
     });
   } catch (error) {
-    res.status(error.status || 500).json({ 
-      message: error.message || "Failed to fetch Department Information" });
+    res.status(error.status || 500).json({
+      message: error.message || "Failed to fetch Department Information"
+    });
   }
 };

@@ -2,7 +2,7 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { Lock, CheckCircle } from "lucide-react";
-import { useAuth } from "../../components/auth/AuthContext";
+import { useAuth } from "@/components/auth/AuthContext";
 
 export default function AdminLogin() {
   const [email, setEmail] = useState("");
@@ -28,7 +28,7 @@ export default function AdminLogin() {
         return;
       }
 
-      navigate("/cgs/dashboard", { replace: true });
+      navigate("/dashboard", { replace: true });
     } catch (err) {
       const errorMessage = err.response?.data?.error || err.message || "Login failed";
       setError(errorMessage);
@@ -41,17 +41,17 @@ export default function AdminLogin() {
   const featureList =
     role === "CGSADM"
       ? [
-          "Full User & Role Management",
-          "System Configuration Control",
-          "Security & Audit Oversight",
-          "Academic Governance",
-        ]
+        "Full User & Role Management",
+        "System Configuration Control",
+        "Security & Audit Oversight",
+        "Academic Governance",
+      ]
       : [
-          "Student Monitoring",
-          "Document Verification",
-          "Progress Tracking",
-          "Operational Support",
-        ];
+        "Student Monitoring",
+        "Document Verification",
+        "Progress Tracking",
+        "Operational Support",
+      ];
 
   const itemVariants = {
     hidden: { opacity: 0, x: 20 },
@@ -141,11 +141,10 @@ export default function AdminLogin() {
               type="submit"
               disabled={loading}
               whileTap={{ scale: 0.98 }}
-              className={`w-full py-3 rounded-lg font-semibold text-white transition duration-200 shadow-md ${
-                loading
-                  ? "bg-blue-400 cursor-not-allowed"
-                  : "bg-blue-600 hover:bg-blue-700 shadow-blue-300/50"
-              }`}
+              className={`w-full py-3 rounded-lg font-semibold text-white transition duration-200 shadow-md ${loading
+                ? "bg-blue-400 cursor-not-allowed"
+                : "bg-blue-600 hover:bg-blue-700 shadow-blue-300/50"
+                }`}
             >
               {loading
                 ? "Verifying..."

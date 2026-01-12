@@ -13,12 +13,20 @@ export default class examiner extends Model {
       },
       emp_id: {
         type: DataTypes.STRING(20),
-        allowNull: false,
+        allowNull: true,
         references: {
           model: 'empinfo',
           key: 'emp_id'
         },
         field: 'emp_id'
+      },
+      visiting_id: {
+        type: DataTypes.STRING(20),
+        allowNull: true,
+        references: {
+          model: 'visiting_staff',
+          key: 'visiting_id'
+        }
       },
       FirstName: {
         type: DataTypes.STRING(150),
@@ -58,6 +66,11 @@ export default class examiner extends Model {
           key: 'role_id'
         },
         field: 'role_id'
+      },
+      role_type: {
+        type: DataTypes.ENUM('Internal', 'External'),
+        allowNull: false,
+        defaultValue: "Internal"
       },
       Dep_Code: {
         type: DataTypes.STRING(100),
@@ -134,6 +147,13 @@ export default class examiner extends Model {
           using: "BTREE",
           fields: [
             { name: "role_id" },
+          ]
+        },
+        {
+          name: "fk_visiting_examiner",
+          using: "BTREE",
+          fields: [
+            { name: "visiting_id" },
           ]
         },
       ],

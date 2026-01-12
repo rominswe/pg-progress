@@ -19,11 +19,6 @@ import VisitingStaff from "../models/visiting_staff.js";
 import DocUp from "../models/documents_uploads.js";
 import DocRev from "../models/documents_reviews.js";
 
-// Auth / Security Models
-import AuditLog from "../models/audit_log.js";
-import LoginAttempt from "../models/login_attempt.js";
-import VerificationToken from "../models/verification_token.js";
-
 // Create Sequelize instance first
 const sequelize = new Sequelize(
   process.env.DB_NAME,
@@ -53,11 +48,6 @@ const master_stu = MasterStu.init(sequelize, DataTypes);
 
 const doc_up = DocUp.init(sequelize, DataTypes);
 const doc_rev = DocRev.init(sequelize, DataTypes);
-
-// ================= AUTH MODELS ================= //
-const auditLog = AuditLog.init(sequelize, DataTypes);
-const loginAttempt = LoginAttempt.init(sequelize, DataTypes);
-const verificationToken = VerificationToken.init(sequelize, DataTypes);
 
 // Relationships
 
@@ -110,25 +100,6 @@ master_stu.belongsTo(studentinfo, { foreignKey: "stu_id" });
 programInfo.hasMany(master_stu, { foreignKey: "Prog_Code" });
 master_stu.belongsTo(programInfo, { foreignKey: "Prog_Code" });
 
-
-// ----- AUTH / SECURITY RELATIONS -----
-
-// VerificationToken → any user table dynamically
-verificationToken.belongsTo(cgs, { foreignKey: "user_id", constraints: false, scope: { user_table: "cgs" }, as: "cgsUser" });
-verificationToken.belongsTo(supervisor, { foreignKey: "user_id", constraints: false, scope: { user_table: "supervisor" }, as: "supervisorUser" });
-verificationToken.belongsTo(master_stu, { foreignKey: "user_id", constraints: false, scope: { user_table: "master_stu" }, as: "studentUser" });
-verificationToken.belongsTo(examiner, { foreignKey: "user_id", constraints: false, scope: { user_table: "examiner" }, as: "examinerUser" });
-verificationToken.belongsTo(visiting_staff, { foreignKey: "user_id", constraints: false, scope: { user_table: "visiting_staff" }, as: "visitingStaffUser" });
-
-// AuditLog → link for user tracking
-[auditLog, loginAttempt].forEach(model => {
-  model.belongsTo(cgs, { foreignKey: "email", targetKey: "EmailId", constraints: false, as: "cgsUser" });
-  model.belongsTo(supervisor, { foreignKey: "email", targetKey: "EmailId", constraints: false, as: "supervisorUser" });
-  model.belongsTo(master_stu, { foreignKey: "email", targetKey: "EmailId", constraints: false, as: "studentUser" });
-  model.belongsTo(examiner, { foreignKey: "email", targetKey: "EmailId", constraints: false, as: "examinerUser" });
-  model.belongsTo(visiting_staff, { foreignKey: "email", targetKey: "EmailId", constraints: false, as: "visitingStaffUser" });
-});
-
 // ================= DOCUMENT RELATIONSHIPS ================= //
 
 // Document upload → reviews
@@ -159,8 +130,5 @@ export {
   master_stu,
   programInfo,
   doc_up,
-  doc_rev,
-  auditLog,
-  loginAttempt,
-  verificationToken
+  doc_rev
 };

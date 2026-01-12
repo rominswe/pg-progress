@@ -5,20 +5,28 @@ const { Model, Sequelize } = _sequelize;
 export default class supervisor extends Model {
   static init(sequelize, DataTypes) {
     return super.init({
-      sup_id: {
+      suv_id: {
         type: DataTypes.STRING(20),
         allowNull: false,
         primaryKey: true,
-        field: 'sup_id'
+        field: 'suv_id'
       },
       emp_id: {
         type: DataTypes.STRING(20),
-        allowNull: false,
+        allowNull: true,
         references: {
           model: 'empinfo',
           key: 'emp_id'
         },
         field: 'emp_id'
+      },
+      visiting_id: {
+        type: DataTypes.STRING(20),
+        allowNull: true,
+        references: {
+          model: 'visiting_staff',
+          key: 'visiting_id'
+        }
       },
       FirstName: {
         type: DataTypes.STRING(150),
@@ -58,6 +66,11 @@ export default class supervisor extends Model {
           key: 'role_id'
         },
         field: 'role_id'
+      },
+      role_type: {
+        type: DataTypes.ENUM('Internal', 'External'),
+        allowNull: false,
+        defaultValue: "Internal"
       },
       Dep_Code: {
         type: DataTypes.STRING(100),
@@ -113,28 +126,35 @@ export default class supervisor extends Model {
           unique: true,
           using: "BTREE",
           fields: [
-            { name: "sup_id" },
+            { name: "suv_id" },
           ]
         },
         {
-          name: "fk_emp_sup",
+          name: "fk_emp_suv",
           using: "BTREE",
           fields: [
             { name: "emp_id" },
           ]
         },
         {
-          name: "fk_dep_code_sup",
+          name: "fk_dep_code_suv",
           using: "BTREE",
           fields: [
             { name: "Dep_Code" },
           ]
         },
         {
-          name: "fk_role_sup",
+          name: "fk_role_suv",
           using: "BTREE",
           fields: [
             { name: "role_id" },
+          ]
+        },
+        {
+          name: "fk_visiting_suv",
+          using: "BTREE",
+          fields: [
+            { name: "visiting_id" },
           ]
         },
       ],

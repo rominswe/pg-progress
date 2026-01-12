@@ -1,5 +1,4 @@
-import React from 'react';
-import { User, Mail, Building, IdCard, CheckCircle2, Clock, Globe, GraduationCap } from 'lucide-react';
+import { User, Mail, Building, IdCard, CheckCircle2, Clock, Globe, GraduationCap, University } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -8,7 +7,7 @@ export default function UserDetailCard({ user, onRegister }) {
   const isRegistered = user.status === 'Registered';
   const isPending = user.status === 'Pending';
   const isUnregistered = user.status === 'Unregistered';
-  const { showRole, showProgram } = user.displayConfigs || {};
+  const { showRole, showProgram, showExpertise, showAffiliation } = user.displayConfigs || {};
 
   return (
     <Card className="overflow-hidden border-t-4 border-t-primary">
@@ -26,13 +25,12 @@ export default function UserDetailCard({ user, onRegister }) {
             </div>
           </div>
 
-          <Badge 
+          <Badge
             variant="outline"
-            className={`capitalize py-1 px-2 ${
-              isRegistered ? 'bg-emerald-50 text-emerald-700 border-emerald-200' : 
-              isPending ? 'bg-amber-50 text-amber-700 border-amber-200' : 
-              'bg-slate-50 text-slate-600'
-            }`}
+            className={`capitalize py-1 px-2 ${isRegistered ? 'bg-emerald-50 text-emerald-700 border-emerald-200' :
+              isPending ? 'bg-amber-50 text-amber-700 border-amber-200' :
+                'bg-slate-50 text-slate-600'
+              }`}
           >
             {isRegistered && <CheckCircle2 className="h-3 w-3 mr-1" />}
             {isPending && <Clock className="h-3 w-3 mr-1 animate-pulse" />}
@@ -47,18 +45,18 @@ export default function UserDetailCard({ user, onRegister }) {
             <div className="flex items-center gap-3 text-sm">
               <IdCard className="h-4 w-4 text-muted-foreground" />
               <span className="font-medium text-muted-foreground uppercase text-[10px] tracking-wider w-20">Role</span>
-              <span>{user.roleLabel}</span>
+              <span>{user.roleLabel || 'N/A'}</span>
             </div>
           )}
           <div className="flex items-center gap-3 text-sm">
             <Building className="h-4 w-4 text-muted-foreground" />
             <span className="font-medium text-muted-foreground uppercase text-[10px] tracking-wider w-20">Dept</span>
-            <span>{user.departmentLabel}</span>
+            <span>{user.departmentLabel || 'N/A'}</span>
           </div>
           <div className="flex items-center gap-3 text-sm">
             <Mail className="h-4 w-4 text-muted-foreground" />
             <span className="font-medium text-muted-foreground uppercase text-[10px] tracking-wider w-20">Email</span>
-            <span className="truncate">{user.email}</span>
+            <span className="truncate">{user.email || 'N/A'}</span>
           </div>
         </div>
 
@@ -68,11 +66,30 @@ export default function UserDetailCard({ user, onRegister }) {
             <span className="font-medium text-muted-foreground uppercase text-[10px] tracking-wider w-20">Country</span>
             <span>{user.country || 'N/A'}</span>
           </div>
+          <div className="flex items-center gap-3 text-sm">
+            <User className="h-4 w-4 text-muted-foreground" />
+            <span className="font-medium text-muted-foreground uppercase text-[10px] tracking-wider w-20">Gender</span>
+            <span>{user.gender || 'N/A'}</span>
+          </div>
           {showProgram && (
             <div className="flex items-center gap-3 text-sm">
               <GraduationCap className="h-4 w-4 text-muted-foreground" />
               <span className="font-medium text-muted-foreground uppercase text-[10px] tracking-wider w-20">Program</span>
               <span>{user.programName || 'N/A'}</span>
+            </div>
+          )}
+          {showExpertise && (
+            <div className="flex items-center gap-3 text-sm">
+              <GraduationCap className="h-4 w-4 text-muted-foreground" />
+              <span className="font-medium text-muted-foreground uppercase text-[10px] tracking-wider w-20">Expertise</span>
+              <span>{user.fieldExpertise || 'N/A'}</span>
+            </div>
+          )}
+          {showAffiliation && (
+            <div className="flex items-center gap-3 text-sm">
+              <University className="h-4 w-4 text-muted-foreground" />
+              <span className="font-medium text-muted-foreground uppercase text-[10px] tracking-wider w-20">Affiliation</span>
+              <span>{user.affiliation || 'N/A'}</span>
             </div>
           )}
         </div>
@@ -85,8 +102,8 @@ export default function UserDetailCard({ user, onRegister }) {
           ) : (
             <div className="bg-muted/50 rounded-lg p-3 text-center">
               <p className="text-sm font-medium text-muted-foreground italic">
-                {isRegistered 
-                  ? "This user already has an active portal account." 
+                {isRegistered
+                  ? "This user already has an active portal account."
                   : "Registration is currently awaiting user activation via email."}
               </p>
             </div>

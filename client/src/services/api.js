@@ -28,6 +28,10 @@ api.interceptors.request.use(
   (error) => Promise.reject(error)
 );
 
+export const initCsrf = async () => {
+  await api.get("/api/csrf-token");
+};
+
 // ===================== REQUEST QUEUE FOR 401 =====================
 let failedQueue = [];
 let isLoggingOut = false;
