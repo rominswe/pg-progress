@@ -334,7 +334,20 @@ export default function Uploads() {
                 <p className="text-sm font-bold text-slate-700">
                   {files.length > 0 ? `${files.length} file(s) selected` : "Click to upload or drag & drop"}
                 </p>
-                <p className="text-xs font-semibold text-slate-400 mt-1">PDF, DOCX up to 15MB</p>
+                <p className="text-xs font-semibold text-slate-400 mt-1">PDF, DOCX up to 1GB</p>
+
+                {files.length > 0 && (
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setFiles([]);
+                    }}
+                    className="mt-4 text-xs font-bold text-red-500 hover:text-red-700 bg-red-50 px-3 py-1 rounded-full border border-red-100 transition-all hover:scale-105"
+                  >
+                    Cancel Selection
+                  </button>
+                )}
               </div>
 
               <button

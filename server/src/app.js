@@ -54,8 +54,8 @@ app.use(
 );
 
 /* ================= MIDDLEWARE ================= */
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: "1gb" }));
+app.use(express.urlencoded({ extended: true, limit: "1gb" }));
 app.use(cookieParser());
 app.use(logger);
 app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));

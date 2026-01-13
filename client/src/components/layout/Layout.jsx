@@ -1,5 +1,5 @@
 // src/components/shared/Layout.jsx
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { LogOut, Bell, Menu, X, ChevronDown, User } from 'lucide-react';
@@ -12,6 +12,7 @@ import {
 } from '../../components/ui/dropdown-menu';
 import { cn } from '../../lib/utils';
 import { useAuth } from '../../components/auth/AuthContext';
+import { API_BASE_URL } from '../../services/api';
 
 /**
  * Props:
@@ -73,7 +74,24 @@ export default function Layout({
   const { user, logout, loading } = useAuth();
   const navigate = useNavigate();
 
-  const notificationsCount = notificationsProp.length;
+  const [notifications, setNotifications] = useState(notificationsProp);
+  const notificationsCount = notifications.length;
+
+  // Keep state in sync with props
+  useEffect(() => {
+    setNotifications(notificationsProp);
+  }, [notificationsProp]);
+
+  const handleNotificationClick = (n) => {
+    // Navigate to the link
+    navigate(n.link);
+    // Remove from local list (marking as "finished")
+    setNotifications(prev => prev.filter(item => item.id !== n.id));
+  };
+
+  const markAllAsRead = () => {
+    setNotifications([]);
+  };
 
   const handleLogoutConfirm = async () => {
     try {
@@ -203,40 +221,78 @@ export default function Layout({
             {/* Notifications */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" size="icon" className="relative">
-                  <Bell className="h-5 w-5" />
+                <Button variant="ghost" size="icon" className="relative group">
+                  <Bell className="h-5 w-5 group-hover:text-blue-600 transition-colors" />
                   {notificationsCount > 0 && (
-                    <span className="absolute right-1 top-1 flex h-4 w-4 items-center justify-center rounded-full bg-destructive text-[10px] font-medium text-destructive-foreground">
+                    <span className="absolute right-1 top-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white ring-2 ring-white">
                       {notificationsCount}
                     </span>
                   )}
                 </Button>
               </DropdownMenuTrigger>
-              {notificationsCount > 0 && (
-                <DropdownMenuContent align="end" className="w-56 bg-popover">
-                  {notificationsProp.map((n) => (
-                    <DropdownMenuItem key={n.id} onClick={() => navigate(n.link)}>
-                      {n.label}
-                    </DropdownMenuItem>
-                  ))}
-                </DropdownMenuContent>
-              )}
+              <DropdownMenuContent align="end" className="w-80 p-0 overflow-hidden rounded-2xl border-slate-100 shadow-2xl bg-white">
+                <div className="bg-slate-50/50 p-4 border-b border-slate-100 flex items-center justify-between">
+                  <h4 className="text-sm font-bold text-slate-800">Notifications</h4>
+                  {notificationsCount > 0 && (
+                    <button
+                      onClick={markAllAsRead}
+                      className="text-[10px] font-bold text-blue-600 hover:text-blue-700 hover:underline px-2 py-1"
+                    >
+                      Clear All
+                    </button>
+                  )}
+                </div>
+                <div className="max-h-96 overflow-y-auto">
+                  {notificationsCount > 0 ? (
+                    notifications.map((n) => (
+                      <DropdownMenuItem
+                        key={n.id}
+                        onClick={() => handleNotificationClick(n)}
+                        className="flex flex-col items-start gap-1 p-4 cursor-pointer hover:bg-slate-50 border-b border-slate-50 last:border-0 focus:bg-blue-50/50"
+                      >
+                        <span className="text-sm font-bold text-slate-700">{n.label}</span>
+                        <span className="text-[10px] font-medium text-slate-400">Click to view details</span>
+                      </DropdownMenuItem>
+                    ))
+                  ) : (
+                    <div className="p-8 text-center bg-white">
+                      <div className="h-12 w-12 rounded-full bg-slate-50 flex items-center justify-center mx-auto mb-3">
+                        <Bell className="h-6 w-6 text-slate-300" />
+                      </div>
+                      <p className="text-sm font-bold text-slate-400">No new notifications</p>
+                    </div>
+                  )}
+                </div>
+              </DropdownMenuContent>
             </DropdownMenu>
 
             {/* Profile Dropdown */}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant="ghost" className="flex items-center gap-2">
-                  <div className="flex h-8 w-8 items-center justify-center rounded-full bg-blue-600">
-                    <User className="h-4 w-4 text-white" />
+                <Button variant="ghost" className="flex items-center gap-2 pr-2">
+                  <div className="flex h-9 w-9 items-center justify-center rounded-full bg-blue-600 overflow-hidden ring-2 ring-background ring-offset-2 ring-offset-slate-100">
+                    {user?.Profile_Image ? (
+                      <img
+                        src={`${API_BASE_URL}${user.Profile_Image}`}
+                        alt="Profile"
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      <User className="h-5 w-5 text-white" />
+                    )}
                   </div>
-                  <span className="hidden text-sm font-medium md:block">
-                    {user?.firstName} {user?.lastName}
-                  </span>
-                  <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                  <div className="hidden flex-col items-start md:flex">
+                    <span className="text-sm font-bold leading-none text-slate-900">
+                      {user?.FirstName} {user?.LastName}
+                    </span>
+                    <span className="text-[10px] font-medium text-slate-400 uppercase tracking-tighter">
+                      {user?.role_id === 'STU' ? 'Student' : user?.role_id === 'SUV' ? 'Supervisor' : user?.role_id}
+                    </span>
+                  </div>
+                  <ChevronDown className="h-4 w-4 text-slate-400" />
                 </Button>
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-56 bg-popover">
+              <DropdownMenuContent align="end" className="w-56 bg-white border-slate-100 shadow-xl rounded-xl">
                 {profileLinks.map((link, idx) => (
                   <DropdownMenuItem
                     key={idx}

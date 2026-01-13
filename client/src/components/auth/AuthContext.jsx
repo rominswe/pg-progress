@@ -29,18 +29,18 @@ export const AuthProvider = ({ children }) => {
   const login = async (role, credentials) => {
     try {
       const res = await authService.login(role, credentials);
-      
+
       // Case 1: Force Password Change
       if (res.data?.mustChangePassword) {
-        return res.data; 
+        return res.data;
       }
-      
+
       // Case 2: Normal Successful Login
       if (res.success && res.data) {
         setUser(res.data);
         return res.data;
       }
-      
+
       // Case 3: Backend returned success: false or missing data
       throw new Error(res.error || "Login failed");
     } catch (err) { // <--- Added the closing brace for 'try' here
@@ -60,7 +60,7 @@ export const AuthProvider = ({ children }) => {
   };
 
   return (
-    <AuthContext.Provider value={{ user, loading, login, logout }}>
+    <AuthContext.Provider value={{ user, setUser, loading, login, logout }}>
       {children}
     </AuthContext.Provider>
   );
