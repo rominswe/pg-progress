@@ -119,13 +119,17 @@ export default function Profile() {
   const statusConfig = getStatusConfig(user.Status);
 
   return (
-    <div className="max-w-5xl mx-auto space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-700 pb-10">
-      <div className="flex flex-col gap-1">
-        <h2 className="text-3xl font-extrabold tracking-tight text-slate-900">Account Settings</h2>
-        <p className="text-slate-500 font-medium text-sm">Update your personal information and account security.</p>
+    <div className="w-full animate-in fade-in slide-in-from-bottom-4 duration-700">
+      {/* Header Banner */}
+      <div className="bg-gradient-to-r from-blue-700 to-blue-600 p-8 text-white shadow-xl relative overflow-hidden mb-6">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none"></div>
+        <div className="relative z-10 flex flex-col gap-1">
+          <h2 className="text-3xl font-extrabold tracking-tight">Account Settings</h2>
+          <p className="text-blue-100 font-medium text-sm">Update your personal information and account security.</p>
+        </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 items-start px-6 pb-6">
         {/* Left: Summary Card */}
         <Card className="lg:col-span-4 border-none shadow-xl shadow-slate-200/50 overflow-hidden bg-white sticky top-24">
           <div className="h-24 bg-gradient-to-r from-blue-600 to-indigo-700" />

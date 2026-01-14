@@ -49,11 +49,11 @@ export default function Uploads() {
     },
     {
       id: 5,
-      title: 'Final Thesis Draft',
+      title: 'Final Thesis',
       status: 'pending',
       date: 'Final Step',
       description: 'Complete thesis',
-      docType: 'Thesis Draft'
+      docType: 'Final Thesis'
     },
   ]);
 
@@ -290,23 +290,25 @@ export default function Uploads() {
             </div>
 
             <div className="p-6 space-y-6">
-              {/* Type Selection */}
-              <div className="space-y-2">
-                <label className="text-sm font-bold text-slate-700 ml-1">Document Type <span className="text-red-500">*</span></label>
-                <div className="relative">
-                  <select
-                    value={documentType}
-                    onChange={(e) => setDocumentType(e.target.value)}
-                    className="w-full pl-4 pr-10 py-3 rounded-xl border border-slate-200 bg-slate-50 text-slate-700 appearance-none focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all font-bold cursor-pointer"
-                  >
-                    <option value="">Select Type...</option>
-                    {availableTypes.map((type) => (
-                      <option key={type} value={type}>{type}</option>
-                    ))}
-                  </select>
-                  <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 font-bold">▼</div>
+              {/* Type Selection - Only show when no type is selected */}
+              {!documentType && (
+                <div className="space-y-2">
+                  <label className="text-sm font-bold text-slate-700 ml-1">Document Type <span className="text-red-500">*</span></label>
+                  <div className="relative">
+                    <select
+                      value={documentType}
+                      onChange={(e) => setDocumentType(e.target.value)}
+                      className="w-full pl-4 pr-10 py-3 rounded-xl border border-slate-200 bg-slate-50 text-slate-700 appearance-none focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all font-bold cursor-pointer"
+                    >
+                      <option value="">Select Type...</option>
+                      {availableTypes.map((type) => (
+                        <option key={type} value={type}>{type}</option>
+                      ))}
+                    </select>
+                    <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 font-bold">▼</div>
+                  </div>
                 </div>
-              </div>
+              )}
 
               {/* Drag & Drop Zone */}
               <div

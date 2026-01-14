@@ -10,6 +10,7 @@ export default function SupervisorDashboard() {
   const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [userProfile, setUserProfile] = useState(null);
+  const [pendingEvaluations, setPendingEvaluations] = useState([]);
   const [realStats, setRealStats] = useState({
     totalStudents: 0,
     pendingReviews: 0,
@@ -24,14 +25,16 @@ export default function SupervisorDashboard() {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [studentsData, profileData, statsData] = await Promise.all([
+      const [studentsData, profileData, statsData, pendingData] = await Promise.all([
         progressService.getMyStudents(),
         authService.me(),
-        dashboardService.getSupervisorStats()
+        dashboardService.getSupervisorStats(),
+        progressService.getPendingEvaluations()
       ]);
       setStudents(studentsData.students || []);
       setUserProfile(profileData.data);
       setRealStats(statsData);
+      setPendingEvaluations(pendingData.evaluations || []);
     } catch (err) {
       console.error("Dashboard fetch error:", err);
     } finally {
@@ -67,7 +70,7 @@ export default function SupervisorDashboard() {
       link: "/supervisor/evaluate-2"
     },
     {
-      title: "Proposals",
+      title: "Proposal Defense",
       value: dashboardStats.proposalsReviewed,
       icon: FileText,
       color: "blue",
@@ -76,11 +79,11 @@ export default function SupervisorDashboard() {
     },
   ];
 
-  const recentActivity = [...students]
+  const recentActivity = [...pendingEvaluations]
     .sort(
       (a, b) =>
-        new Date(b.lastSubmissionDate).getTime() -
-        new Date(a.lastSubmissionDate).getTime()
+        new Date(b.submittedDate).getTime() -
+        new Date(a.submittedDate).getTime()
     )
     .slice(0, 5);
 
@@ -251,11 +254,11 @@ export default function SupervisorDashboard() {
                     </div>
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-bold text-slate-800 leading-tight group-hover:text-blue-600 transition-colors">
-                        {student.name}
+                        {student.fullName}
                       </p>
-                      <p className="text-xs text-slate-500 mb-1">submitted a progress update</p>
+                      <p className="text-xs text-slate-500 mb-1">{student.title || "submitted a progress update"}</p>
                       <p className="text-[10px] font-semibold text-slate-400 uppercase tracking-wide">
-                        {new Date(student.lastSubmissionDate).toLocaleDateString()}
+                        {new Date(student.submittedDate).toLocaleDateString()}
                       </p>
                     </div>
                     <div className="p-2 text-slate-300 group-hover:text-blue-600 transition-all">

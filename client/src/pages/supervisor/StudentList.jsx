@@ -1,10 +1,12 @@
 import { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Search, Mail, TrendingUp, Calendar, BookOpen, ChevronRight, Filter, Loader2 } from 'lucide-react';
 import { Card } from '@/components/ui/card';
 import { motion, AnimatePresence } from 'framer-motion';
 import { progressService } from '@/services/api';
 
 export default function StudentList() {
+  const navigate = useNavigate();
   const [students, setStudents] = useState([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
@@ -180,7 +182,13 @@ export default function StudentList() {
                   </div>
 
                   {/* Action Arrow */}
-                  <div className="hidden lg:flex items-center justify-center w-12 h-12 rounded-full border border-slate-100 text-slate-300 group-hover:bg-blue-600 group-hover:text-white group-hover:border-blue-600 transition-all">
+                  <div
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      navigate('/supervisor/review');
+                    }}
+                    className="hidden lg:flex items-center justify-center w-12 h-12 rounded-full border border-slate-100 text-slate-300 group-hover:bg-blue-600 group-hover:text-white group-hover:border-blue-600 transition-all"
+                  >
                     <ChevronRight size={24} />
                   </div>
                 </div>

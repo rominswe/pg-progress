@@ -36,7 +36,7 @@ const ServiceRequest = () => {
     };
 
     return (
-        <div className="max-w-full px-6 mx-auto animate-fade-in-up space-y-8 py-6">
+        <div className="w-full animate-fade-in-up">
             {isSubmitted ? (
                 <div className="max-w-2xl mx-auto mt-10 p-12 bg-white rounded-3xl shadow-xl border border-slate-100 text-center">
                     <div className="text-6xl mb-6">✅</div>

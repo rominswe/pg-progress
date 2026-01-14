@@ -141,8 +141,35 @@ const ProgressEvaluation2 = () => {
 
         } catch (error) {
             console.error('Error submitting evaluation:', error);
-            const errorMessage = error.response?.data?.error || error.message || 'Failed to submit evaluation. Please try again.';
-            alert(errorMessage);
+
+            // Handle specific error cases
+            const errorData = error.response?.data;
+
+            if (errorData?.error === 'Final Thesis Not Submitted') {
+                // Student hasn't submitted thesis draft
+                alert(
+                    `❌ Evaluation Not Allowed\n\n` +
+                    `${errorData.message}\n\n` +
+                    `Please ask the student to submit their Final Thesis before proceeding with the evaluation.`
+                );
+            } else if (errorData?.error === 'Student Not Found') {
+                // Student doesn't exist
+                alert(
+                    `❌ Student Not Found\n\n` +
+                    `${errorData.message}\n\n` +
+                    `Please check the Student ID and try again.`
+                );
+            } else if (errorData?.error === 'Final Thesis Not Approved') {
+                // Thesis draft not approved yet
+                alert(
+                    `⏳ Final Thesis Pending Approval\n\n` +
+                    `${errorData.message}`
+                );
+            } else {
+                // Generic error
+                const errorMessage = errorData?.error || errorData?.message || error.message || 'Failed to submit evaluation. Please try again.';
+                alert(`❌ Error\n\n${errorMessage}`);
+            }
         } finally {
             setIsSubmitting(false);
         }

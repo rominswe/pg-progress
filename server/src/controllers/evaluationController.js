@@ -2,7 +2,7 @@ import initModels from '../models/init-models.js';
 import { sequelize } from '../config/config.js';
 
 const models = initModels(sequelize);
-const { defense_evaluations, master_stu, supervisor } = models;
+const { defense_evaluations, master_stu, supervisor, documents_uploads } = models;
 
 // Find student by ID (Restricted to supervisor's department)
 export const getStudentById = async (req, res) => {
@@ -71,6 +71,42 @@ export const createEvaluation = async (req, res) => {
             return res.status(400).json({ error: 'All ratings are required' });
         }
 
+        // ✅ NEW VALIDATION: Check if student exists
+        const student = await master_stu.findOne({
+            where: { master_id: studentId }
+        });
+
+        if (!student) {
+            return res.status(404).json({
+                error: 'Student Not Found',
+                message: `Student with ID "${studentId}" does not exist in the system. Please verify the student ID and try again.`
+            });
+        }
+
+        // ✅ NEW VALIDATION: Check if student has submitted Final Thesis
+        const finalThesis = await documents_uploads.findOne({
+            where: {
+                master_id: studentId,
+                document_type: 'Final Thesis'
+            }
+        });
+
+        if (!finalThesis) {
+            return res.status(403).json({
+                error: 'Final Thesis Not Submitted',
+                message: `Student "${student.FirstName} ${student.LastName}" (${studentId}) has not submitted their Final Thesis yet. Evaluation cannot be performed until the Final Thesis is submitted.`,
+                studentName: `${student.FirstName} ${student.LastName}`
+            });
+        }
+
+        // Optional: Check if Final Thesis is approved (uncomment if needed)
+        // if (finalThesis.status !== 'Approved') {
+        //     return res.status(403).json({ 
+        //         error: 'Final Thesis Not Approved',
+        //         message: `The Final Thesis for student "${student.FirstName} ${student.LastName}" is still ${finalThesis.status}. Please wait for approval before evaluation.`
+        //     });
+        // }
+
         // Create evaluation
         const evaluation = await defense_evaluations.create({
             student_name: studentName,
@@ -126,7 +162,14 @@ export const getStudentEvaluations = async (req, res) => {
 // Get all evaluations (for admin/supervisor overview)
 export const getAllEvaluations = async (req, res) => {
     try {
+        // Only fetch evaluations for students that exist in master_stu table
         const evaluations = await defense_evaluations.findAll({
+            include: [{
+                model: master_stu,
+                as: 'master',
+                required: true, // INNER JOIN - only show evaluations for real students
+                attributes: [] // We don't need student data, just filtering
+            }],
             order: [['created_at', 'DESC']]
         });
 

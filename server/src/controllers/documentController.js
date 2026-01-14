@@ -23,7 +23,7 @@ export const uploadDocument = async (req, res) => {
     // Optional: List valid types if your DB is strict
     const validTypes = [
       "Progress Report",
-      "Thesis Draft",
+      "Final Thesis",
       "Proposal",
       "Research Proposal",
       "Literature Review",
@@ -193,7 +193,7 @@ export const getStudentDashboardStats = async (req, res) => {
       "Literature Review",
       "Methodology",
       "Data Analysis",
-      "Thesis Draft"
+      "Final Thesis"
     ];
 
     // Find which milestones have been uploaded (at least once)

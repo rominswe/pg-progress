@@ -230,7 +230,7 @@ function StudentForm({ onSubmit }) {
         }
 
         if (step === 4) {
-            if (!formData.signature) newErrors.signature = 'Digital signature is required'
+            if (!formData.signature.trim()) newErrors.signature = 'Signature (your name) is required'
         }
 
         setErrors(newErrors)
@@ -566,35 +566,15 @@ function StudentForm({ onSubmit }) {
                 </p>
             </div>
 
-            <div className="mb-6">
-                <label className="block text-sm font-semibold text-slate-700 mb-2">
-                    Digital Signature <span className="text-red-500">*</span>
-                </label>
-                <div className={`border-2 border-dashed rounded-xl overflow-hidden bg-white touch-none
-                     ${errors.signature ? 'border-red-400' : 'border-slate-300'}`}>
-                    <canvas
-                        ref={canvasRef}
-                        className="w-full h-48 cursor-crosshair bg-[url('https://www.transparenttextures.com/patterns/graphy.png')] bg-white"
-                        onMouseDown={startDrawing}
-                        onMouseMove={draw}
-                        onMouseUp={stopDrawing}
-                        onMouseLeave={stopDrawing}
-                        onTouchStart={startDrawing}
-                        onTouchMove={draw}
-                        onTouchEnd={stopDrawing}
-                    />
-                </div>
-                <div className="flex justify-end mt-2">
-                    <button
-                        type="button"
-                        onClick={clearSignature}
-                        className="text-xs font-semibold text-red-500 hover:text-red-700 uppercase tracking-wide"
-                    >
-                        Clear Signature
-                    </button>
-                </div>
-                {errors.signature && <p className="mt-1 text-sm text-red-500 font-medium">⚠ {errors.signature}</p>}
-            </div>
+            <InputField
+                label="Signature (Write your full name)"
+                name="signature"
+                value={formData.signature}
+                onChange={handleInputChange}
+                error={errors.signature}
+                placeholder="Enter your full name as signature"
+                required
+            />
 
             <InputField
                 label="Date of Submission"
@@ -619,15 +599,15 @@ function StudentForm({ onSubmit }) {
     const progressPercentage = ((currentStep - 1) / (steps.length - 1)) * 100
 
     return (
-        <div className="max-w-4xl mx-auto my-8">
+        <div className="w-full">
             {/* Header Card */}
-            <div className="bg-gradient-to-r from-blue-700 to-blue-600 rounded-3xl p-8 md:p-12 text-center text-white shadow-xl mb-8 relative overflow-hidden">
+            <div className="bg-gradient-to-r from-blue-700 to-blue-600 p-6 md:p-8 text-center text-white relative overflow-hidden">
                 <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none"></div>
                 <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight mb-1 relative z-10">PG-Forms Portal</h1>
                 <p className="text-blue-100 font-medium relative z-10 text-lg">Postgraduate Student Services</p>
             </div>
 
-            <div className="bg-white rounded-3xl shadow-xl overflow-hidden border border-slate-100">
+            <div className="bg-white overflow-hidden">
                 {/* Stepper */}
                 <div className="bg-slate-50 border-b border-slate-100 p-8">
                     <div className="relative flex items-center justify-between max-w-2xl mx-auto z-0">
@@ -695,7 +675,7 @@ function StudentForm({ onSubmit }) {
                             onClick={handleSubmit}
                             className="px-8 py-3 rounded-xl font-bold bg-green-600 text-white shadow-lg shadow-green-200 hover:bg-green-700 hover:shadow-green-300 hover:-translate-y-0.5 transition-all flex items-center gap-2"
                         >
-                            Submit Request 🚀
+                            Submit 🚀
                         </button>
                     )}
                 </div>

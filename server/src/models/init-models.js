@@ -88,6 +88,11 @@ export default function initModels(sequelize) {
   progress_updates.belongsTo(master_stu, { as: "student", foreignKey: "student_id" });
   master_stu.hasMany(progress_updates, { as: "progress_updates", foreignKey: "student_id" });
 
+  // Add relationship for defense_evaluations
+  defense_evaluations.belongsTo(master_stu, { as: "master", foreignKey: "student_id", targetKey: "master_id" });
+  master_stu.hasMany(defense_evaluations, { as: "defense_evaluations", foreignKey: "student_id", sourceKey: "master_id" });
+
+
   return {
     audit_log,
     login_attempt,
