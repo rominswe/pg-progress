@@ -1,5 +1,5 @@
 import express from 'express';
-import { protect } from '../middleware/authmiddleware.js';
+import { protect } from '../middleware/authMiddleware.js';
 import { requireRole } from '../middleware/rbacMiddleware.js';
 import { createEvaluation, getStudentEvaluations, getAllEvaluations, getStudentById } from '../controllers/evaluationController.js';
 

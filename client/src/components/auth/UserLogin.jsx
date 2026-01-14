@@ -7,10 +7,10 @@ import { useAuth } from "@/components/auth/AuthContext";
 export default function UserLogin() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
-  const [role, setRole] = useState("STU"); // STU | SUV | EXA
+  const [role, setRole] = useState("EXA"); // Default to Examiner to help debug
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [showPassword, setShowPassword] = useState(false);
 
   const navigate = useNavigate();
   const { login } = useAuth();
@@ -28,19 +28,10 @@ export default function UserLogin() {
     try {
       const data = await login(role, { email, password });
 
-      // 🔐 Temporary password enforcement
+      // App.jsx will detect the 'user' change and redirect automatically.
       if (data?.mustChangePassword) {
         navigate(data.redirectUrl, { replace: true });
-        return;
       }
-
-      // 🚦 Redirect by role
-      const dashboardMap = {
-        STU: "/student/dashboard",
-        SUV: "/supervisor/dashboard",
-        EXA: "/examiner/dashboard",
-      };
-      navigate(dashboardMap[role] || "/login", { replace: true });
     } catch (err) {
       const errorMessage = err.response?.data?.error || err.message || "Login failed";
       setError(errorMessage);
@@ -160,14 +151,19 @@ export default function UserLogin() {
                   required
                   whileFocus={{ scale: 1.01 }}
                   placeholder="Enter your password"
-                  className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-blue-500 focus:border-blue-500 outline-none transition duration-150 pr-10"
+                  className="w-full border border-gray-300 rounded-lg px-4 py-3 pr-10 focus:ring-blue-500 focus:border-blue-500 outline-none transition duration-150"
                 />
+
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none"
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-blue-600 focus:outline-none"
                 >
-                  {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                  {showPassword ? (
+                    <EyeOff className="w-5 h-5" />
+                  ) : (
+                    <Eye className="w-5 h-5" />
+                  )}
                 </button>
               </div>
             </div>

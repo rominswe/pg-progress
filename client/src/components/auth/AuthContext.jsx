@@ -19,10 +19,15 @@ export const AuthProvider = ({ children }) => {
         }
       })
       .catch((err) => {
-        console.error("Auth check failed:", err);
+        // Only error log once, don't trigger state cascade if already null
+        if (err.response?.status !== 401) {
+          console.error("Auth check failed:", err.message);
+        }
         setUser(null);
       })
-      .finally(() => setLoading(false));
+      .finally(() => {
+        setLoading(false);
+      });
   }, []);
 
   // Login function
@@ -32,6 +37,7 @@ export const AuthProvider = ({ children }) => {
 
       // Case 1: Force Password Change
       if (res.data?.mustChangePassword) {
+        setUser(res.data);
         return res.data;
       }
 
@@ -43,7 +49,7 @@ export const AuthProvider = ({ children }) => {
 
       // Case 3: Backend returned success: false or missing data
       throw new Error(res.error || "Login failed");
-    } catch (err) { // <--- Added the closing brace for 'try' here
+    } catch (err) {
       throw err;
     }
   };

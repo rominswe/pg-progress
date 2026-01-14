@@ -31,6 +31,8 @@ import ReviewRequest from '@/pages/supervisor/ReviewRequest';
 import ProgressEvaluation from "@/pages/supervisor/ProgressEvaluation";
 import ProgressEvaluation2 from "@/pages/supervisor/ProgressEvaluation2";
 import Profile from "@/components/layout/Profile";
+import ExaminerLayout from "@/components/layout/ExaminerLayout";
+import ExaminerDashboard from "@/pages/examiner/ExaminerDashboard";
 
 // QueryClient
 const queryClient = new QueryClient();
@@ -52,7 +54,7 @@ function AppWrapper() {
       <Route
         path="/login"
         element={
-          user && ["STU", "SUV", "EXM"].includes(user.role_id) ? (
+          user && ["STU", "SUV", "EXA"].includes(user.role_id) ? (
             <Navigate
               to={user.role_id === "STU" ? "/student/dashboard" : user.role_id === "SUV" ? "/supervisor/dashboard" : "/examiner/dashboard"}
               replace
@@ -82,7 +84,7 @@ function AppWrapper() {
         <Route path="uploads" element={<Uploads />} />
         <Route path="progress-updates" element={<ProgressUpdates />} />
         <Route path="feedback" element={<Feedback />} />
-        <Route path="service-request" element={<ServiceRequest />} /> {/* ✅ NEW */}
+        <Route path="service-request" element={<ServiceRequest />} />
         <Route path="profile" element={<Profile />} />
       </Route>
 
@@ -107,6 +109,24 @@ function AppWrapper() {
         <Route path="review-request" element={<ReviewRequest />} />
         <Route path="evaluate" element={<ProgressEvaluation />} />
         <Route path="evaluate-2" element={<ProgressEvaluation2 />} />
+        <Route path="profile" element={<Profile />} />
+      </Route>
+
+      <Route
+        path="/examiner/*"
+        element={
+          <ProtectedRoute
+            isAuthenticated={!!user}
+            loading={loading}
+            userRole={user?.role_id}
+            allowedRole="EXA"
+          >
+            <ExaminerLayout onLogout={logout} />
+          </ProtectedRoute>
+        }
+      >
+        <Route index element={<Navigate to="dashboard" replace />} />
+        <Route path="dashboard" element={<ExaminerDashboard />} />
         <Route path="profile" element={<Profile />} />
       </Route>
 

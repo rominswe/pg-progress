@@ -1,6 +1,6 @@
 import express from "express";
 import { me, updateMe, uploadProfileImage } from "../controllers/profileController.js";
-import { protect } from "../middleware/authmiddleware.js";
+import { protect } from "../middleware/authMiddleware.js";
 import rateLimit from "express-rate-limit";
 import multer from "multer";
 import path from "node:path";

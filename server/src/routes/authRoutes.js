@@ -2,7 +2,7 @@ import express from "express";
 import rateLimit from "express-rate-limit";
 import { login, verifyAccount, logout } from "../controllers/authController.js";
 import { resendVerificationToken, checkTokenStatus } from "../controllers/verificationTokenController.js";
-import { protect } from "../middleware/authmiddleware.js";
+import { protect } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
 
@@ -17,7 +17,7 @@ const verifyLimiter = rateLimit({
 });
 
 router.post("/login", loginLimiter, login);
-router.get("/verify", verifyLimiter, verifyAccount); 
+router.get("/verify", verifyLimiter, verifyAccount);
 router.post("/resend-verification", resendVerificationToken);
 router.get("/check-token/:token", checkTokenStatus);// expects query params: ?code=<vcode>&type=email
 router.post("/logout", protect, logout);

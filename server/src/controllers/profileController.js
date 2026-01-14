@@ -66,6 +66,7 @@ export const me = async (req, res) => {
     response.name = `${user.FirstName} ${user.LastName}`;
     response.FirstName = user.FirstName;
     response.LastName = user.LastName;
+    response.mustChangePassword = !!user.MustChangePassword;
 
     return sendSuccess(res, "Profile fetched successfully", response);
   } catch (err) {
@@ -100,8 +101,10 @@ export const updateMe = async (req, res) => {
     }
     if (Phonenumber) user.Phonenumber = Phonenumber;
     if (Profile_Image) user.Profile_Image = Profile_Image;
-    if (Expertise) user.Expertise = Expertise;
-    if (Affiliation) user.Affiliation = Affiliation;
+
+    // Expertise/Affiliation only exist for visiting_staff (some EXA)
+    if (Expertise && user.Expertise !== undefined) user.Expertise = Expertise;
+    if (Affiliation && user.Affiliation !== undefined) user.Affiliation = Affiliation;
 
     await user.save({ hooks: true });
     await logAuthEvent(user.EmailId, role_id, "UPDATE_PROFILE");
@@ -114,8 +117,9 @@ export const updateMe = async (req, res) => {
       Profile_Image: user.Profile_Image,
       Affiliation: user.Affiliation,
       Expertise: user.Expertise,
+      Status: user.Status,
       role_id: role_id,
-      university_id: role_id === "STU" ? user.stu_id : (role_id === "SUV" ? (user.sup_id || user.emp_id) : (user.cgs_id || user.emp_id || id))
+      university_id: role_id === "STU" ? user.stu_id : (role_id === "SUV" ? (user.sup_id || user.emp_id) : (user.examiner_id || user.cgs_id || user.emp_id || id))
     };
 
     return sendSuccess(res, "Profile updated successfully", response);

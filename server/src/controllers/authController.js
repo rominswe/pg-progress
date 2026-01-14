@@ -87,13 +87,19 @@ export const login = async (req, res) => {
 
     await logAuthEvent(email, role_id, "LOGIN_SUCCESS", req, { table: modelUsed });
 
-    // Temporary password check
+    /* Temporarily disabled for debugging
     if (user.MustChangePassword) {
+      const redirectPath =
+        role_id === "STU" ? "/student/profile" :
+          role_id === "SUV" ? "/supervisor/profile" :
+            "/examiner/profile";
+
       return sendSuccess(res, "Please update your temporary password", {
         mustChangePassword: true,
-        redirectUrl: "/api/profile/me" // Updated to a frontend-friendly route
+        redirectUrl: redirectPath
       });
     }
+    */
 
     return sendSuccess(res, "Login successful", req.session.user);
   } catch (err) {
