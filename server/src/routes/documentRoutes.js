@@ -1,6 +1,6 @@
 import express from "express";
 import { uploadDocument, getMyDocuments, reviewDocument, getSupervisorDocuments, downloadDocument, getStudentDashboardStats, deleteDocument } from "../controllers/documentController.js";
-import { protect } from "../middleware/authmiddleware.js";
+import { protect } from "../middleware/authMiddleware.js";
 import { requireRole } from "../middleware/rbacMiddleware.js";
 import upload from "../middleware/upload.js"; // 1. Import the upload middleware
 

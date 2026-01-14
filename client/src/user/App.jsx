@@ -18,8 +18,10 @@ import UserLogin from "@/components/auth/UserLogin";
 import StudentLayout from "@/components/layout/StudentLayout";
 import Dashboard from "@/pages/student/Dashboard";
 import Uploads from "@/pages/student/Uploads";
+import ThesisSubmission from "@/pages/student/ThesisSubmission";
 import ProgressUpdates from "@/pages/student/ProgressUpdates";
 import Feedback from "@/pages/student/Feedback";
+import Analytics from "@/pages/student/Analytics";
 import ServiceRequest from "@/pages/student/ServiceRequest";
 
 // Supervisor pages
@@ -29,14 +31,18 @@ import StudentList from "@/pages/supervisor/StudentList";
 import ReviewSubmissions from "@/pages/supervisor/ReviewSubmissions";
 import ReviewRequest from '@/pages/supervisor/ReviewRequest';
 import ProgressEvaluation from "@/pages/supervisor/ProgressEvaluation";
-import ProgressEvaluation2 from "@/pages/supervisor/ProgressEvaluation2";
 import Profile from "@/components/layout/Profile";
 
+import ExaminerLayout from "@/components/layout/ExaminerLayout";
+import ExaminerDashboard from "@/pages/examiner/ExaminerDashboard";
+import ExaminerProfile from "@/pages/examiner/ExaminerProfile";
 // QueryClient
 const queryClient = new QueryClient();
 
 function AppWrapper() {
+
   const { user, loading, logout } = useAuth();
+  console.log("AppWrapper user:", user, "loading:", loading);
 
   if (loading) {
     return (
@@ -48,20 +54,29 @@ function AppWrapper() {
 
   return (
     <Routes>
-      {/* ===== LOGIN PAGES ===== */}
+      {/* ===== LOGIN PAGE ===== */}
       <Route
         path="/login"
         element={
-          user && ["STU", "SUV", "EXM"].includes(user.role_id) ? (
+          // Show login page while loading or if no user
+          loading || !user ? (
+            <UserLogin />
+          ) : (
+            // Only redirect if user exists and loading is done
             <Navigate
-              to={user.role_id === "STU" ? "/student/dashboard" : user.role_id === "SUV" ? "/supervisor/dashboard" : "/examiner/dashboard"}
+              to={
+                user.role_id === "STU"
+                  ? "/student/dashboard"
+                  : user.role_id === "SUV"
+                    ? "/supervisor/dashboard"
+                    : "/examiner/dashboard"
+              }
               replace
             />
-          ) : (
-            <UserLogin />
           )
         }
       />
+
 
       {/* ===== STUDENT ===== */}
       <Route
@@ -80,8 +95,10 @@ function AppWrapper() {
         <Route index element={<Navigate to="dashboard" replace />} />
         <Route path="dashboard" element={<Dashboard />} />
         <Route path="uploads" element={<Uploads />} />
+        <Route path="thesis-submission" element={<ThesisSubmission />} />
         <Route path="progress-updates" element={<ProgressUpdates />} />
         <Route path="feedback" element={<Feedback />} />
+        <Route path="analytics" element={<Analytics />} />
         <Route path="service-request" element={<ServiceRequest />} /> {/* ✅ NEW */}
         <Route path="profile" element={<Profile />} />
       </Route>
@@ -106,8 +123,26 @@ function AppWrapper() {
         <Route path="review" element={<ReviewSubmissions />} />
         <Route path="review-request" element={<ReviewRequest />} />
         <Route path="evaluate" element={<ProgressEvaluation />} />
-        <Route path="evaluate-2" element={<ProgressEvaluation2 />} />
         <Route path="profile" element={<Profile />} />
+      </Route>
+
+      {/* ===== EXAMINER ===== */}
+      <Route
+        path="/examiner/*"
+        element={
+          <ProtectedRoute
+            isAuthenticated={!!user}
+            loading={loading}
+            userRole={user?.role_id}
+            allowedRole="EXA"
+          >
+            <ExaminerLayout onLogout={logout} />
+          </ProtectedRoute>
+        }
+      >
+        <Route index element={<Navigate to="dashboard" replace />} />
+        <Route path="dashboard" element={<ExaminerDashboard />} />
+        <Route path="profile" element={<ExaminerProfile />} />
       </Route>
 
       {/* ===== FALLBACK ===== */}

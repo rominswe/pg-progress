@@ -1,6 +1,6 @@
 import express from "express";
 import { createUpdate, getUpdates, getPendingEvaluations, reviewUpdate, getMyStudents } from "../controllers/progressController.js";
-import { protect } from "../middleware/authmiddleware.js";
+import { protect } from "../middleware/authMiddleware.js";
 import { requireRole } from "../middleware/rbacMiddleware.js";
 import multer from "multer";
 import path from "path";

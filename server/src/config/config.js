@@ -18,11 +18,13 @@ import TableDepartments from "../models/tbldepartments.js";
 import VisitingStaff from "../models/visiting_staff.js";
 import DocUp from "../models/documents_uploads.js";
 import DocRev from "../models/documents_reviews.js";
+import DefenseEvaluations from "../models/defense_evaluations.js";
 
 // Auth / Security Models
 import AuditLog from "../models/audit_log.js";
 import LoginAttempt from "../models/login_attempt.js";
 import VerificationToken from "../models/verification_token.js";
+import ExaminerAssignments from "../models/examiner_assignments.js";
 
 // Create Sequelize instance first
 const sequelize = new Sequelize(
@@ -53,17 +55,27 @@ const master_stu = MasterStu.init(sequelize, DataTypes);
 
 const doc_up = DocUp.init(sequelize, DataTypes);
 const doc_rev = DocRev.init(sequelize, DataTypes);
+const defense_evaluations = DefenseEvaluations.init(sequelize, DataTypes);
 
 // ================= AUTH MODELS ================= //
 const auditLog = AuditLog.init(sequelize, DataTypes);
 const loginAttempt = LoginAttempt.init(sequelize, DataTypes);
 const verificationToken = VerificationToken.init(sequelize, DataTypes);
+const examiner_assignments = ExaminerAssignments.init(sequelize, DataTypes);
 
 // Relationships
+
+// Examiner Assignments
+examiner.hasMany(examiner_assignments, { foreignKey: "examiner_id" });
+examiner_assignments.belongsTo(examiner, { foreignKey: "examiner_id" });
+
+master_stu.hasMany(examiner_assignments, { foreignKey: "student_id" });
+examiner_assignments.belongsTo(master_stu, { foreignKey: "student_id", as: 'student' });
 
 // Empinfo relationships
 empinfo.hasMany(cgs, { foreignKey: "emp_id" });
 cgs.belongsTo(empinfo, { foreignKey: "emp_id" });
+
 
 empinfo.hasMany(examiner, { foreignKey: "emp_id" });
 examiner.belongsTo(empinfo, { foreignKey: "emp_id" });
@@ -73,19 +85,19 @@ supervisor.belongsTo(empinfo, { foreignKey: "emp_id" });
 
 // Role-based access control
 role.hasMany(cgs, { foreignKey: "role_id" });
-cgs.belongsTo(role, { foreignKey: "role_id" });
+cgs.belongsTo(role, { foreignKey: "role_id", as: 'role' });
 
 role.hasMany(examiner, { foreignKey: "role_id" });
-examiner.belongsTo(role, { foreignKey: "role_id" });
+examiner.belongsTo(role, { foreignKey: "role_id", as: 'role' });
 
 role.hasMany(supervisor, { foreignKey: "role_id" });
-supervisor.belongsTo(role, { foreignKey: "role_id" });
+supervisor.belongsTo(role, { foreignKey: "role_id", as: 'role' });
 
 role.hasMany(master_stu, { foreignKey: "role_id" });
-master_stu.belongsTo(role, { foreignKey: "role_id" });
+master_stu.belongsTo(role, { foreignKey: "role_id", as: 'role' });
 
 role.hasMany(visiting_staff, { foreignKey: "role_id" });
-visiting_staff.belongsTo(role, { foreignKey: "role_id" });
+visiting_staff.belongsTo(role, { foreignKey: "role_id", as: 'role' });
 
 // Department relationships
 tbldepartments.hasMany(cgs, { foreignKey: "Dep_Code" });
@@ -145,6 +157,11 @@ doc_up.belongsTo(role, { foreignKey: "role_id", as: "role" });
 role.hasMany(doc_rev, { foreignKey: "role_id" });
 doc_rev.belongsTo(role, { foreignKey: "role_id", as: "role" });
 
+// Defense Evaluations
+master_stu.hasMany(defense_evaluations, { foreignKey: "student_id" });
+defense_evaluations.belongsTo(master_stu, { foreignKey: "student_id", as: 'student' });
+
+
 // ================= EXPORT ================= //
 export {
   sequelize,
@@ -162,5 +179,7 @@ export {
   doc_rev,
   auditLog,
   loginAttempt,
-  verificationToken
+  verificationToken,
+  examiner_assignments,
+  defense_evaluations
 };

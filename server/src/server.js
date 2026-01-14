@@ -63,6 +63,22 @@ while (retries) {
     await sequelize.authenticate();
     console.log("✅ Database connected");
 
+    // --- MANUAL FIX: Add viva_outcome column safely ---
+    try {
+      await sequelize.query(`
+        ALTER TABLE defense_evaluations 
+        ADD COLUMN viva_outcome ENUM('Pass', 'Minor Corrections', 'Major Corrections', 'Fail') NULL DEFAULT NULL;
+      `);
+      console.log("✅ Column 'viva_outcome' added via raw SQL.");
+    } catch (e) {
+      if (e.original && e.original.code === 'ER_DUP_FIELDNAME') {
+        console.log("ℹ️ Column 'viva_outcome' already exists (Skipping).");
+      } else {
+        console.log("⚠️ Schema update warning:", e.message);
+      }
+    }
+    // --------------------------------------------------
+
     await sequelize.sync();
     console.log("✅ Database synced");
 

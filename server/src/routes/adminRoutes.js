@@ -22,7 +22,7 @@ import {
   deleteDocumentAdmin
 } from "../controllers/adminController.js";
 
-import { protect } from "../middleware/authmiddleware.js";
+import { protect } from "../middleware/authMiddleware.js";
 import { requireRole } from "../middleware/rbacMiddleware.js";
 
 const router = express.Router();

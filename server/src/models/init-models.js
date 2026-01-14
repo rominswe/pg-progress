@@ -8,6 +8,7 @@ import _documents_reviews from "./documents_reviews.js";
 import _documents_uploads from "./documents_uploads.js";
 import _empinfo from "./empinfo.js";
 import _examiner from "./examiner.js";
+import _examiner_assignments from "./examiner_assignments.js";
 import _master_stu from "./master_stu.js";
 import _program_info from "./program_info.js";
 import _roles from "./roles.js";
@@ -38,6 +39,7 @@ export default function initModels(sequelize) {
   const progress_updates = _progress_updates.init(sequelize, DataTypes);
   const service_requests = _service_requests.init(sequelize, DataTypes);
   const defense_evaluations = _defense_evaluations.init(sequelize, DataTypes);
+  const examiner_assignments = _examiner_assignments.init(sequelize, DataTypes);
 
   documents_reviews.belongsTo(documents_uploads, { as: "doc_up", foreignKey: "doc_up_id" });
   documents_uploads.hasMany(documents_reviews, { as: "documents_reviews", foreignKey: "doc_up_id" });
@@ -88,6 +90,11 @@ export default function initModels(sequelize) {
   progress_updates.belongsTo(master_stu, { as: "student", foreignKey: "student_id" });
   master_stu.hasMany(progress_updates, { as: "progress_updates", foreignKey: "student_id" });
 
+  examiner_assignments.belongsTo(examiner, { as: "examiner", foreignKey: "examiner_id" });
+  examiner.hasMany(examiner_assignments, { as: "examiner_assignments", foreignKey: "examiner_id" });
+  examiner_assignments.belongsTo(master_stu, { as: "student", foreignKey: "student_id" });
+  master_stu.hasMany(examiner_assignments, { as: "examiner_assignments", foreignKey: "student_id" });
+
   return {
     audit_log,
     login_attempt,
@@ -97,6 +104,7 @@ export default function initModels(sequelize) {
     documents_uploads,
     empinfo,
     examiner,
+    examiner_assignments,
     master_stu,
     program_info,
     roles,

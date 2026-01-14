@@ -22,6 +22,10 @@ export default class defense_evaluations extends Model {
                 type: DataTypes.ENUM('Proposal Defense', 'Final Thesis'),
                 allowNull: false
             },
+            viva_outcome: {
+                type: DataTypes.ENUM('Pass', 'Minor Corrections', 'Major Corrections', 'Fail'),
+                allowNull: true // Can be null if just a proposal defense, or initially? Prompt implies it's required for submission.
+            },
             semester: {
                 type: DataTypes.STRING(100),
                 allowNull: false

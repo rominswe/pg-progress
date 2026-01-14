@@ -65,6 +65,7 @@ export const login = async (req, res) => {
     if (!user.role || user.role.role_id !== role_id)
       throw new Error("Role mismatch");
 
+
     enforceAccountRules(user);
 
     const valid = await bcrypt.compare(password, user.Password);
@@ -80,9 +81,10 @@ export const login = async (req, res) => {
       email: user.EmailId,
       role_id: user.role.role_id,
       table: modelUsed,
+      FirstName: user.FirstName,
+      LastName: user.LastName,
       Status: user.Status,
       MustChangePassword: user.MustChangePassword,
-      Dep_Code: user.Dep_Code,
     };
 
     await logAuthEvent(email, role_id, "LOGIN_SUCCESS", req, { table: modelUsed });
@@ -91,12 +93,14 @@ export const login = async (req, res) => {
     if (user.MustChangePassword) {
       return sendSuccess(res, "Please update your temporary password", {
         mustChangePassword: true,
-        redirectUrl: "/api/profile/me" // Updated to a frontend-friendly route
+        redirectUrl: "/examiner/dashboard",
+        user: req.session.user
       });
     }
 
     return sendSuccess(res, "Login successful", req.session.user);
   } catch (err) {
+    console.error("❌ Login Error:", err);
     return sendError(res, err.message, 403);
   }
 };

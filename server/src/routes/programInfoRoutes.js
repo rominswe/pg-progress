@@ -1,6 +1,6 @@
 import express from "express";
 import { getAllProgramInfo } from "../controllers/programInfoController.js";
-import { protect } from "../middleware/authmiddleware.js";
+import { protect } from "../middleware/authMiddleware.js";
 import { requireRole } from "../middleware/rbacMiddleware.js";
 
 const router = express.Router();

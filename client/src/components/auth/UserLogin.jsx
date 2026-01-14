@@ -1,16 +1,18 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Users, CheckCircle, Eye, EyeOff } from "lucide-react";
+import { Users, CheckCircle, Eye, EyeOff } from "lucide-react"; // 1. Added Eye imports
 import { useAuth } from "@/components/auth/AuthContext";
 
 export default function UserLogin() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [showPassword, setShowPassword] = useState(false);
   const [role, setRole] = useState("STU"); // STU | SUV | EXA
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+
+  // 2. Added state for password visibility
+  const [showPassword, setShowPassword] = useState(false);
 
   const navigate = useNavigate();
   const { login } = useAuth();
@@ -28,19 +30,16 @@ export default function UserLogin() {
     try {
       const data = await login(role, { email, password });
 
-      // 🔐 Temporary password enforcement
+      // 🛑 REMOVE MANUAL NAVIGATION HERE
+      // The App.jsx will detect the 'user' change and redirect automatically.
+
+      // Only keep the password change logic if necessary
       if (data?.mustChangePassword) {
         navigate(data.redirectUrl, { replace: true });
-        return;
       }
 
-      // 🚦 Redirect by role
-      const dashboardMap = {
-        STU: "/student/dashboard",
-        SUV: "/supervisor/dashboard",
-        EXA: "/examiner/dashboard",
-      };
-      navigate(dashboardMap[role] || "/login", { replace: true });
+      // logic ends here; the component will unmount when App.jsx redirects.
+
     } catch (err) {
       const errorMessage = err.response?.data?.error || err.message || "Login failed";
       setError(errorMessage);
@@ -120,8 +119,8 @@ export default function UserLogin() {
                 onClick={() => setRole(r.id)}
                 disabled={loading}
                 className={`px-6 py-2 rounded-lg font-semibold border-2 transition-all duration-300 shadow-sm ${role === r.id
-                  ? "bg-blue-600 text-white border-blue-600"
-                  : "bg-white text-blue-600 border-blue-600 hover:bg-blue-50"
+                    ? "bg-blue-600 text-white border-blue-600"
+                    : "bg-white text-blue-600 border-blue-600 hover:bg-blue-50"
                   }`}
               >
                 {r.label}
@@ -151,23 +150,30 @@ export default function UserLogin() {
               <label className="block mb-2 text-sm font-medium text-gray-700">
                 Password
               </label>
+              {/* 3. WRAPPED INPUT IN RELATIVE DIV FOR EYE ICON */}
               <div className="relative">
                 <motion.input
-                  type={showPassword ? "text" : "password"}
+                  type={showPassword ? "text" : "password"} // Dynamic type
                   value={password}
                   disabled={loading}
                   onChange={(e) => setPassword(e.target.value)}
                   required
                   whileFocus={{ scale: 1.01 }}
                   placeholder="Enter your password"
-                  className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-blue-500 focus:border-blue-500 outline-none transition duration-150 pr-10"
+                  className="w-full border border-gray-300 rounded-lg px-4 py-3 pr-10 focus:ring-blue-500 focus:border-blue-500 outline-none transition duration-150"
                 />
+
+                {/* 4. THE EYE BUTTON */}
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 focus:outline-none"
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-blue-600 focus:outline-none"
                 >
-                  {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                  {showPassword ? (
+                    <EyeOff className="w-5 h-5" />
+                  ) : (
+                    <Eye className="w-5 h-5" />
+                  )}
                 </button>
               </div>
             </div>
@@ -177,8 +183,8 @@ export default function UserLogin() {
               disabled={loading}
               whileHover={{ scale: loading ? 1 : 1.02 }}
               className={`w-full py-3 px-4 bg-blue-600 text-white rounded-lg font-semibold transition duration-200 shadow-md ${loading
-                ? "opacity-60 cursor-not-allowed"
-                : "hover:bg-blue-700 shadow-blue-300/50"
+                  ? "opacity-60 cursor-not-allowed"
+                  : "hover:bg-blue-700 shadow-blue-300/50"
                 }`}
             >
               {loading ? "Signing in..." : `Sign In as ${roleLabel}`}

@@ -32,6 +32,7 @@ export const AuthProvider = ({ children }) => {
 
       // Case 1: Force Password Change
       if (res.data?.mustChangePassword) {
+        if (res.data.user) setUser(res.data.user);
         return res.data;
       }
 
