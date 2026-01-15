@@ -63,7 +63,7 @@ services:
       - app-network
 
   redis:
-    image: redis:8.0-alpine
+    image: redis:alpine
     restart: always
     ports:
       - "6379:6379"

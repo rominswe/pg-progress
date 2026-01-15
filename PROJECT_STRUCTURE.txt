@@ -25,9 +25,11 @@ pg-progress/
 │       ├── components/     # Reusable UI components
 │       │   ├── auth/       # Login & Protection
 │       │   ├── form/       # Business Forms
+│       │   │   └── examiner/ # Examiner specific forms
 │       │   ├── layout/     # Page layouts
 │       │   └── ui/         # Shadcn UI primitives
 │       └── pages/          # Application Screens
+│           ├── examiner/   # Examiner Dashboard & tools
 │           ├── staff/      # Staff/CGS Dashboard & tools
 │           ├── student/    # Student Dashboard & submissions
 │           └── supervisor/ # Supervisor Dashboard & reviews
@@ -77,12 +79,16 @@ Built with Vite and React.
   - App.jsx, main.jsx, index.css: Entry files for user portal.
 - components/: Reusable React components.
   - auth/: Authentication forms and context (Login, ProtectedRoute, AuthContext).
-  - form/: Detailed business forms (StudentForm, SupervisorAssessmentForm, etc.).
+  - form/: Detailed business forms.
+    - examiner/: Examiner specific forms (ThesisEvaluationForm.jsx).
+    - StudentForm, SupervisorAssessmentForm, etc.
   - layout/: Page layouts (Layout, StaffLayout, StudentLayout, SupervisorLayout).
   - modal/: Modal dialogs (ConfirmRegisterModal).
   - ui/: Shadcn/UI primitive components (button, card, input, etc.).
 - hooks/: Custom React hooks.
 - pages/: Application page views.
+  - examiner/: Pages for Examiners.
+    - ExaminerDashboard.jsx: Dashboard for examiners to view assigned students.
   - staff/: Pages for CGS/Staff users (Dashboard, RegisterUsers, VerifyDocuments, etc.).
   - student/: Pages for Student users (Dashboard, ThesisSubmission, Uploads, ProgressUpdates).
   - supervisor/: Pages for Supervisors (Dashboard, ReviewSubmissions, ProgressEvaluation).
@@ -105,6 +111,8 @@ Built with Node.js and Express.
   - redis.js: Redis client configuration.
 - controllers/: Request handlers (Business logic).
   - authController.js: Authentication logic.
+  - dashboardController.js: Dashboard data aggregation (e.g., for examiners).
+  - defenseEvaluationController.js: Handling defense evaluation submissions.
   - studentInfoController.js: Student data management.
   - documentController.js: File upload and implementation.
   - adminController.js, profileController.js, etc.
@@ -113,11 +121,15 @@ Built with Node.js and Express.
   - rbacMiddleware.js: Role-Based Access Control.
   - upload.js: Multer configuration for file uploads.
 - models/: Sequelize database models.
+  - defense_evaluations.js: Schema for thesis defense evaluations.
   - studinfo.js, empinfo.js, supervisor.js: User tables.
   - documents_uploads.js, documents_reviews.js: Document tracking.
+  - service_requests.js: Student service requests.
   - index.js, init-models.js: Model associations.
 - routes/: API route definitions.
-  - Maps endpoints (e.g., /api/auth) to controllers.
+  - Maps endpoints (e.g., /api/defense-evaluations) to controllers.
+  - defenseEvaluationRoutes.js: Routes for evaluation submissions.
+  - dashboardRoutes.js: Routes for dashboard data.
 - seeds/: Scripts to populate the database with initial data.
   - seedAdmin.js, createSupervisorUser.js, etc.
 - utils/: Helper utility functions.

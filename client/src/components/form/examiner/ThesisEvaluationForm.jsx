@@ -74,7 +74,7 @@ export default function ThesisEvaluationForm({ studentData, existingData, onSubm
                 <div className="relative z-10">
                     <h1 className="text-3xl font-extrabold mb-2 flex items-center gap-3">
                         <Award className="w-8 h-8" />
-                        Thesis Evaluation Form
+                        Defense Evaluation Form
                     </h1>
                     <p className="text-blue-100 font-medium opacity-90">Official External & Internal Examiner Assessment Portal</p>
                 </div>
@@ -206,7 +206,7 @@ export default function ThesisEvaluationForm({ studentData, existingData, onSubm
                             ) : (
                                 <>
                                     <CheckCircle size={22} />
-                                    Submit Final Evaluation
+                                    Submit Evaluation
                                 </>
                             )}
                         </button>

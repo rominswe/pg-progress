@@ -10,13 +10,6 @@ import { progressService, API_BASE_URL } from '../../../services/api';
 const SupervisorAssessmentForm = ({ studentData, onBack }) => {
     // Initial State following your provided structure
     const [formData, setFormData] = useState({
-        ratings: {
-            researchProgress: 0,
-            qualityOfWork: 0,
-            initiative: 0,
-            attendance: 0,
-            englishProficiency: 0
-        },
         hasIssues: null, // true/false
         issueDescription: '',
         milestones: '',
@@ -24,6 +17,7 @@ const SupervisorAssessmentForm = ({ studentData, onBack }) => {
         overallStatus: '',
         recommendation: '',
         supervisorComments: '',
+        signature: '',
         evaluationDate: new Date().toISOString().split('T')[0]
     });
 
@@ -37,12 +31,7 @@ const SupervisorAssessmentForm = ({ studentData, onBack }) => {
     };
 
     // Handle Rating Matrix (1-5)
-    const handleRatingChange = (criterion, value) => {
-        setFormData(prev => ({
-            ...prev,
-            ratings: { ...prev.ratings, [criterion]: parseInt(value) }
-        }));
-    };
+
 
     const handleSubmit = async (e) => {
         e.preventDefault();
@@ -54,7 +43,8 @@ const SupervisorAssessmentForm = ({ studentData, onBack }) => {
             await progressService.reviewProgressUpdate({
                 update_id: studentData.id,
                 supervisor_feedback: formData.supervisorComments,
-                status: 'Reviewed'
+                status: 'Reviewed',
+                signature: formData.signature
             });
 
             alert("Assessment submitted and progress update marked as Reviewed!");
@@ -197,54 +187,7 @@ const SupervisorAssessmentForm = ({ studentData, onBack }) => {
                 )}
 
                 {/* SECTION 2: PERFORMANCE RATINGS */}
-                <div className="bg-white rounded-3xl p-8 shadow-sm border border-slate-100 relative overflow-hidden">
-                    <div className="absolute top-0 left-0 w-2 h-full bg-blue-500"></div>
-                    <div className="flex items-center justify-between mb-8">
-                        <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
-                            <div className="p-2 bg-blue-50 text-blue-600 rounded-lg">
-                                <BarChart size={20} />
-                            </div>
-                            Performance Ratings
-                        </h2>
-                        <span className="text-sm font-medium text-slate-500 bg-slate-100 px-3 py-1 rounded-full">1 = Poor, 5 = Excellent</span>
-                    </div>
 
-                    <div className="space-y-6">
-                        {[
-                            { id: 'researchProgress', label: 'Research Progress & Milestones' },
-                            { id: 'qualityOfWork', label: 'Quality of Work Produced' },
-                            { id: 'initiative', label: 'Initiative & Independence' },
-                            { id: 'attendance', label: 'Attendance & Consultations' },
-                            { id: 'englishProficiency', label: 'English Writing Proficiency' }
-                        ].map((criterion, idx) => (
-                            <div key={criterion.id} className={`flex flex-col md:flex-row md:items-center justify-between gap-4 p-4 rounded-2xl transition-colors ${idx % 2 === 0 ? 'bg-slate-50/50' : 'bg-white'}`}>
-                                <span className="text-slate-700 font-bold text-sm md:text-base w-full md:w-1/3">{criterion.label}</span>
-                                <div className="flex items-center gap-2 flex-1 justify-end">
-                                    {[1, 2, 3, 4, 5].map((score) => (
-                                        <label
-                                            key={score}
-                                            className={`relative cursor-pointer w-10 h-10 md:w-12 md:h-12 flex items-center justify-center rounded-xl font-bold transition-all border-2 
-                                                ${formData.ratings[criterion.id] === score
-                                                    ? 'bg-blue-600 text-white border-blue-600 shadow-lg shadow-blue-200 scale-110 z-10'
-                                                    : 'bg-white text-slate-400 border-slate-200 hover:border-blue-300 hover:text-blue-500'
-                                                }`}
-                                        >
-                                            <input
-                                                type="radio"
-                                                name={criterion.id}
-                                                value={score}
-                                                checked={formData.ratings[criterion.id] === score}
-                                                onChange={() => handleRatingChange(criterion.id, score)}
-                                                className="absolute inset-0 opacity-0 cursor-pointer"
-                                            />
-                                            {score}
-                                        </label>
-                                    ))}
-                                </div>
-                            </div>
-                        ))}
-                    </div>
-                </div>
 
                 {/* SECTION: RECOMMENDATION & DECLARATION */}
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -255,7 +198,7 @@ const SupervisorAssessmentForm = ({ studentData, onBack }) => {
                             <div className={`p-2 rounded-lg ${isAtRisk ? 'bg-red-50 text-red-600' : 'bg-green-50 text-green-600'}`}>
                                 <FileText size={20} />
                             </div>
-                            Final Recommendation
+                            Recommendation & Date
                         </h2>
 
                         <div className="space-y-6">
@@ -279,6 +222,20 @@ const SupervisorAssessmentForm = ({ studentData, onBack }) => {
                                     <option value="Unsatisfactory">Unsatisfactory (At Risk)</option>
                                 </select>
                             </div>
+
+                            <div>
+                                <label className="text-sm font-bold text-slate-700 mb-2 block">Date of Evaluation</label>
+                                <div className="relative">
+                                    <Calendar className="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400" size={18} />
+                                    <input
+                                        type="date"
+                                        name="evaluationDate"
+                                        value={formData.evaluationDate}
+                                        onChange={handleChange}
+                                        className="w-full pl-12 pr-4 py-3 rounded-xl border border-slate-200 bg-slate-50 font-medium text-slate-700 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10"
+                                    />
+                                </div>
+                            </div>
                         </div>
                     </div>
 
@@ -289,7 +246,7 @@ const SupervisorAssessmentForm = ({ studentData, onBack }) => {
                             <div className="p-2 bg-slate-100 text-slate-600 rounded-lg">
                                 <MessageSquare size={20} />
                             </div>
-                            Supervisor Declaration
+                            Feedback & Signature
                         </h2>
 
                         <div className="space-y-6">
@@ -306,18 +263,18 @@ const SupervisorAssessmentForm = ({ studentData, onBack }) => {
                             </div>
 
                             <div>
-                                <label className="text-sm font-bold text-slate-700 mb-2 block">Date of Evaluation</label>
-                                <div className="relative">
-                                    <Calendar className="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400" size={18} />
-                                    <input
-                                        type="date"
-                                        name="evaluationDate"
-                                        value={formData.evaluationDate}
-                                        onChange={handleChange}
-                                        className="w-full pl-12 pr-4 py-3 rounded-xl border border-slate-200 bg-slate-50 font-medium text-slate-700 outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10"
-                                    />
-                                </div>
+                                <label className="text-sm font-bold text-slate-700 mb-2 block">Signature (Write your full name)</label>
+                                <input
+                                    type="text"
+                                    name="signature"
+                                    value={formData.signature}
+                                    onChange={handleChange}
+                                    placeholder="Enter your full name as signature"
+                                    className="w-full p-4 rounded-xl border border-slate-200 bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all font-medium text-slate-700"
+                                />
                             </div>
+
+
                         </div>
                     </div>
                 </div>

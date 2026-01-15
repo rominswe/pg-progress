@@ -181,9 +181,24 @@ export const evaluationService = {
   }
 };
 
+export const defenseEvaluationService = {
+  submitEvaluation: async (data) => {
+    const res = await api.post("/api/defense-evaluations", data);
+    return res.data;
+  },
+  getEvaluations: async (studentId) => {
+    const res = await api.get(`/api/defense-evaluations/student/${studentId}`);
+    return res.data;
+  }
+};
+
 export const dashboardService = {
   getSupervisorStats: async () => {
     const res = await api.get("/api/dashboard/supervisor/stats");
+    return res.data;
+  },
+  getExaminerStudents: async () => {
+    const res = await api.get("/api/dashboard/examiner/students");
     return res.data;
   }
 };

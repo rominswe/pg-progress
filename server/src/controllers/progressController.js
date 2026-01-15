@@ -3,7 +3,7 @@ import { sequelize } from "../config/config.js";
 import { Op } from 'sequelize';
 
 const models = initModels(sequelize);
-const { progress_updates, master_stu, supervisor } = models;
+const { progress_updates, master_stu, supervisor, documents_uploads } = models;
 
 export const createUpdate = async (req, res) => {
     try {
@@ -174,6 +174,10 @@ export const getMyStudents = async (req, res) => {
                     as: 'progress_updates',
                     limit: 1,
                     order: [['submission_date', 'DESC']]
+                }, {
+                    model: documents_uploads,
+                    as: 'documents_uploads',
+                    attributes: ['document_type', 'status']
                 }]
             });
             return res.json({ students: formatStudents(students) });
@@ -190,6 +194,10 @@ export const getMyStudents = async (req, res) => {
                 as: 'progress_updates',
                 limit: 1,
                 order: [['submission_date', 'DESC']]
+            }, {
+                model: documents_uploads,
+                as: 'documents_uploads',
+                attributes: ['document_type', 'status']
             }]
         });
 
@@ -205,11 +213,30 @@ export const getMyStudents = async (req, res) => {
 const formatStudents = (students) => {
     return students.map(student => {
         const lastUpdate = student.progress_updates?.[0];
+        const uploads = student.documents_uploads || [];
 
-        // Calculate a dummy progress based on number of updates or status
-        // For now using 75% for John Doe as requested/implied by previous context
-        let progress = 75;
-        if (student.FirstName === 'John') progress = 90;
+        // Define milestones
+        const milestones = [
+            'Research Proposal',
+            'Literature Review',
+            'Methodology',
+            'Data Analysis',
+            'Final Thesis'
+        ];
+
+        // Calculate progress based on unique, non-rejected uploads
+        const validUploads = new Set(
+            uploads
+                .filter(u => u.status !== 'Rejected')
+                .map(u => u.document_type)
+        );
+
+        let completedCount = 0;
+        milestones.forEach(m => {
+            if (validUploads.has(m)) completedCount++;
+        });
+
+        const progress = Math.round((completedCount / milestones.length) * 100);
 
         return {
             id: student.master_id,

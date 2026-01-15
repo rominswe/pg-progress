@@ -216,16 +216,60 @@ export const getStudentDashboardStats = async (req, res) => {
       rejected: rejectedCount
     };
 
-    // 4. Recent Activity (Top 5)
+    // 4. Analytics Data Preparation
+
+    // A. Document Statistics (Bar Chart)
+    const docStatsMap = {};
+    documents.forEach(doc => {
+      // Normalize type keys if needed, or just use as is
+      const type = doc.document_type || 'Other';
+      docStatsMap[type] = (docStatsMap[type] || 0) + 1;
+    });
+
+    const docStats = Object.keys(docStatsMap).map(key => ({
+      name: key,
+      count: docStatsMap[key]
+    }));
+
+    // B. Progress Trend (Line Chart) - Last 6 Months
+    const monthlyProgress = [];
+    const today = new Date();
+
+    for (let i = 5; i >= 0; i--) {
+      const d = new Date(today.getFullYear(), today.getMonth() - i, 1);
+      const monthName = d.toLocaleString('default', { month: 'short' });
+      const endOfMonth = new Date(today.getFullYear(), today.getMonth() - i + 1, 0); // Last day of that month
+
+      // Calculate progress at this point in time
+      // Filter docs uploaded BEFORE or ON endOfMonth
+      const docsAtTime = documents.filter(doc => new Date(doc.uploaded_at) <= endOfMonth);
+
+      const uploadedTypesAtTime = new Set(docsAtTime.map(doc => doc.document_type));
+      let progressAtTime = 0;
+      milestones.forEach(m => {
+        if (uploadedTypesAtTime.has(m)) progressAtTime += 20;
+      });
+
+      monthlyProgress.push({
+        month: monthName,
+        completion: progressAtTime
+      });
+    }
+
+    // 5. Recent Activity (Top 5)
     const recentActivity = documents.slice(0, 5).map(doc => ({
       id: doc.doc_up_id,
       action: `Uploaded ${doc.document_type}`,
-      date: doc.uploaded_at, // Sequelize usually returns Date object
+      date: doc.uploaded_at,
       details: doc.document_name
     }));
 
     res.json({
       stats,
+      analytics: {
+        docStats,
+        monthlyProgress
+      },
       recentActivity
     });
 

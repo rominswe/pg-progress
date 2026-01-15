@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import ThesisEvaluationForm from '@/components/form/examiner/ThesisEvaluationForm.jsx';
 import { useAuth } from '@/components/auth/AuthContext';
+import { dashboardService, defenseEvaluationService } from '@/services/api';
 
 const ExaminerDashboard = () => {
     const { logout } = useAuth();
@@ -8,44 +9,73 @@ const ExaminerDashboard = () => {
     // State for Views
     const [view, setView] = useState('list');
     const [selectedStudent, setSelectedStudent] = useState(null);
+    const [isLoading, setIsLoading] = useState(true);
 
     // State for Logout Confirmation
     const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
 
-    // Mock Data
-    const [students, setStudents] = useState([
-        {
-            id: 1, fullName: 'Ahmed Ali', studentId: 'PG2023-099',
-            programme: 'PhD in Computer Science', thesisTitle: 'AI in Healthcare Optimization',
-            status: 'Pending'
-        },
-        {
-            id: 2, fullName: 'Sarah Tan', studentId: 'PG2023-102',
-            programme: 'Master of Engineering', thesisTitle: 'Sustainable Concrete Materials',
-            status: 'Submitted',
-            evaluationData: {
-                ratings: { originality: 4, methodology: 5, analysis: 4, presentation: 5 },
-                comments: 'Excellent work.',
-                vivaDate: '2023-11-15',
-                vivaOutcome: 'Pass',
-                finalRemarks: 'Approved without corrections.'
+    // Data State
+    const [students, setStudents] = useState([]);
+
+    // Fetch Students on Mount
+    useEffect(() => {
+        const fetchStudents = async () => {
+            try {
+                const data = await dashboardService.getExaminerStudents();
+                setStudents(data);
+            } catch (error) {
+                console.error("Failed to fetch students:", error);
+                // alert("Failed to load students.");
+            } finally {
+                setIsLoading(false);
             }
-        }
-    ]);
+        };
+        fetchStudents();
+    }, []);
 
     const handleEvaluateClick = (student) => {
         setSelectedStudent(student);
         setView('form');
     };
 
-    const handleFormSubmit = (data) => {
+    const handleFormSubmit = async (data) => {
         console.log("Submitting Evaluation:", data);
-        setStudents(prev => prev.map(s =>
-            s.id === data.studentId ? { ...s, status: 'Submitted', evaluationData: data } : s
-        ));
-        alert("Evaluation submitted successfully!");
-        setView('list');
-        setSelectedStudent(null);
+
+        try {
+            // Calculate overall rating
+            const { originality, methodology, analysis, presentation } = data.ratings;
+            const overall = Math.round((originality + methodology + analysis + presentation) / 4);
+
+            const payload = {
+                student_id: data.studentId,
+                student_name: selectedStudent.fullName,
+                defense_type: 'Proposal Defense', // Hardcoded for now based on context
+                semester: '2023/2024', // Should probably be dynamic
+                knowledge_rating: originality,
+                organization_rating: methodology,
+                response_rating: analysis,
+                presentation_rating: presentation,
+                overall_rating: overall,
+                strengths: data.comments, // Using comments as strengths/general feedback
+                recommendations: data.finalRemarks,
+                final_comments: data.finalRemarks,
+                evaluation_date: data.vivaDate
+            };
+
+            await defenseEvaluationService.submitEvaluation(payload);
+
+            alert("Evaluation submitted successfully!");
+
+            // Refresh list
+            const updatedStudents = await dashboardService.getExaminerStudents();
+            setStudents(updatedStudents);
+
+            setView('list');
+            setSelectedStudent(null);
+        } catch (error) {
+            console.error("Submission error:", error);
+            alert("Failed to submit evaluation. Please try again.");
+        }
     };
 
     const onLogoutConfirm = () => {
@@ -63,6 +93,10 @@ const ExaminerDashboard = () => {
                 onCancel={() => { setView('list'); setSelectedStudent(null); }}
             />
         );
+    }
+
+    if (isLoading) {
+        return <div style={{ padding: '40px', textAlign: 'center' }}>Loading students...</div>;
     }
 
     return (
@@ -93,6 +127,16 @@ const ExaminerDashboard = () => {
                                 </td>
                                 <td style={{ ...styles.td, maxWidth: '300px' }}>
                                     {student.thesisTitle}
+                                    {student.documentPath && (
+                                        <a
+                                            href={`http://localhost:5000/${student.documentPath}`}
+                                            target="_blank"
+                                            rel="noreferrer"
+                                            style={{ display: 'block', fontSize: '11px', marginTop: '4px', textDecoration: 'underline', color: '#007bff' }}
+                                        >
+                                            View Document
+                                        </a>
+                                    )}
                                 </td>
                                 <td style={styles.td}>
                                     <span style={student.status === 'Submitted' ? styles.badgeSuccess : styles.badgeWarning}>

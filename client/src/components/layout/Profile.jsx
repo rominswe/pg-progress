@@ -75,8 +75,8 @@ export default function Profile() {
     const file = e.target.files?.[0];
     if (!file) return;
 
-    if (file.size > 2 * 1024 * 1024) {
-      return toast.error("File size must be less than 2MB");
+    if (file.size > 10 * 1024 * 1024) {
+      return toast.error("File size must be less than 10MB");
     }
 
     const uploadFormData = new FormData();
@@ -239,6 +239,10 @@ export default function Profile() {
                 </div>
               </div>
 
+
+
+
+
               <div className="relative py-4">
                 <div className="absolute inset-0 flex items-center">
                   <Separator className="w-full" />
@@ -309,6 +313,6 @@ export default function Profile() {
           </CardContent>
         </Card>
       </div>
-    </div>
+    </div >
   );
 }

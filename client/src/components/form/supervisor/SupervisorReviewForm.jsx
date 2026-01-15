@@ -54,6 +54,7 @@ function SupervisorReviewForm({ studentData, onDecision, onBack }) {
             newErrors.rejectionReason = `Reason is required`;
         }
 
+
         if (!reviewData.signature.trim()) {
             newErrors.signature = 'Please type your full name to sign';
         }
@@ -187,16 +188,8 @@ function SupervisorReviewForm({ studentData, onDecision, onBack }) {
                         </p>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="grid grid-cols-1 gap-6">
                         <div>
-                            <label className="text-xs font-bold text-slate-400 uppercase tracking-wide block mb-2">Supervisor Name</label>
-                            <input type="text" value={reviewData.supervisorName} readOnly className="w-full px-4 py-3 bg-slate-100 border border-slate-200 rounded-xl text-slate-500 font-bold outline-none cursor-default" />
-                        </div>
-                        <div>
-                            <label className="text-xs font-bold text-slate-400 uppercase tracking-wide block mb-2">Staff ID</label>
-                            <input type="text" value={reviewData.staffId} readOnly className="w-full px-4 py-3 bg-slate-100 border border-slate-200 rounded-xl text-slate-500 font-bold outline-none cursor-default" />
-                        </div>
-                        <div className="md:col-span-2">
                             <label className="text-xs font-bold text-slate-400 uppercase tracking-wide block mb-2">Digital Signature (Type Full Name) <span className="text-red-500">*</span></label>
                             <input
                                 type="text"
@@ -210,8 +203,6 @@ function SupervisorReviewForm({ studentData, onDecision, onBack }) {
                         </div>
                     </div>
                 </div>
-
-                {/* ACTIONS */}
                 <div className="flex gap-4 pt-4">
                     <button
                         onClick={onBack}

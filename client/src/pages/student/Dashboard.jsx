@@ -44,7 +44,7 @@ const Dashboard = () => {
           icon: TrendingUp,
           change: data.stats.progress === 100 ? "Completed" : "In Progress",
           color: "blue",
-          link: "/student/progress-updates"
+          link: "/student/uploads"
         },
         {
           title: "Pending Reviews",
@@ -66,7 +66,7 @@ const Dashboard = () => {
 
       const dashboardSummary = {
         progress: data.stats.progress,
-        onTrack: data.stats.progress > 0 ? 1 : 0,
+        onTrack: Math.floor(data.stats.progress / 20), // Calculate milestones met
         needAttention: data.stats.rejected || 0
       };
       setOverviewData(dashboardSummary);
@@ -192,7 +192,7 @@ const Dashboard = () => {
               Student Progress Overview
             </h3>
             <button
-              onClick={() => navigate('/student/progress-updates')}
+              onClick={() => navigate('/student/uploads')}
               className="text-sm font-bold text-blue-600 hover:text-blue-700"
             >
               View All
@@ -218,15 +218,15 @@ const Dashboard = () => {
 
             <div className="grid grid-cols-3 border-t border-slate-100 pt-8 mt-auto">
               <div className="text-center border-r border-slate-100">
-                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Avg. Progress</p>
+                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Thesis Submission Progress</p>
                 <p className="text-2xl font-black text-slate-800">{overviewData.progress}%</p>
               </div>
               <div className="text-center border-r border-slate-100">
-                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">On Track</p>
+                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Milestones Met</p>
                 <p className="text-2xl font-black text-blue-600">{overviewData.onTrack}</p>
               </div>
               <div className="text-center">
-                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Need Attention</p>
+                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Rejected Docs</p>
                 <p className="text-2xl font-black text-blue-400">{overviewData.needAttention}</p>
               </div>
             </div>

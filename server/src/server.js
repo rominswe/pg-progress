@@ -76,6 +76,7 @@ while (retries) {
       `❌ DB connection failed. Retries left: ${retries - 1}`,
       err.message
     );
+    console.error(`   👉 Hint: Ensure Docker is running and MySQL is exposed on port ${process.env.DB_PORT}`);
     retries--;
     await new Promise((res) => setTimeout(res, 3000));
   }

@@ -76,23 +76,46 @@ export default function Uploads() {
   const updateRoadmap = (docs) => {
     setMilestones(prev => {
       const newMilestones = [...prev];
-      const uploadedTypes = new Set(docs.map(d => d.document_type));
+
+      // Group docs by type to find the status of each milestone
+      const docsByType = {};
+      docs.forEach(d => {
+        if (!docsByType[d.document_type]) {
+          docsByType[d.document_type] = [];
+        }
+        docsByType[d.document_type].push(d);
+      });
 
       let firstPendingFound = false;
 
       return newMilestones.map(m => {
-        if (uploadedTypes.has(m.docType)) {
-          // If valid doc exists, it's completed
-          // Find the specific doc to get the date if needed? 
-          // For now, just mark completed.
-          return { ...m, status: 'completed', date: 'Submitted' };
-        } else {
-          if (!firstPendingFound) {
-            firstPendingFound = true;
-            return { ...m, status: 'in-progress', date: 'Current Step' };
-          }
-          return { ...m, status: 'pending', date: 'Locked' };
+        const myDocs = docsByType[m.docType] || [];
+        const hasApproved = myDocs.some(d => d.status === 'Approved');
+        // Treat Pending (or unknown) as submitted/completed for roadmap purposes (waiting for review)
+        const hasPending = myDocs.some(d => d.status === 'Pending' || (d.status !== 'Approved' && d.status !== 'Rejected'));
+
+        if (hasApproved) {
+          return { ...m, status: 'completed', date: 'Completed' };
         }
+
+        if (hasPending) {
+          firstPendingFound = true; // Block next steps until this is approved
+          return { ...m, status: 'completed', date: 'Submitted' };
+        }
+
+        // If we are here, it means we have either NO docs, or only REJECTED docs.
+        // We should allow submission (in-progress) for the first such milestone we find.
+        if (!firstPendingFound) {
+          firstPendingFound = true;
+          const hasRejected = myDocs.some(d => d.status === 'Rejected');
+          return {
+            ...m,
+            status: 'in-progress',
+            date: hasRejected ? 'Re-submission Needed' : 'Current Step'
+          };
+        }
+
+        return { ...m, status: 'pending', date: 'Locked' };
       });
     });
   };
@@ -135,6 +158,13 @@ export default function Uploads() {
     // Scroll smoothly to upload section
     uploadSectionRef.current?.scrollIntoView({ behavior: 'smooth' });
   };
+
+  // Auto-select active milestone document type
+  useEffect(() => {
+    if (activeMilestone) {
+      setDocumentType(activeMilestone.docType);
+    }
+  }, [activeMilestone]);
 
   const handleFileChange = (e) => setFiles(e.target.files);
 
@@ -182,34 +212,15 @@ export default function Uploads() {
         setUploadedDocs([...res.data.documents, ...uploadedDocs]);
 
         // --- Milestone Progression Logic ---
-        const uploadedType = documentType;
-
-        setMilestones(prevMilestones => {
-          const newMilestones = [...prevMilestones];
-          const currentIdx = newMilestones.findIndex(m => m.docType === uploadedType);
-
-          if (currentIdx !== -1) {
-            // 1. Mark current as completed
-            newMilestones[currentIdx] = {
-              ...newMilestones[currentIdx],
-              status: 'completed',
-              date: new Date().toISOString().split('T')[0] // Set today's date
-            };
-
-            // 2. Unlock next milestone if exists
-            if (currentIdx + 1 < newMilestones.length) {
-              newMilestones[currentIdx + 1] = {
-                ...newMilestones[currentIdx + 1],
-                status: 'in-progress',
-                description: 'Now ready for submission'
-              };
-            }
-          }
-          return newMilestones;
-        });
+        // Just re-run the full roadmap logic with updated docs
+        // We can merge the response docs with existing state but it's safer to fetch or rebuild
+        // For now, let's just trigger a re-computation using the helper if possible, 
+        // OR simply rely on the fact that we updated uploadedDocs.
+        // Wait, standard React pattern: we can just call updateRoadmap with the new list.
+        updateRoadmap([...res.data.documents, ...uploadedDocs]);
       }
       setFiles([]);
-      setDocumentType("");
+      // Don't reset documentType here as it should stay as the current goal until refreshed or updated
     } catch (err) {
       console.error("Upload failed:", err.response?.data || err.message);
       alert("Upload failed: " + (err.response?.data?.error || err.message));
@@ -220,6 +231,18 @@ export default function Uploads() {
 
   return (
     <div className="max-w-full px-6 mx-auto animate-fade-in-up space-y-6">
+      {user && user.role_id !== 'STU' && (
+        <div className="bg-amber-100 border-l-4 border-amber-500 text-amber-700 p-4 rounded shadow-sm" role="alert">
+          <p className="font-bold">Access Warning</p>
+          <p>
+            You are logged in as a <strong>{user.role_id}</strong>.
+            Thesis submission features are primarily for Students.
+            <br />
+            Some features (uploading) may be restricted.
+          </p>
+        </div>
+      )}
+
       {/* Header Section */}
       <div className="bg-gradient-to-r from-blue-700 to-blue-600 rounded-3xl p-6 text-white shadow-xl relative overflow-hidden">
         <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none"></div>
@@ -267,8 +290,8 @@ export default function Uploads() {
                   </button>
                 )}
                 {milestone.status === 'completed' && (
-                  <span className="mt-2 text-xs font-bold text-blue-700 bg-blue-50 px-3 py-1 rounded-full border border-blue-100">
-                    Completed
+                  <span className={`mt-2 text-xs font-bold px-3 py-1 rounded-full border ${milestone.date === 'Submitted' ? 'text-amber-700 bg-amber-50 border-amber-100' : 'text-blue-700 bg-blue-50 border-blue-100'}`}>
+                    {milestone.date === 'Submitted' ? 'Submitted' : 'Completed'}
                   </span>
                 )}
               </div>
@@ -290,25 +313,7 @@ export default function Uploads() {
             </div>
 
             <div className="p-6 space-y-6">
-              {/* Type Selection - Only show when no type is selected */}
-              {!documentType && (
-                <div className="space-y-2">
-                  <label className="text-sm font-bold text-slate-700 ml-1">Document Type <span className="text-red-500">*</span></label>
-                  <div className="relative">
-                    <select
-                      value={documentType}
-                      onChange={(e) => setDocumentType(e.target.value)}
-                      className="w-full pl-4 pr-10 py-3 rounded-xl border border-slate-200 bg-slate-50 text-slate-700 appearance-none focus:outline-none focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 transition-all font-bold cursor-pointer"
-                    >
-                      <option value="">Select Type...</option>
-                      {availableTypes.map((type) => (
-                        <option key={type} value={type}>{type}</option>
-                      ))}
-                    </select>
-                    <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400 font-bold">▼</div>
-                  </div>
-                </div>
-              )}
+
 
               {/* Drag & Drop Zone */}
               <div

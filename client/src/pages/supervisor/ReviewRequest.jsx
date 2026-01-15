@@ -85,7 +85,7 @@ const ReviewRequest = () => {
       <div className="max-w-5xl mx-auto">
         <h2 className="text-xl font-bold text-slate-800 mb-6 flex items-center gap-2">
           <span className="flex items-center justify-center w-8 h-8 bg-blue-100 rounded-full text-blue-600 text-sm">{requests.length}</span>
-          Pending Requests
+          Pending Approval
         </h2>
 
         <div className="space-y-4">

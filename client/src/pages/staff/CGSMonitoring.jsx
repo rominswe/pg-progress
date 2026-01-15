@@ -1,8 +1,8 @@
-import React from "react";
+import React, { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { Progress } from '../../components/ui/progress';
 import { Badge } from '../../components/ui/badge';
-import { Activity, Users, Search, Filter, ArrowUpRight, Clock, ShieldCheck } from 'lucide-react';
+import { Activity, Users, Search, Filter, ArrowUpRight, Clock, ShieldCheck, Loader2 } from 'lucide-react';
 import { motion } from "framer-motion";
 import {
   Table,
@@ -12,15 +12,35 @@ import {
   TableHeader,
   TableRow,
 } from '../../components/ui/table';
-
-const mockProgress = [
-  { id: 1, studentName: 'Ahmad bin Ibrahim', supervisorName: 'Dr. Razak', department: 'Computer Science', progress: 85, status: 'On Track' },
-  { id: 2, studentName: 'Siti Nurhaliza', supervisorName: 'Prof. Aminah', department: 'Information Systems', progress: 45, status: 'Delayed' },
-  { id: 3, studentName: 'Muhammad Farhan', supervisorName: 'Dr. Zulkifli', department: 'Cyber Security', progress: 20, status: 'At Risk' },
-  { id: 4, studentName: 'Nurul Izzah', supervisorName: 'Dr. Sarah', department: 'Software Engineering', progress: 95, status: 'On Track' },
-];
+import { progressService } from '../../services/api';
 
 export default function CGSMonitoring() {
+  const [students, setStudents] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    fetchData();
+  }, []);
+
+  const fetchData = async () => {
+    try {
+      setLoading(true);
+      const data = await progressService.getMyStudents(); // Re-using this endpoint (it returns students in Dept)
+      setStudents(data.students || []);
+    } catch (err) {
+      console.error("Failed to fetch monitoring data", err);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Generic status helper based on progress
+  const getDerivedStatus = (progress) => {
+    if (progress >= 80) return 'On Track';
+    if (progress >= 50) return 'Delayed'; // Logic: 50-79 is acceptable but maybe delayed? Or "In Progress"
+    return 'At Risk';
+  };
+
   const getStatusBadge = (status) => {
     switch (status) {
       case 'On Track':
@@ -37,7 +57,7 @@ export default function CGSMonitoring() {
         );
       case 'At Risk':
         return (
-          <Badge className="bg-slate-100 text-slate-500 border-slate-200 px-3 py-1 rounded-full font-bold text-[10px] uppercase tracking-wider">
+          <Badge className="bg-red-100 text-red-500 border-red-200 px-3 py-1 rounded-full font-bold text-[10px] uppercase tracking-wider">
             {status}
           </Badge>
         );
@@ -55,6 +75,11 @@ export default function CGSMonitoring() {
     hidden: { y: 20, opacity: 0 },
     visible: { y: 0, opacity: 1 }
   };
+
+  // Calculate generic stats
+  const onTrackCount = students.filter(s => getDerivedStatus(s.progress) === 'On Track').length;
+  const delayedCount = students.filter(s => getDerivedStatus(s.progress) === 'Delayed').length;
+  const atRiskCount = students.filter(s => getDerivedStatus(s.progress) === 'At Risk').length;
 
   return (
     <motion.div
@@ -87,9 +112,9 @@ export default function CGSMonitoring() {
       {/* Summary Cards */}
       <div className="grid gap-6 md:grid-cols-3">
         {[
-          { label: 'On Track', count: mockProgress.filter(p => p.status === 'On Track').length, icon: ShieldCheck, color: 'text-blue-600', bg: 'bg-blue-50' },
-          { label: 'Delayed', count: mockProgress.filter(p => p.status === 'Delayed').length, icon: Clock, color: 'text-blue-400', bg: 'bg-blue-50' },
-          { label: 'At Risk', count: mockProgress.filter(p => p.status === 'At Risk').length, icon: Users, color: 'text-slate-400', bg: 'bg-slate-50' }
+          { label: 'On Track', count: onTrackCount, icon: ShieldCheck, color: 'text-blue-600', bg: 'bg-blue-50' },
+          { label: 'Delayed', count: delayedCount, icon: Clock, color: 'text-blue-400', bg: 'bg-blue-50' },
+          { label: 'At Risk', count: atRiskCount, icon: Users, color: 'text-red-400', bg: 'bg-red-50' }
         ].map((stat) => (
           <motion.div key={stat.label} variants={itemVariants}>
             <Card className="rounded-3xl border-slate-100 shadow-xl shadow-slate-200/50 bg-white overflow-hidden group">
@@ -127,55 +152,76 @@ export default function CGSMonitoring() {
             </div>
           </CardHeader>
           <CardContent className="p-0">
-            <div className="overflow-x-auto">
-              <Table>
-                <TableHeader>
-                  <TableRow className="bg-slate-50/30 border-b border-slate-100">
-                    <TableHead className="py-5 px-6 font-bold text-slate-500 uppercase tracking-wider text-xs">Student</TableHead>
-                    <TableHead className="py-5 px-6 font-bold text-slate-500 uppercase tracking-wider text-xs">Supervisor</TableHead>
-                    <TableHead className="py-5 px-6 font-bold text-slate-500 uppercase tracking-wider text-xs">Department</TableHead>
-                    <TableHead className="py-5 px-6 font-bold text-slate-500 uppercase tracking-wider text-xs">Progress</TableHead>
-                    <TableHead className="py-5 px-6 font-bold text-slate-500 uppercase tracking-wider text-xs">Status</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody className="divide-y divide-slate-100">
-                  {mockProgress.map((item) => (
-                    <TableRow key={item.id} className="hover:bg-slate-50/80 transition-colors group">
-                      <TableCell className="py-4 px-6">
-                        <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 bg-blue-50 rounded-full flex items-center justify-center text-blue-600 font-bold text-sm border border-blue-100">
-                            {item.studentName.charAt(0)}
-                          </div>
-                          <span className="font-bold text-slate-900">{item.studentName}</span>
-                        </div>
-                      </TableCell>
-                      <TableCell>
-                        <span className="text-sm font-medium text-slate-600">{item.supervisorName}</span>
-                      </TableCell>
-                      <TableCell>
-                        <span className="text-xs font-bold text-slate-400 uppercase tracking-wide bg-slate-50 px-2 py-1 rounded border border-slate-100">
-                          {item.department}
-                        </span>
-                      </TableCell>
-                      <TableCell>
-                        <div className="space-y-1.5 flex flex-col w-32">
-                          <div className="flex justify-between items-center text-[10px] font-bold text-slate-500">
-                            <span>COMPLETION</span>
-                            <span>{item.progress}%</span>
-                          </div>
-                          <Progress
-                            value={item.progress}
-                            className="h-1.5"
-                            indicatorClassName="bg-blue-600"
-                          />
-                        </div>
-                      </TableCell>
-                      <TableCell className="px-6">{getStatusBadge(item.status)}</TableCell>
+            {loading ? (
+              <div className="flex flex-col items-center justify-center p-12">
+                <Loader2 className="w-10 h-10 text-blue-600 animate-spin" />
+                <p className="mt-4 text-slate-500 font-bold">Syncing data...</p>
+              </div>
+            ) : (
+              <div className="overflow-x-auto">
+                <Table>
+                  <TableHeader>
+                    <TableRow className="bg-slate-50/30 border-b border-slate-100">
+                      <TableHead className="py-5 px-6 font-bold text-slate-500 uppercase tracking-wider text-xs">Student</TableHead>
+                      <TableHead className="py-5 px-6 font-bold text-slate-500 uppercase tracking-wider text-xs">Supervisor</TableHead>
+                      <TableHead className="py-5 px-6 font-bold text-slate-500 uppercase tracking-wider text-xs">Program</TableHead>
+                      <TableHead className="py-5 px-6 font-bold text-slate-500 uppercase tracking-wider text-xs">Progress</TableHead>
+                      <TableHead className="py-5 px-6 font-bold text-slate-500 uppercase tracking-wider text-xs">Status</TableHead>
                     </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            </div>
+                  </TableHeader>
+                  <TableBody className="divide-y divide-slate-100">
+                    {students.length === 0 ? (
+                      <TableRow>
+                        <TableCell colSpan={5} className="text-center py-8 text-slate-500 font-medium">
+                          No students found in this department.
+                        </TableCell>
+                      </TableRow>
+                    ) : (
+                      students.map((student) => (
+                        <TableRow key={student.id} className="hover:bg-slate-50/80 transition-colors group">
+                          <TableCell className="py-4 px-6">
+                            <div className="flex items-center gap-3">
+                              <div className="w-10 h-10 bg-blue-50 rounded-full flex items-center justify-center text-blue-600 font-bold text-sm border border-blue-100">
+                                {student.name.charAt(0)}
+                              </div>
+                              <div className="flex flex-col">
+                                <span className="font-bold text-slate-900">{student.name}</span>
+                                <span className="text-xs text-slate-400">{student.email}</span>
+                              </div>
+                            </div>
+                          </TableCell>
+                          <TableCell>
+                            <span className="text-sm font-medium text-slate-400 italic">N/A</span>
+                          </TableCell>
+                          <TableCell>
+                            <span className="text-xs font-bold text-slate-400 uppercase tracking-wide bg-slate-50 px-2 py-1 rounded border border-slate-100">
+                              {student.program || 'N/A'}
+                            </span>
+                          </TableCell>
+                          <TableCell>
+                            <div className="space-y-1.5 flex flex-col w-32">
+                              <div className="flex justify-between items-center text-[10px] font-bold text-slate-500">
+                                <span>COMPLETION</span>
+                                <span>{student.progress}%</span>
+                              </div>
+                              <Progress
+                                value={student.progress}
+                                className="h-1.5"
+                                indicatorClassName={
+                                  student.progress >= 80 ? 'bg-blue-600' :
+                                    student.progress >= 50 ? 'bg-blue-400' : 'bg-red-400'
+                                }
+                              />
+                            </div>
+                          </TableCell>
+                          <TableCell className="px-6">{getStatusBadge(getDerivedStatus(student.progress))}</TableCell>
+                        </TableRow>
+                      ))
+                    )}
+                  </TableBody>
+                </Table>
+              </div>
+            )}
           </CardContent>
           <div className="p-4 border-t border-slate-50 bg-slate-50/20 text-center">
             <button className="text-sm font-bold text-blue-600 hover:text-blue-700 hover:underline">

@@ -96,6 +96,7 @@ const ProgressEvaluation2 = () => {
         });
 
         if (!formData.supervisorName.trim()) newErrors.supervisorName = 'Supervisor name is required';
+        if (!formData.finalComments) newErrors.finalComments = 'Final decision is required';
 
         setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
@@ -358,20 +359,10 @@ const ProgressEvaluation2 = () => {
                                         />
                                     </div>
 
-                                    <div>
-                                        <label className="block text-sm font-semibold text-gray-700 mb-2">Areas for Improvement</label>
-                                        <textarea
-                                            name="weaknesses"
-                                            value={formData.weaknesses}
-                                            onChange={handleChange}
-                                            rows="3"
-                                            className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 bg-gray-50 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all resize-none"
-                                            placeholder="What could be improved?"
-                                        />
-                                    </div>
+
 
                                     <div>
-                                        <label className="block text-sm font-semibold text-gray-700 mb-2">Recommendations</label>
+                                        <label className="block text-sm font-semibold text-gray-700 mb-2">Recommendations and Comments</label>
                                         <textarea
                                             name="recommendations"
                                             value={formData.recommendations}
@@ -383,15 +374,28 @@ const ProgressEvaluation2 = () => {
                                     </div>
 
                                     <div>
-                                        <label className="block text-sm font-semibold text-gray-700 mb-2">Final Comments</label>
-                                        <textarea
-                                            name="finalComments"
-                                            value={formData.finalComments}
-                                            onChange={handleChange}
-                                            rows="4"
-                                            className="w-full px-4 py-3 rounded-xl border-2 border-gray-200 bg-gray-50 focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all resize-none"
-                                            placeholder="Overall assessment and final remarks..."
-                                        />
+                                        <label className="block text-sm font-semibold text-gray-700 mb-2">
+                                            Final Decision <span className="text-red-500">*</span>
+                                        </label>
+                                        <div className="relative">
+                                            <select
+                                                name="finalComments"
+                                                value={formData.finalComments}
+                                                onChange={handleChange}
+                                                className={`w-full px-4 py-3 rounded-xl border-2 ${errors.finalComments ? 'border-red-400 bg-red-50' : 'border-gray-200 bg-gray-50'} focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all appearance-none`}
+                                            >
+                                                <option value="">Select decision</option>
+                                                <option value="Pass">Pass</option>
+                                                <option value="Pass with Minor Corrections">Pass with Minor Corrections</option>
+                                                <option value="Pass with Major Corrections">Pass with Major Corrections</option>
+                                                <option value="Resubmission of Thesis">Resubmission of Thesis</option>
+                                                <option value="Reject">Reject</option>
+                                            </select>
+                                            <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-gray-500">
+                                                <ChevronRight className="w-5 h-5 rotate-90" />
+                                            </div>
+                                        </div>
+                                        {errors.finalComments && <p className="mt-1 text-sm text-red-500">⚠ {errors.finalComments}</p>}
                                     </div>
                                 </div>
                             </div>

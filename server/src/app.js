@@ -24,6 +24,7 @@ import tblDepartmentsRoutes from "./routes/tblDepartmentsRoutes.js";
 import progressRoutes from "./routes/progressRoutes.js";
 import serviceRequestRoutes from "./routes/serviceRequestRoutes.js";
 import evaluationRoutes from "./routes/evaluationRoutes.js";
+import defenseEvaluationRoutes from "./routes/defenseEvaluationRoutes.js"; // New Import
 import dashboardRoutes from "./routes/dashboardRoutes.js";
 
 dotenv.config({ path: path.resolve(process.cwd(), "../.env") });
@@ -60,9 +61,18 @@ app.use(cookieParser());
 app.use(logger);
 app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
 
-/* ================= SESSION (REDIS) ================= */
+/* ================= SESSION (REDIS / MEMORY) ================= */
+let store;
+if (redisClient.isOpen) {
+  console.log("✅ Using Redis for Session Store");
+  store = new RedisStore({ client: redisClient });
+} else {
+  console.log("⚠️  Redis not connected. Using MemoryStore for Session Store (Dev Mode).");
+  store = new session.MemoryStore();
+}
+
 export const sessionMiddleware = session({
-  store: new RedisStore({ client: redisClient }),
+  store: store,
   name: "sid",
   secret: process.env.SESSION_SECRET,
   resave: false,
@@ -90,7 +100,9 @@ app.use((req, res, next) => {
     "/api/progress",
     "/api/service-requests",
     "/api/evaluations",
-    "/api/dashboard"
+    "/api/defense-evaluations", // New Whitelist
+    "/api/dashboard",
+    "/api/profile"
   ];
   // ============================
 
@@ -119,6 +131,7 @@ app.use("/api/departments", tblDepartmentsRoutes);
 app.use("/api/progress", progressRoutes);
 app.use("/api/service-requests", serviceRequestRoutes);
 app.use("/api/evaluations", evaluationRoutes);
+app.use("/api/defense-evaluations", defenseEvaluationRoutes); // New Route
 app.use("/api/dashboard", dashboardRoutes);
 
 /* ================= HEALTH CHECK ================= */

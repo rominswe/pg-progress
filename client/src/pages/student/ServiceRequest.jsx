@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
 import StudentForm from '../../components/form/students/StudentForm';
 import { serviceRequestService } from '../../services/api';
+import { useAuth } from '../../components/auth/AuthContext';
 import { Clock } from 'lucide-react';
 
 const ServiceRequest = () => {
+    const { user } = useAuth();
     const [isSubmitted, setIsSubmitted] = useState(false);
     const [loading, setLoading] = useState(false);
 
@@ -23,8 +25,10 @@ const ServiceRequest = () => {
     const [history, setHistory] = useState([]);
 
     useEffect(() => {
-        fetchHistory();
-    }, [isSubmitted]);
+        if (user?.role_id === 'STU') {
+            fetchHistory();
+        }
+    }, [isSubmitted, user]);
 
     const fetchHistory = async () => {
         try {
@@ -37,6 +41,17 @@ const ServiceRequest = () => {
 
     return (
         <div className="w-full animate-fade-in-up">
+            {user && user.role_id !== 'STU' && (
+                <div className="bg-amber-100 border-l-4 border-amber-500 text-amber-700 p-4 mb-6 rounded shadow-sm" role="alert">
+                    <p className="font-bold">Access Warning</p>
+                    <p>
+                        You are currently logged in as a <strong>{user.role_id}</strong>.
+                        This form is strictly for Students.
+                        <br />
+                        Please log out and log in with a Student account to submit a request.
+                    </p>
+                </div>
+            )}
             {isSubmitted ? (
                 <div className="max-w-2xl mx-auto mt-10 p-12 bg-white rounded-3xl shadow-xl border border-slate-100 text-center">
                     <div className="text-6xl mb-6">✅</div>

@@ -12,7 +12,7 @@ export default function ExaminerLayout({ onLogout }) {
     return (
         <Layout
             navigation={examinerNav}
-            title="Thesis Examiner Portal"
+            title="Examiner Portal"
             logoIcon={FileText}
             notifications={[]}
             profileLinks={[
