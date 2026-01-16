@@ -60,16 +60,33 @@ export const getExaminerStudents = async (req, res) => {
 
         const depCode = examiner.Dep_Code;
 
-        // Find students in the same department who have uploaded 'Research Proposal'
-        // We join documents_uploads -> master_stu -> studinfo
-        // And check if document_type is 'Research Proposal'
+        // 1. Find all students who have at least one 'Pass' evaluation from a Supervisor
+        const approvedBySupervisor = await models.defense_evaluations.findAll({
+            where: {
+                evaluator_role: 'SUV',
+                final_comments: { [Op.like]: 'Pass%' }
+            },
+            attributes: ['student_id', 'defense_type']
+        });
+
+        if (approvedBySupervisor.length === 0) {
+            return res.json([]);
+        }
+
+        const studentIds = approvedBySupervisor.map(e => e.student_id);
+
+        // 2. Fetch submissions for these students in this department
+        // We'll show all documents that match a 'Pass' evaluation type
+        // mapping 'Proposal Defense' -> 'Research Proposal' and 'Final Thesis' -> 'Final Thesis'
 
         const submissions = await models.documents_uploads.findAll({
             where: {
+                master_id: { [Op.in]: studentIds },
                 Dep_Code: depCode,
-                document_type: 'Research Proposal'
-                // We might want to filter by status, e.g., only 'Pending' or 'Approved' by supervisor?
-                // For now, let's fetch all so the examiner can see them.
+                [Op.or]: [
+                    { document_type: 'Research Proposal' },
+                    { document_type: 'Final Thesis' }
+                ]
             },
             include: [
                 {
@@ -79,7 +96,7 @@ export const getExaminerStudents = async (req, res) => {
                         {
                             model: models.studinfo,
                             as: 'stu',
-                            attributes: ['FirstName', 'LastName', 'EmailId', 'Program']
+                            attributes: ['FirstName', 'LastName', 'EmailId']
                         },
                         {
                             model: models.program_info,
@@ -92,38 +109,55 @@ export const getExaminerStudents = async (req, res) => {
             order: [['uploaded_at', 'DESC']]
         });
 
-        // Search for existing evaluations for these students + defense type
-        const existingEvaluations = await models.defense_evaluations.findAll({
+        // 3. Search for existing evaluations BY THIS EXAMINER
+        const examinerEvaluations = await models.defense_evaluations.findAll({
             where: {
-                defense_type: 'Proposal Defense'
+                evaluator_role: 'EXA',
+                evaluator_id: examinerId
             }
         });
 
-        // Map to a cleaner structure for the frontend
-        const students = submissions.map(doc => {
+        // Map to structure for the frontend
+        const result = submissions.map(doc => {
             const student = doc.master;
             const stuInfo = student.stu;
             const program = student.Prog_Code_program_info;
 
-            // Check if already evaluated
-            const evaluation = existingEvaluations.find(e => e.student_id === student.master_id);
-            const status = evaluation ? 'Submitted' : 'Pending';
+            // Find matching supervisor approval
+            const supEval = approvedBySupervisor.find(e =>
+                e.student_id === student.master_id &&
+                ((doc.document_type === 'Research Proposal' && e.defense_type === 'Proposal Defense') ||
+                    (doc.document_type === 'Final Thesis' && e.defense_type === 'Final Thesis'))
+            );
+
+            // If no matching 'Pass' evaluation for this document type, we skip it
+            // (Wait, the findAll already filtered studentIds, but didn't match document type strictly)
+            if (!supEval) return null;
+
+            // Check if THIS EXAMINER already evaluated it
+            const myEval = examinerEvaluations.find(e =>
+                e.student_id === student.master_id &&
+                e.defense_type === supEval.defense_type
+            );
+
+            const status = myEval ? 'Submitted' : 'Pending';
 
             return {
-                id: student.master_id, // Use master_id as the unique key
+                id: `${student.master_id}-${doc.document_type}`, // Unique key
                 fullName: `${stuInfo.FirstName} ${stuInfo.LastName}`,
                 studentId: student.master_id,
                 programme: program ? program.Prog_Name : 'N/A',
-                thesisTitle: doc.document_name, // Using document Name as proxy for thesis title or user can see the doc name
+                thesisTitle: doc.document_name,
+                defenseType: supEval.defense_type,
                 status: status,
                 documentId: doc.doc_up_id,
                 documentPath: doc.file_path,
                 uploadedAt: doc.uploaded_at,
-                evaluationData: evaluation || null
+                evaluationData: myEval || null
             };
-        });
+        }).filter(Boolean);
 
-        res.json(students);
+        res.json(result);
 
     } catch (err) {
         console.error('Get Examiner Students Error:', err);

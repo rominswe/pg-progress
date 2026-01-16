@@ -231,7 +231,7 @@ export default function ReviewSubmissions() {
                             <Eye size={18} />
                           </button>
 
-                          {submission.status === "pending" && (
+                          {submission.status === "pending" && submission.documentType !== "Final Thesis" && (
                             <>
                               <button
                                 onClick={() => openEvaluationModal(submission)}

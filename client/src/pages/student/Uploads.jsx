@@ -90,9 +90,9 @@ export default function Uploads() {
 
       return newMilestones.map(m => {
         const myDocs = docsByType[m.docType] || [];
-        const hasApproved = myDocs.some(d => d.status === 'Approved');
+        const hasApproved = myDocs.some(d => d.status === 'Approved' || d.status === 'Completed');
         // Treat Pending (or unknown) as submitted/completed for roadmap purposes (waiting for review)
-        const hasPending = myDocs.some(d => d.status === 'Pending' || (d.status !== 'Approved' && d.status !== 'Rejected'));
+        const hasPending = myDocs.some(d => d.status === 'Pending' || (d.status !== 'Approved' && d.status !== 'Completed' && d.status !== 'Rejected' && d.status !== 'Resubmit'));
 
         if (hasApproved) {
           return { ...m, status: 'completed', date: 'Completed' };
@@ -103,15 +103,15 @@ export default function Uploads() {
           return { ...m, status: 'completed', date: 'Submitted' };
         }
 
-        // If we are here, it means we have either NO docs, or only REJECTED docs.
+        // If we are here, it means we have either NO docs, or only REJECTED/RESUBMIT docs.
         // We should allow submission (in-progress) for the first such milestone we find.
         if (!firstPendingFound) {
           firstPendingFound = true;
-          const hasRejected = myDocs.some(d => d.status === 'Rejected');
+          const needsResubmission = myDocs.some(d => d.status === 'Rejected' || d.status === 'Resubmit');
           return {
             ...m,
             status: 'in-progress',
-            date: hasRejected ? 'Re-submission Needed' : 'Current Step'
+            date: needsResubmission ? 'Re-submission Needed' : 'Current Step'
           };
         }
 
@@ -419,15 +419,15 @@ export default function Uploads() {
                             {doc.document_name}
                           </h4>
                           {/* Status Pill Logic */}
-                          {doc.status === 'Rejected' ? (
+                          {doc.status === 'Rejected' || doc.status === 'Resubmit' ? (
                             <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-red-50 text-red-700 border border-red-100">
                               <AlertCircle className="w-3 h-3" />
-                              Rejected
+                              {doc.status === 'Resubmit' ? 'Resubmit' : 'Rejected'}
                             </span>
-                          ) : doc.status === 'Approved' ? (
+                          ) : doc.status === 'Approved' || doc.status === 'Completed' ? (
                             <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-blue-600 text-white border border-blue-100">
                               <CheckCircle className="w-3 h-3" />
-                              Approved
+                              {doc.status === 'Completed' ? 'Completed' : 'Approved'}
                             </span>
                           ) : (
                             <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-xs font-bold bg-blue-50 text-blue-700 border border-blue-100">

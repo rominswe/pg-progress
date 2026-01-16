@@ -9,7 +9,7 @@ import { motion } from 'framer-motion';
 export default function ThesisEvaluationForm({ studentData, existingData, onSubmit, onCancel }) {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [formData, setFormData] = useState({
-        studentId: studentData.id,
+        studentId: studentData.studentId,
         ratings: existingData?.ratings || {
             originality: 0,
             methodology: 0,
@@ -65,8 +65,12 @@ export default function ThesisEvaluationForm({ studentData, existingData, onSubm
         >
             <div className="bg-gradient-to-r from-blue-800 to-indigo-700 rounded-3xl p-8 text-white shadow-xl relative overflow-hidden">
                 <button
-                    onClick={onCancel}
-                    className="absolute top-8 right-8 flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-xl transition-all font-medium text-sm backdrop-blur-sm"
+                    onClick={(e) => {
+                        e.preventDefault();
+                        console.log("Back button clicked in Form");
+                        onCancel();
+                    }}
+                    className="absolute top-8 right-8 z-50 flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-xl transition-all font-bold text-sm backdrop-blur-md border border-white/10 cursor-pointer"
                 >
                     <ChevronLeft size={16} /> Back to Dashboard
                 </button>

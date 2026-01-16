@@ -21,6 +21,7 @@ export const createDefenseEvaluation = async (req, res) => {
             weaknesses,
             recommendations,
             final_comments,
+            viva_outcome,
             evaluation_date
         } = req.body;
 
@@ -49,8 +50,11 @@ export const createDefenseEvaluation = async (req, res) => {
             weaknesses,
             recommendations,
             final_comments,
+            viva_outcome,
             supervisor_name: evaluatorName, // Using examiner name here as they are the evaluator
             evaluation_date: evaluation_date || new Date(),
+            evaluator_role: 'EXA',
+            evaluator_id: examinerId
         });
 
         res.status(201).json({ message: 'Evaluation submitted successfully', data: newEvaluation });

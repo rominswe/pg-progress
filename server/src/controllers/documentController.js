@@ -1,5 +1,6 @@
 import { doc_up, doc_rev, master_stu } from "../config/config.js";
 import fs from "node:fs";
+import path from "node:path";
 
 export const uploadDocument = async (req, res) => {
   try {
@@ -108,6 +109,62 @@ export const downloadDocument = async (req, res) => {
     res.status(500).json({ error: "Could not download file" });
   }
 };
+
+export const viewDocument = async (req, res) => {
+  try {
+    const userId = req.user.id || req.user.student_id || req.user.admin_id;
+    const { role_id } = req.user;
+    const { id } = req.params;
+
+    const doc = await doc_up.findByPk(id);
+
+    if (!doc) {
+      console.log(`[viewDocument] Document ${id} not found in DB`);
+      return res.status(404).json({ error: "Document not found" });
+    }
+
+    // Authorization: Examiner can only view, no download
+    const isStaff = ["SUV", "CGSADM", "EXA", "CGSS"].includes(role_id);
+    const isOwner = String(doc.uploaded_by) === String(userId);
+
+    if (!isOwner && !isStaff) {
+      console.log(`[viewDocument] Access denied for user ${userId}, role ${role_id}`);
+      return res.status(403).json({ error: "Access denied" });
+    }
+
+    const normalizedPath = path.normalize(doc.file_path).replace(/\\/g, '/');
+    console.log(`[viewDocument] Checking file path: ${normalizedPath}`);
+    console.log(`[viewDocument] Resolved path: ${path.resolve(normalizedPath)}`);
+    console.log(`[viewDocument] CWD: ${process.cwd()}`);
+
+    if (!fs.existsSync(normalizedPath)) {
+      console.log(`[viewDocument] File DOES NOT exist at: ${normalizedPath}`);
+      return res.status(404).json({ error: "File not found on server" });
+    }
+
+    doc.file_path = normalizedPath;
+
+    const ext = path.extname(doc.file_path).toLowerCase();
+    let contentType = 'application/octet-stream';
+    if (ext === '.pdf') contentType = 'application/pdf';
+    else if (ext === '.jpg' || ext === '.jpeg') contentType = 'image/jpeg';
+    else if (ext === '.png') contentType = 'image/png';
+
+    res.setHeader('Content-Type', contentType);
+    res.setHeader('Content-Disposition', 'inline');
+
+    // For Examiners, we might want to add extra headers to discourage caching/downloading if supported
+    if (role_id === 'EXA') {
+      res.setHeader('X-Content-Type-Options', 'nosniff');
+    }
+
+    const fileStream = fs.createReadStream(doc.file_path);
+    fileStream.pipe(res);
+  } catch (err) {
+    console.error("View Error:", err);
+    res.status(500).json({ error: "Could not view file" });
+  }
+}
 
 // ... keep downloadDocument ...
 

@@ -1,5 +1,5 @@
 import express from "express";
-import { uploadDocument, getMyDocuments, reviewDocument, getSupervisorDocuments, downloadDocument, getStudentDashboardStats, deleteDocument } from "../controllers/documentController.js";
+import { uploadDocument, getMyDocuments, reviewDocument, getSupervisorDocuments, downloadDocument, viewDocument, getStudentDashboardStats, deleteDocument } from "../controllers/documentController.js";
 import { protect } from "../middleware/authMiddleware.js";
 import { requireRole } from "../middleware/rbacMiddleware.js";
 import upload from "../middleware/upload.js"; // 1. Import the upload middleware
@@ -18,7 +18,11 @@ router.post(
 // Student views own documents
 router.get("/my-documents", protect, requireRole("STU"), getMyDocuments);
 router.get("/student/stats", protect, requireRole("STU"), getStudentDashboardStats);
-router.get("/:id/download", protect, downloadDocument);
+router.get("/:id/download", protect, (req, res, next) => {
+    if (req.user.role_id === 'EXA') return res.status(403).json({ error: "Download restricted for Examiners" });
+    next();
+}, downloadDocument);
+router.get("/:id/view", protect, viewDocument);
 router.delete("/:id", protect, requireRole("STU"), deleteDocument);
 
 // Supervisors / Examiners review documents

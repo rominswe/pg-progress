@@ -62,6 +62,10 @@ export default class defense_evaluations extends Model {
                 type: DataTypes.TEXT,
                 allowNull: true
             },
+            viva_outcome: {
+                type: DataTypes.STRING(255),
+                allowNull: true
+            },
             supervisor_name: {
                 type: DataTypes.STRING(255),
                 allowNull: false
@@ -69,6 +73,15 @@ export default class defense_evaluations extends Model {
             evaluation_date: {
                 type: DataTypes.DATEONLY,
                 allowNull: false
+            },
+            evaluator_role: {
+                type: DataTypes.ENUM('SUV', 'EXA'),
+                allowNull: false,
+                defaultValue: 'SUV'
+            },
+            evaluator_id: {
+                type: DataTypes.STRING(50),
+                allowNull: true
             },
             created_at: {
                 type: DataTypes.DATE,

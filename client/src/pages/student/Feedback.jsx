@@ -129,7 +129,7 @@ const Feedback = () => {
             <MessageSquare className="w-10 h-10 text-slate-400" />
           </div>
           <h3 className="text-xl font-bold text-slate-800 mb-2">No Evaluations Yet</h3>
-          <p className="text-slate-500">Your defense evaluations will appear here once submitted by your supervisor.</p>
+          <p className="text-slate-500">Your defense evaluations will appear here once submitted by your supervisor or examiner.</p>
         </div>
       ) : (
         <div className="space-y-6">
@@ -157,7 +157,10 @@ const Feedback = () => {
                     <div>
                       <div className="flex items-center gap-3 mb-1">
                         <h3 className="text-lg font-bold text-slate-900">{evaluation.supervisor_name}</h3>
-                        <span className={`px-2.5 py-0.5 text-white text-[10px] font-bold uppercase tracking-wider rounded-full shadow-sm bg-blue-600 shadow-blue-200`}>
+                        <span className={`px-2.5 py-0.5 text-white text-[10px] font-bold uppercase tracking-wider rounded-full shadow-sm ${evaluation.evaluator_role === 'EXA' ? 'bg-purple-600 shadow-purple-200' : 'bg-blue-600 shadow-blue-200'}`}>
+                          {evaluation.evaluator_role === 'EXA' ? 'Examiner' : 'Supervisor'}
+                        </span>
+                        <span className="px-2.5 py-0.5 bg-slate-100 text-slate-600 text-[10px] font-bold uppercase tracking-wider rounded-full">
                           {evaluation.defense_type}
                         </span>
                       </div>
@@ -218,11 +221,23 @@ const Feedback = () => {
                         </div>
                       </div>
 
-                      {/* Strengths */}
+                      {/* Viva Outcome - Only show if it exists */}
+                      {evaluation.viva_outcome && (
+                        <div className="bg-purple-50/50 rounded-2xl p-6 border border-purple-100/50">
+                          <p className="text-xs font-bold text-purple-600 uppercase tracking-widest mb-3 flex items-center gap-2">
+                            <Award className="w-4 h-4" /> Viva Outcome
+                          </p>
+                          <span className="inline-block px-4 py-1.5 bg-purple-600 text-white rounded-xl font-bold text-sm shadow-sm">
+                            {evaluation.viva_outcome}
+                          </span>
+                        </div>
+                      )}
+
+                      {/* Detailed Comments / Strengths */}
                       {evaluation.strengths && (
                         <div className="bg-green-50/50 rounded-2xl p-6 border border-green-100/50">
                           <p className="text-xs font-bold text-green-600 uppercase tracking-widest mb-3 flex items-center gap-2">
-                            <CheckCircle className="w-4 h-4" /> Strengths
+                            <CheckCircle className="w-4 h-4" /> {evaluation.evaluator_role === 'EXA' ? 'Detailed Examiner Comments' : 'Strengths'}
                           </p>
                           <p className="text-slate-700 leading-relaxed font-medium">{evaluation.strengths}</p>
                         </div>
@@ -244,10 +259,12 @@ const Feedback = () => {
                         </div>
                       )}
 
-                      {/* Final Comments */}
+                      {/* Final Recommendation / Comments */}
                       {evaluation.final_comments && (
                         <div className="bg-slate-50 rounded-2xl p-6 border border-slate-100">
-                          <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">Final Comments</p>
+                          <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-3">
+                            {evaluation.evaluator_role === 'EXA' ? 'Final Recommendation' : 'Final Comments'}
+                          </p>
                           <p className="text-slate-700 leading-relaxed font-medium">"{evaluation.final_comments}"</p>
                         </div>
                       )}

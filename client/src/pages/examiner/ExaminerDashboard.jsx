@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import ThesisEvaluationForm from '@/components/form/examiner/ThesisEvaluationForm.jsx';
+import DocumentViewer from '@/components/DocumentViewer.jsx';
 import { useAuth } from '@/components/auth/AuthContext';
 import { dashboardService, defenseEvaluationService } from '@/services/api';
+import { Eye } from 'lucide-react';
 
 const ExaminerDashboard = () => {
     const { logout } = useAuth();
@@ -34,6 +36,7 @@ const ExaminerDashboard = () => {
     }, []);
 
     const handleEvaluateClick = (student) => {
+        console.log("Evaluating student:", student);
         setSelectedStudent(student);
         setView('form');
     };
@@ -49,8 +52,8 @@ const ExaminerDashboard = () => {
             const payload = {
                 student_id: data.studentId,
                 student_name: selectedStudent.fullName,
-                defense_type: 'Proposal Defense', // Hardcoded for now based on context
-                semester: '2023/2024', // Should probably be dynamic
+                defense_type: selectedStudent.defenseType || 'Research Proposal',
+                semester: selectedStudent.semester || '2023/2024',
                 knowledge_rating: originality,
                 organization_rating: methodology,
                 response_rating: analysis,
@@ -59,6 +62,7 @@ const ExaminerDashboard = () => {
                 strengths: data.comments, // Using comments as strengths/general feedback
                 recommendations: data.finalRemarks,
                 final_comments: data.finalRemarks,
+                viva_outcome: data.vivaOutcome,
                 evaluation_date: data.vivaDate
             };
 
@@ -84,13 +88,31 @@ const ExaminerDashboard = () => {
     };
 
     // --- RENDER DASHBOARD ---
+    if (view === 'viewer' && selectedStudent) {
+        return (
+            <DocumentViewer
+                documentId={selectedStudent.documentId}
+                documentName={selectedStudent.thesisTitle}
+                onClose={() => {
+                    console.log("DocumentViewer - Back button clicked");
+                    setView('list');
+                    setSelectedStudent(null);
+                }}
+            />
+        );
+    }
+
     if (view === 'form' && selectedStudent) {
         return (
             <ThesisEvaluationForm
                 studentData={selectedStudent}
                 existingData={selectedStudent.evaluationData}
                 onSubmit={handleFormSubmit}
-                onCancel={() => { setView('list'); setSelectedStudent(null); }}
+                onCancel={() => {
+                    console.log("Back button clicked - Returning to list view");
+                    setView('list');
+                    setSelectedStudent(null);
+                }}
             />
         );
     }
@@ -126,16 +148,33 @@ const ExaminerDashboard = () => {
                                     <div style={{ fontSize: '11px', color: '#007bff' }}>{student.programme}</div>
                                 </td>
                                 <td style={{ ...styles.td, maxWidth: '300px' }}>
-                                    {student.thesisTitle}
-                                    {student.documentPath && (
-                                        <a
-                                            href={`http://localhost:5000/${student.documentPath}`}
-                                            target="_blank"
-                                            rel="noreferrer"
-                                            style={{ display: 'block', fontSize: '11px', marginTop: '4px', textDecoration: 'underline', color: '#007bff' }}
+                                    <div style={{ fontWeight: '500', marginBottom: '4px' }}>{student.thesisTitle}</div>
+                                    <div style={{ fontSize: '10px', fontWeight: 'bold', color: '#999', textTransform: 'uppercase', letterSpacing: '0.05em' }}>
+                                        {student.defenseType}
+                                    </div>
+                                    {student.documentId && (
+                                        <button
+                                            onClick={() => {
+                                                setSelectedStudent(student);
+                                                setView('viewer');
+                                            }}
+                                            style={{
+                                                display: 'flex',
+                                                alignItems: 'center',
+                                                gap: '6px',
+                                                fontSize: '11px',
+                                                marginTop: '8px',
+                                                color: '#007bff',
+                                                background: 'none',
+                                                border: 'none',
+                                                padding: 0,
+                                                cursor: 'pointer',
+                                                fontWeight: 'bold'
+                                            }}
                                         >
-                                            View Document
-                                        </a>
+                                            <Eye size={14} />
+                                            View Document (Read-Only)
+                                        </button>
                                     )}
                                 </td>
                                 <td style={styles.td}>
@@ -148,7 +187,7 @@ const ExaminerDashboard = () => {
                                         onClick={() => handleEvaluateClick(student)}
                                         style={student.status === 'Submitted' ? styles.btnOutline : styles.btnPrimary}
                                     >
-                                        {student.status === 'Submitted' ? 'View Result' : 'Start Evaluation'}
+                                        {student.status === 'Submitted' ? 'Evaluate' : 'Start Evaluation'}
                                     </button>
                                 </td>
                             </tr>

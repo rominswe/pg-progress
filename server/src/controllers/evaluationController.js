@@ -123,8 +123,27 @@ export const createEvaluation = async (req, res) => {
             recommendations,
             final_comments: finalComments,
             supervisor_name: supervisorName,
-            evaluation_date: evaluationDate || new Date()
+            evaluation_date: evaluationDate || new Date(),
+            evaluator_role: 'SUV',
+            evaluator_id: req.user.id || req.user.sup_id
         });
+
+        // ✅ AUTOMATION: Update Final Thesis status based on decision
+        if (defenseType === 'Final Thesis') {
+            const isPass = finalComments === 'Pass';
+            const newStatus = isPass ? 'Completed' : 'Resubmit';
+
+            console.log(`[Automation] Updating Final Thesis status for student ${studentId} to ${newStatus}`);
+            await documents_uploads.update(
+                { status: newStatus },
+                {
+                    where: {
+                        master_id: studentId,
+                        document_type: 'Final Thesis'
+                    }
+                }
+            );
+        }
 
         res.status(201).json({
             message: 'Evaluation submitted successfully',
