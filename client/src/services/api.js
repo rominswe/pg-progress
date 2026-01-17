@@ -1,92 +1,62 @@
 import axios from "axios";
 import { socket } from "./socket";
 
-export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
+const isDev = import.meta.env.DEV;
+export const API_BASE_URL = import.meta.env.VITE_API_URL || (isDev ? "" : (import.meta.env.API_BASE_URL || ""));
 
-// Axios instance
 const api = axios.create({
   baseURL: API_BASE_URL,
-  withCredentials: true,  // 🔑 sends session cookie
-  headers: { "Content-Type": "application/json" },
+  withCredentials: true, // 🔑 cookie-based session
+  headers: {
+    "Content-Type": "application/json",
+  },
 });
 
-// ===================== CSRF INTERCEPTOR =====================
-// Automatically attach CSRF token from cookie for mutating requests
-api.interceptors.request.use(
-  (config) => {
-    const csrfToken = document.cookie
-      .split("; ")
-      .find((row) => row.startsWith("XSRF-TOKEN="))
-      ?.split("=")[1];
 
-    if (csrfToken && config.method !== "get") {
-      config.headers["X-CSRF-Token"] = csrfToken;
-    }
+/* ===================== CSRF ===================== */
+api.interceptors.request.use((config) => {
+  const csrfToken = document.cookie
+    .split("; ")
+    .find((row) => row.startsWith("XSRF-TOKEN="))
+    ?.split("=")[1];
 
-    return config;
-  },
-  (error) => Promise.reject(error)
-);
+  if (csrfToken && config.method !== "get") {
+    config.headers["X-CSRF-Token"] = csrfToken;
+  }
 
-export const initCsrf = async () => {
-  await api.get("/api/csrf-token");
-};
+  return config;
+});
 
-// ===================== REQUEST QUEUE FOR 401 =====================
-let failedQueue = [];
-let isLoggingOut = false;
-
-const processQueue = (error = null) => {
-  failedQueue.forEach((p) => (error ? p.reject(error) : p.resolve()));
-  failedQueue = [];
-};
-
-export const setIsLoggingOut = (value) => {
-  isLoggingOut = value;
-};
-
-// ===================== AUTH SERVICE =====================
+/* ===================== AUTH SERVICE ===================== */
 export const authService = {
-  login: async (role, credentials) => {
-    const response = await api.post("/api/auth/login", {
+  async initCsrf() {
+    await api.get("/api/csrf-token");
+  },
+
+  async login(role, credentials) {
+    const res = await api.post("/api/auth/login", {
       ...credentials,
       role_id: role,
     });
 
-    const result = response.data;
-
-    // connect WebSocket after successful login
-    if (result.success && result.data) {
-      socket.connect();
+    if (res.data?.success) {
+      socket.connect(); // 🔌 connect only after login
     }
 
-    // fallback user object
-    if (result.success && !result.data.email && credentials.email) {
-      result.data = {
-        ...result.data,
-        email: credentials.email,
-        role_id: role,
-        mustChangePassword: result.data.mustChangePassword || false,
-      };
-    }
-
-    return result;
+    return res.data;
   },
 
-  me: async () => {
+  async me() {
     const res = await api.get("/api/profile/me");
     return res.data;
   },
 
-  logout: async () => {
-    setIsLoggingOut(true);
+  async logout() {
     try {
-      socket.disconnect(); // 🔌 disconnect WebSocket
-      await api.post("/api/auth/logout"); // backend clears cookie
+      socket.disconnect();
+      await api.post("/api/auth/logout");
     } catch (err) {
       console.error("Logout failed:", err);
-    } finally {
-      setIsLoggingOut(false);
     }
   },
 };

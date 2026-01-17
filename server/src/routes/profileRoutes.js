@@ -1,5 +1,5 @@
 import express from "express";
-import { me, updateMe } from "../controllers/profileController.js";
+import { me, updateProfile } from "../controllers/profileController.js";
 import { protect } from "../middleware/authmiddleware.js";
 import rateLimit from "express-rate-limit";
 
@@ -14,6 +14,6 @@ const updateProfileLimiter = rateLimit({
 router.get("/me", protect, me);
 
 // Update current user profile
-router.put("/me", protect, updateProfileLimiter, updateMe);
+router.put("/update", protect, updateProfileLimiter, updateProfile);
 
 export default router;

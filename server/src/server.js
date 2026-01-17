@@ -32,7 +32,7 @@ io.on("connection", async (socket) => {
   const userId = session.user.id;
   const stateKey = `ws_state:${userId}`;
 
-  console.log(`🔌 Socket connected: user ${session.userId}`);
+  console.log(`🔌 Socket connected: user ${session?.user?.id}`);
 
   // 🔁 Restore state on refresh / reconnect
   const savedState = await redisClient.get(stateKey);
@@ -49,7 +49,7 @@ io.on("connection", async (socket) => {
   });
 
   socket.on("disconnect", () => {
-    console.log(`🔌 Socket disconnected: user ${session.userId}`);
+    console.log(`🔌 Socket disconnected: user ${session?.user?.id}`);
   });
 });
 

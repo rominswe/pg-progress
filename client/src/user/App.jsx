@@ -37,15 +37,7 @@ import Profile from "@/components/layout/Profile";
 const queryClient = new QueryClient();
 
 function AppWrapper() {
-  const { user, loading, logout } = useAuth();
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-screen text-lg font-semibold">
-        Authenticating AIU PG Progress Portal...
-      </div>
-    );
-  }
+  const { user, loading, isAuthenticated, logout } = useAuth();
 
   return (
       <Routes>
@@ -69,7 +61,7 @@ function AppWrapper() {
         path="/student/*"
         element={
           <ProtectedRoute 
-            isAuthenticated={!!user} 
+            isAuthenticated={isAuthenticated} 
             loading={loading}
             userRole={user?.role_id} 
             allowedRole="STU"
@@ -94,7 +86,7 @@ function AppWrapper() {
         path="/supervisor/*"
         element={
           <ProtectedRoute 
-            isAuthenticated={!!user} 
+            isAuthenticated={isAuthenticated} 
             loading={loading}
             userRole={user?.role_id} 
             allowedRole="SUV"

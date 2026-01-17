@@ -11,7 +11,7 @@ import {
   TableRow,
 } from '../../components/ui/table';
 
-export default function CGSMonitoring() {
+export default function Monitoring() {
   const getStatusBadge = (status) => {
     switch (status) {
       case 'On Track':

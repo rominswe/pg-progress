@@ -1,141 +1,125 @@
 import bcrypt from "bcryptjs";
 import {
-  cgs,
-  supervisor,
-  master_stu,
-  examiner,
-  visiting_staff,
-  role
+  pgstaffinfo,
+  pgstaff_roles,
+  pgstudinfo,
 } from "../config/config.js";
 import { sendSuccess, sendError } from "../utils/responseHandler.js";
-import { verifyActivationToken } from "../utils/activationToken.js";
 /* ================= ROLE MODEL MAPPING ================= */
 const ROLE_MODEL_MAP = {
-  CGSADM: cgs,
-  SUV: supervisor,
-  STU: master_stu,
-  CGSS: cgs,
-  EXA: examiner
+  STU: pgstudinfo,
+  EXA: pgstaffinfo,
+  SUV: pgstaffinfo,
+  CGSADM: pgstaffinfo,
+  CGSS: pgstaffinfo,
 };
 
+/* ================= AUTHENTICATION ================= */
+const authenticateUser = async (email, password, role_id) => {
+  const Model = ROLE_MODEL_MAP[role_id];
+  if (!Model) throw new Error("Invalid role selection");
+
+  const user = await Model.findOne({ where: { EmailId: email } });
+  if (!user) throw new Error("Invalid Email");
+
+  const valid = await bcrypt.compare(password, user.Password);
+  if (!valid) throw new Error("Invalid Password");
+
+  return user;
+};
+
+/* ================= AUTHORIZATION ================= */
+const authorizeRole = async (user, role_id) => {
+  if (role_id === "STU") {
+    return {
+      role_id: "STU",
+      role_level: user.role_level,
+    };
+  }
+
+  const roleRecord = await pgstaff_roles.findOne({
+    where: {
+      pg_staff_id: user.pg_staff_id,
+      role_id,
+    },
+  });
+
+  if (!roleRecord)
+    throw new Error("You are not authorized for this role");
+
+  return {
+    role_id,
+    role_level: roleRecord.role_level,
+    employment_type: roleRecord.employment_type,
+  };
+};
+
+
 /* ================= ACCOUNT STATUS ENFORCEMENT ================= */
-const enforceAccountRules = (user) => {
-  if (user.Status === "Inactive") throw new Error("Account inactive");
-  if (user.Status === "Pending") throw new Error("Account not verified");
+const enforceAccountState = (user) => {
+  if (user.Status === "Inactive")
+    throw new Error("Account deactivated. Please contact Admin.");
+
   if (user.EndDate && new Date(user.EndDate) < new Date())
     throw new Error("Account expired");
+
+  if (!user.IsVerified)
+    throw new Error("Account not verified.");
 };
 
 /* ================= LOGIN HANDLER ================= */
 export const login = async (req, res) => {
-  const { email, password, role_id } = req.body;
+  const { email, password, role_id: requestedRole } = req.body;
 
-  if (!email || !password || !role_id)
-    return res.status(400).json({ error: "Missing fields" });
+  if (!email || !password || !requestedRole)
+    return sendError(res, "Missing fields", 400);
 
   try {
-    let user = null;
-    let modelUsed = null;
+    const user = await authenticateUser(email, password, requestedRole);
 
-    if (role_id === "EXA") {
-      // Internal EXA
-      user = await examiner.findOne({ where: { EmailId: email }, include: [{ model: role }] });
-      modelUsed = "examiner";
-      // External EXA
-      if (!user) {
-        user = await visiting_staff.findOne({ where: { EmailId: email }, include: [{ model: role }] });
-        modelUsed = "visiting_staff";
-      }
-    } else {
-      const Model = ROLE_MODEL_MAP[role_id];
-      if (!Model) throw new Error("Invalid role");
-      user = await Model.findOne({ where: { EmailId: email }, include: [{ model: role }] });
-      modelUsed = Model.tableName;
+    if (user.Status === "Pending" && (user.IsVerified === 0 || !user.IsVerified)) {
+      user.IsVerified = 1;
+      user.Status = "Active";
+      await user.save();
+      await user.reload();
     }
 
-    if (!user) {
-      throw new Error("Invalid Email");
-    }
+    enforceAccountState(user);
 
-    if (!user.role || user.role.role_id !== role_id)
-      throw new Error("Role mismatch");
+    const auth = await authorizeRole(user, requestedRole);
 
-    if (!user.IsVerified || user.Status !== "Active") {
-      const tempToken = generateActivationToken(user[user.constructor.primaryKeyAttribute]);
-      await sendVerificationSafe(user, tempToken, user.Password, user.role.role_id);
-
-      return res.status(403).json({
-        message: "Account not verified. Activation email resent."
-      });
-    }
-
-    enforceAccountRules(user);
-
-    const valid = await bcrypt.compare(password, user.Password);
-    if (!valid) {
-      throw new Error("Invalid Password");
-    }
-
-    // Save user info in session
-    req.session.user = {
-      id: user[user.constructor.primaryKeyAttribute],
+    const sessionUser = {
       email: user.EmailId,
-      role_id: user.role.role_id,
-      table: modelUsed,
-      Status: user.Status,
-      MustChangePassword: user.MustChangePassword,
+      name: `${user.FirstName} ${user.LastName}`,
+      role_id: requestedRole,
+      role_level: auth.role_level,
+      employment_type: auth.employment_type || null,
+      table: ROLE_MODEL_MAP[requestedRole].tableName
     };
 
-    // Temporary password check
-    if (user.MustChangePassword) {
-      return sendSuccess(res, "Please update your temporary password", {
-        mustChangePassword: true,
-        redirectUrl: "/api/profile/me" // Updated to a frontend-friendly route
-      });
+    if (requestedRole === "STU") {
+      sessionUser.id = user.pgstud_id;
+      sessionUser.stu_id = user.stu_id;
+    } else {
+      sessionUser.id = user.pg_staff_id;
+      sessionUser.emp_id = user.emp_id;
     }
+
+    req.session.user = sessionUser;
 
     return sendSuccess(res, "Login successful", req.session.user);
   } catch (err) {
     console.error("[LOGIN_ERROR]", err);
-    // Return 401 for known auth errors, 500 for others
     const status = err.message.includes("Invalid") || err.message.includes("mismatch") ? 401 : 500;
     return sendError(res, err.message, status);
-  }
-};
-
-/* ================= VERIFY ACCOUNT ================= */
-export const verifyAccount = async (req, res) => {
-  try {
-    const { token } = req.query;
-    if (!token) return res.status(400).json({ error: "Token required" });
-
-    const userId = verifyActivationToken(token);
-
-    // Find user by ID
-    let user = await master_stu.findByPk(userId)
-      || await cgs.findByPk(userId)
-      || await examiner.findByPk(userId)
-      || await visiting_staff.findByPk(userId);
-
-    if (!user) return res.status(404).json({ error: "User not found" });
-
-    // Activate account
-    user.IsVerified = 1;
-    user.Status = "Active";
-    user.MustChangePassword = 1; // force password update
-    await user.save();
-
-    return res.json({ message: "Account verified. Please log in." });
-  } catch (err) {
-    console.error(err);
-    res.status(400).json({ error: err.message });
   }
 };
 
 /* ================= LOGOUT ================= */
 export const logout = async (req, res) => {
   req.session.destroy((err) => {
-    if (err) return res.status(500).json({ error: "Logout failed" });
-    res.clearCookie("sid").json({ message: "Logout successful" });
+    if (err) return sendError(res, "Logout failed", 500);
+    res.clearCookie("sid");
+    return sendSuccess(res, "Logout successful");
   });
 };

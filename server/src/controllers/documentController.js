@@ -1,4 +1,4 @@
-import { doc_up, doc_rev } from "../config/config.js";
+import { documents_uploads, documents_reviews } from "../config/config.js";
 import upload from "../middleware/upload.js";
 
 /**
@@ -26,7 +26,7 @@ export const uploadDocument = async (req, res) => {
       const docs = [];
 
       for (const file of req.files) {
-        docs.push(await doc_up.create({
+        docs.push(await documents_uploads.create({
           uploaded_by: id,
           master_id: id,
           role_id,
@@ -60,7 +60,7 @@ export const getMyDocuments = async (req, res) => {
       return res.status(403).json({ error: "Access denied" });
     }
 
-    const documents = await doc_up.findAll({
+    const documents = await documents_uploads.findAll({
       where: { uploaded_by: id },
       order: [["uploaded_at", "DESC"]]
     });
@@ -84,20 +84,20 @@ export const reviewDocument = async (req, res) => {
       return res.status(403).json({ error: "Not authorized to review documents" });
     }
 
-    const doc = await doc_up.findByPk(doc_up_id);
+    const doc = await documents_uploads.findByPk(doc_up_id);
     if (doc.Dep_Code !== "CGS") return res.status(403).json({ error: "Unauthorized document access" });
     if (!doc) return res.status(404).json({ error: "Document not found" });
 
 
     // Prevent double review
-    const existing = await doc_rev.findOne({
+    const existing = await documents_reviews.findOne({
       where: { doc_up_id, reviewed_by: id }
     });
     if (existing) {
       return res.status(409).json({ error: "You already reviewed this document" });
     }
 
-    const review = await doc_rev.create({
+    const review = await documents_reviews.create({
       doc_up_id,
       reviewed_by: id,
       role_id,

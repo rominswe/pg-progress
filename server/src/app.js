@@ -12,19 +12,28 @@ import crypto from "node:crypto";
 
 /* ================= ROUTES ================= */
 import authRoutes from "./routes/authRoutes.js";
-import adminRoutes from "./routes/adminRoutes.js";
+import adminRoutes from "./routes/userRoutes.js";
 import documentRoutes from "./routes/documentRoutes.js";
-import empinfoRoutes from "./routes/empinfoRoutes.js";
 import profileRoutes from "./routes/profileRoutes.js";
+import tblDepartmentsRoutes from "./routes/tblDepartmentsRoutes.js";
 import programInfoRoutes from "./routes/programInfoRoutes.js";
 import rolesRoutes from "./routes/rolesRoutes.js";
-import studentInfoRoutes from "./routes/studentInfoRoutes.js";
-import tblDepartmentsRoutes from "./routes/tblDepartmentsRoutes.js";
 
 dotenv.config({ path: path.resolve(process.cwd(), "../.env") });
 
 const app = express();
+
+// Diagnostic logging - AT THE VERY TOP
+app.use((req, res, next) => {
+  if (!req.path.startsWith("/health") && !req.path.includes(".")) {
+    const sidVal = req.headers.cookie?.split(';')?.find(c => c.trim().startsWith('sid='))?.split('=')[1];
+    console.log(`[REQ_START] ${req.method} ${req.path} - sid_cookie: ${sidVal ? 'FOUND' : 'MISSING'}, Host: ${req.headers.host}, Origin: ${req.headers.origin}`);
+  }
+  next();
+});
+
 const { csrf } = lusca;
+
 
 const allowedOrigins = new Set([
   process.env.FRONTEND_USER_URL,
@@ -72,6 +81,15 @@ export const sessionMiddleware = session({
 });
 
 app.use(sessionMiddleware);
+
+// Diagnostic logging
+app.use((req, res, next) => {
+  if (!req.path.startsWith("/health")) {
+    console.log(`[REQ] ${req.method} ${req.path} - sid: ${req.cookies.sid ? 'YES' : 'NO'}, session.user: ${req.session?.user ? 'YES' : 'NO'}`);
+  }
+  next();
+});
+
 
 /* ================= SECURE CSRF TOKEN ================= */
 // Middleware to generate CSRF token per session and set cookie
@@ -126,12 +144,10 @@ app.use((req, res, next) => {
 app.use("/api/auth", authRoutes);
 app.use("/api/admin", adminRoutes);
 app.use("/api/documents", documentRoutes);
-app.use("/api/employees", empinfoRoutes);
 app.use("/api/profile", profileRoutes);
-app.use("/api/program-info", programInfoRoutes);
-app.use("/api/roles", rolesRoutes);
-app.use("/api/students", studentInfoRoutes);
 app.use("/api/departments", tblDepartmentsRoutes);
+app.use("/api/programs", programInfoRoutes);
+app.use("/api/roles", rolesRoutes);
 
 /* ================= HEALTH CHECK ================= */
 app.get("/health", (req, res) => {

@@ -1,5 +1,5 @@
 import express from "express";
-import { getAllProgramInfo } from "../controllers/programInfoController.js";
+import { getAllProgramInfo, getAssignableProgramInfo } from "../controllers/programInfoController.js";
 import { protect } from "../middleware/authmiddleware.js";
 import { requireRole } from "../middleware/rbacMiddleware.js";
 

@@ -1,34 +1,60 @@
-import { programInfo } from "../config/config.js";
+import { program_info, tbldepartments } from "../config/config.js";
+import { Op } from "sequelize";
 
-const ensureProframInfoAccess = (req) => {
-  //   if (req.user.role_id !== "CGSADM" && req.user.role_id !== "CGSS") {
-  //     const err = new Error("Forbidden: Admin or Staff access only");
-  //     err.status = 403;
-  //     throw err;
-  //   }
-};
+const allowedAttributes = ["Prog_Code", "prog_name", "Dep_Code"];
 
-const allowedAttributes = [
-  "Prog_Code",
-  "prog_name",
-  "Dep_Code",
-];
-// Get all program information
 export const getAllProgramInfo = async (req, res) => {
   try {
-    //     ensureProframInfoAccess(req);
-
-    const programnsInfoAccess = await programInfo.findAll(req.user.id, {
-      where: { Dep_Code: "CGS" },
+    const programnsInfoAccess = await program_info.findAll({
       attributes: allowedAttributes,
-      order: [["Creation_Date", "DESC"]],
+      include: [
+        {
+          model: tbldepartments,
+          as: "tbldepartment",
+          attributes: ["DepartmentName"]
+        }
+      ],
+      order: [["prog_name", "ASC"]],
     });
+
     res.status(200).json({
       total: programnsInfoAccess.length,
-      programnsInfoAccess
+      programs: programnsInfoAccess
     });
   } catch (error) {
-    res.status(error.status || 500).json({
+    res.status(500).json({
+      message: error.message || "Failed to fetch program information"
+    });
+  }
+};
+
+export const getAssignableProgramInfo = async (req, res) => {
+  try {
+    const programnsInfoAccess = await program_info.findAll({
+      where: {
+        Dep_Code: ["CGS", "SCI", "SBSS", "SEHS"],
+        [Op.or]: [
+          { prog_name: { [Op.like]: 'Master of%' } },
+          { prog_name: { [Op.like]: 'Doctor of%' } }
+        ]
+      },
+      attributes: allowedAttributes,
+      include: [
+        {
+          model: tbldepartments,
+          as: "tbldepartment",
+          attributes: ["DepartmentName"]
+        }
+      ],
+      order: [["prog_name", "ASC"]],
+    });
+
+    res.status(200).json({
+      total: programnsInfoAccess.length,
+      programs: programnsInfoAccess
+    });
+  } catch (error) {
+    res.status(500).json({
       message: error.message || "Failed to fetch program information"
     });
   }
