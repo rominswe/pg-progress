@@ -3,7 +3,7 @@ import { documentService, API_BASE_URL } from "../../services/api";
 import { FileText, CheckCircle, XCircle, Eye, Clock, Download, Filter, Search, MoreHorizontal } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import Modal from "@/components/ui/modal";
+import { Modal } from "@/components/ui/modal";
 import { motion, AnimatePresence } from "framer-motion";
 
 export default function ReviewSubmissions() {
@@ -18,19 +18,18 @@ export default function ReviewSubmissions() {
 
   const fetchSubmissions = async () => {
     try {
-      const data = await documentService.getSupervisorDocuments();
-      if (data && data.documents) {
-        const formatted = data.documents.map(doc => ({
-          id: doc.doc_up_id,
-          studentName: doc.master ? `${doc.master.FirstName} ${doc.master.LastName}` : "Unknown Student",
-          documentType: doc.document_type,
-          submittedDate: doc.uploaded_at,
-          status: doc.status.toLowerCase(),
-          file_name: doc.document_name,
-          file_path: doc.file_path,
-        }));
-        setSubmissions(formatted);
-      }
+      const res = await documentService.getSupervisorDocuments();
+      const docs = res.data?.documents || [];
+      const formatted = docs.map(doc => ({
+        id: doc.doc_up_id,
+        studentName: doc.master ? `${doc.master.FirstName} ${doc.master.LastName}` : "Unknown Student",
+        documentType: doc.document_type,
+        submittedDate: doc.uploaded_at,
+        status: doc.status.toLowerCase(),
+        file_name: doc.document_name,
+        file_path: doc.file_path,
+      }));
+      setSubmissions(formatted);
     } catch (err) {
       console.error("Failed to fetch documents:", err);
     } finally {

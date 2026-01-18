@@ -1,80 +1,73 @@
 import axios from "axios";
 import { socket } from "./socket";
 
-export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
+const isDev = import.meta.env.DEV;
+export const API_BASE_URL = import.meta.env.VITE_API_URL || (isDev ? "" : (import.meta.env.API_BASE_URL || ""));
 
-// Axios instance
 const api = axios.create({
   baseURL: API_BASE_URL,
-  withCredentials: true,  // 🔑 send session cookie
-  headers: { "Content-Type": "application/json" },
+  withCredentials: true, // 🔑 cookie-based session
+  headers: {
+    "Content-Type": "application/json",
+  },
 });
 
-// Queuing for multiple simultaneous 401 requests
-let failedQueue = [];
-let isLoggingOut = false;
 
-const processQueue = (error = null) => {
-  failedQueue.forEach((p) => (error ? p.reject(error) : p.resolve()));
-  failedQueue = [];
-};
+/* ===================== CSRF ===================== */
+api.interceptors.request.use((config) => {
+  const csrfToken = document.cookie
+    .split("; ")
+    .find((row) => row.startsWith("XSRF-TOKEN="))
+    ?.split("=")[1];
 
-export const setIsLoggingOut = (value) => {
-  isLoggingOut = value;
-};
+  if (csrfToken && config.method !== "get") {
+    config.headers["X-CSRF-Token"] = csrfToken;
+  }
 
-// Auth service
+  return config;
+});
+
+/* ===================== AUTH SERVICE ===================== */
 export const authService = {
-  login: async (role, credentials) => {
-    const response = await api.post("/api/auth/login", {
+  async initCsrf() {
+    await api.get("/api/csrf-token");
+  },
+
+  async login(role, credentials) {
+    const res = await api.post("/api/auth/login", {
       ...credentials,
       role_id: role,
     });
 
-    const result = response.data;
-
-    // connect WebSocket after successful login
-    if (result.success && result.data) {
-      socket.connect();
+    if (res.data?.success) {
+      socket.connect(); // 🔌 connect only after login
     }
 
-    // fallback user object
-    if (result.success && !result.data.email && credentials.email) {
-      result.data = {
-        ...result.data,
-        email: credentials.email,
-        role_id: role,
-        mustChangePassword: result.data.mustChangePassword || false,
-      };
-    }
-
-    return result;
+    return res.data;
   },
 
-  // Get currently logged-in user
-  me: async () => {
+  async me() {
     const res = await api.get("/api/profile/me");
     return res.data;
   },
 
-  logout: async () => {
-    setIsLoggingOut(true);
+  async logout() {
     try {
-      socket.disconnect(); // 🔌 disconnect WebSocket
-      await api.post("/api/auth/logout"); // backend clears cookie
+      socket.disconnect();
+      await api.post("/api/auth/logout");
     } catch (err) {
       console.error("Logout failed:", err);
-    } finally {
-      setIsLoggingOut(false);
     }
   },
 };
 
+/* ===================== DOCUMENT SERVICE ===================== */
 export const documentService = {
   upload: async (formData) => {
-    return api.post("/api/documents/upload", formData, {
+    const res = await api.post("/api/documents/upload", formData, {
       headers: { "Content-Type": "multipart/form-data" },
     });
+    return res.data;
   },
   getMyDocuments: async () => {
     const res = await api.get("/api/documents/my-documents");
@@ -85,17 +78,20 @@ export const documentService = {
     return res.data;
   },
   review: async (data) => {
-    return api.post("/api/documents/review", data);
+    const res = await api.post("/api/documents/review", data);
+    return res.data;
   },
   getDashboardStats: async () => {
     const res = await api.get("/api/documents/student/stats");
     return res.data;
   },
   delete: async (id) => {
-    return api.delete(`/api/documents/${id}`);
+    const res = await api.delete(`/api/documents/${id}`);
+    return res.data;
   }
 };
 
+/* ===================== PROGRESS SERVICE ===================== */
 export const progressService = {
   // Fetch logs
   getUpdates: async (studentId = null) => {
@@ -143,19 +139,25 @@ export const progressService = {
     return res.data;
   }
 };
+
+/* ===================== SERVICE REQUEST SERVICE ===================== */
 export const serviceRequestService = {
   create: async (data) => {
-    return api.post("/api/service-requests", data);
+    const res = await api.post("/api/service-requests", data);
+    return res.data;
   },
   getAll: async (status) => {
     const url = status ? `/api/service-requests?status=${status}` : '/api/service-requests';
-    return api.get(url);
+    const res = await api.get(url);
+    return res.data;
   },
   updateStatus: async (id, status, comments) => {
-    return api.put(`/api/service-requests/${id}`, { status, comments });
+    const res = await api.put(`/api/service-requests/${id}`, { status, comments });
+    return res.data;
   }
 };
 
+/* ===================== EVALUATION SERVICE ===================== */
 export const evaluationService = {
   // Submit a new defense evaluation
   submitEvaluation: async (data) => {
@@ -181,6 +183,7 @@ export const evaluationService = {
   }
 };
 
+/* ===================== DEFENSE EVALUATION SERVICE ===================== */
 export const defenseEvaluationService = {
   submitEvaluation: async (data) => {
     const res = await api.post("/api/defense-evaluations", data);
@@ -192,6 +195,7 @@ export const defenseEvaluationService = {
   }
 };
 
+/* ===================== DASHBOARD SERVICE ===================== */
 export const dashboardService = {
   getSupervisorStats: async () => {
     const res = await api.get("/api/dashboard/supervisor/stats");

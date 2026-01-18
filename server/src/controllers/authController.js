@@ -1,156 +1,130 @@
 import bcrypt from "bcryptjs";
 import {
-  cgs,
-  supervisor,
-  master_stu,
-  examiner,
-  visiting_staff,
-  role
+  pgstaffinfo,
+  pgstaff_roles,
+  pgstudinfo,
 } from "../config/config.js";
-import { verifyToken } from "../utils/verification.js";
-import { logAuthEvent, handleLockout, recordLoginAttempt } from "../utils/authSecurity.js";
 import { sendSuccess, sendError } from "../utils/responseHandler.js";
+
 /* ================= ROLE MODEL MAPPING ================= */
 const ROLE_MODEL_MAP = {
-  CGSADM: cgs,
-  SUV: supervisor,
-  STU: master_stu,
-  CGSS: cgs,
-  EXA: examiner
+  STU: pgstudinfo,
+  EXA: pgstaffinfo,
+  SUV: pgstaffinfo,
+  CGSADM: pgstaffinfo,
+  CGSS: pgstaffinfo,
 };
 
+/* ================= AUTHENTICATION ================= */
+const authenticateUser = async (email, password, role_id) => {
+  const Model = ROLE_MODEL_MAP[role_id];
+  if (!Model) throw new Error("Invalid role selection");
+
+  const user = await Model.findOne({ where: { EmailId: email } });
+  if (!user) throw new Error("Invalid Email");
+
+  const valid = await bcrypt.compare(password, user.Password);
+  if (!valid) throw new Error("Invalid Password");
+
+  return user;
+};
+
+/* ================= AUTHORIZATION ================= */
+const authorizeRole = async (user, role_id) => {
+  if (role_id === "STU") {
+    return {
+      role_id: "STU",
+      role_level: user.role_level,
+    };
+  }
+
+  const roleRecord = await pgstaff_roles.findOne({
+    where: {
+      pg_staff_id: user.pg_staff_id,
+      role_id,
+    },
+  });
+
+  if (!roleRecord)
+    throw new Error("You are not authorized for this role");
+
+  return {
+    role_id,
+    role_level: roleRecord.role_level,
+    employment_type: roleRecord.employment_type,
+  };
+};
+
+
 /* ================= ACCOUNT STATUS ENFORCEMENT ================= */
-const enforceAccountRules = (user) => {
-  if (user.Status === "Inactive") throw new Error("Account inactive");
-  if (user.Status === "Pending") throw new Error("Account not verified");
+const enforceAccountState = (user) => {
+  if (user.Status === "Inactive")
+    throw new Error("Account deactivated. Please contact Admin.");
+
   if (user.EndDate && new Date(user.EndDate) < new Date())
     throw new Error("Account expired");
+
+  if (!user.IsVerified)
+    throw new Error("Account not verified.");
 };
 
 /* ================= LOGIN HANDLER ================= */
 export const login = async (req, res) => {
-  const { email, password, role_id } = req.body;
+  const { email, password, role_id: requestedRole } = req.body;
 
-  if (!email || !password || !role_id)
-    return res.status(400).json({ error: "Missing fields" });
+  if (!email || !password || !requestedRole)
+    return sendError(res, "Missing fields", 400);
 
   try {
-    await handleLockout(email);
+    const user = await authenticateUser(email, password, requestedRole);
 
-    let user = null;
-    let modelUsed = null;
-
-    if (role_id === "EXA") {
-      // Internal EXA
-      user = await examiner.findOne({ where: { EmailId: email }, include: [{ model: role, as: 'role' }] });
-      modelUsed = "examiner";
-      // External EXA
-      if (!user) {
-        user = await visiting_staff.findOne({ where: { EmailId: email }, include: [{ model: role, as: 'role' }] });
-        modelUsed = "visiting_staff";
-      }
-    } else {
-      const Model = ROLE_MODEL_MAP[role_id];
-      if (!Model) throw new Error("Invalid role");
-      user = await Model.findOne({ where: { EmailId: email }, include: [{ model: role, as: 'role' }] });
-      modelUsed = Model.tableName;
+    // Auto-activate pending users on first login
+    if (user.Status === "Pending" && (user.IsVerified === 0 || !user.IsVerified)) {
+      user.IsVerified = 1;
+      user.Status = "Active";
+      await user.save();
+      await user.reload();
     }
 
-    if (!user) {
-      await recordLoginAttempt(email);
-      await logAuthEvent(email, role_id, "LOGIN_FAIL", req, { table: modelUsed });
-      throw new Error("Invalid Email");
-    }
+    enforceAccountState(user);
 
-    if (!user.role || user.role.role_id !== role_id)
-      throw new Error("Role mismatch");
+    const auth = await authorizeRole(user, requestedRole);
 
-    enforceAccountRules(user);
-
-    const valid = await bcrypt.compare(password, user.Password);
-    if (!valid) {
-      await recordLoginAttempt(email);
-      await logAuthEvent(email, role_id, "LOGIN_FAIL", req, { table: modelUsed });
-      throw new Error("Invalid Password");
-    }
-
-    // Save user info in session
-    req.session.user = {
-      id: user[user.constructor.primaryKeyAttribute],
+    const sessionUser = {
       email: user.EmailId,
-      role_id: user.role.role_id,
-      table: modelUsed,
+      name: `${user.FirstName} ${user.LastName}`,
+      role_id: requestedRole,
+      role_level: auth.role_level,
+      employment_type: auth.employment_type || null,
+      table: ROLE_MODEL_MAP[requestedRole].tableName,
       Status: user.Status,
-      MustChangePassword: user.MustChangePassword,
       Dep_Code: user.Dep_Code,
     };
 
-    await logAuthEvent(email, role_id, "LOGIN_SUCCESS", req, { table: modelUsed });
-
-    /* Temporarily disabled for debugging
-    if (user.MustChangePassword) {
-      const redirectPath =
-        role_id === "STU" ? "/student/profile" :
-          role_id === "SUV" ? "/supervisor/profile" :
-            "/examiner/profile";
-
-      return sendSuccess(res, "Please update your temporary password", {
-        mustChangePassword: true,
-        redirectUrl: redirectPath
-      });
+    // Add role-specific IDs
+    if (requestedRole === "STU") {
+      sessionUser.id = user.pgstud_id;
+      sessionUser.stu_id = user.stu_id;
+    } else {
+      sessionUser.id = user.pg_staff_id;
+      sessionUser.emp_id = user.emp_id;
     }
-    */
 
-    return sendSuccess(res, "Login successful", req.session.user);
+    req.session.user = sessionUser;
+
+    return sendSuccess(res, "Login successful", sessionUser);
   } catch (err) {
-    return sendError(res, err.message, 403);
-  }
-};
-
-/* ================= VERIFY ACCOUNT ================= */
-export const verifyAccount = async (req, res) => {
-  try {
-    const { token } = req.query;
-    if (!token) return res.status(400).json({ error: "Invalid verification token" });
-
-    const record = await verifyToken(token);
-    if (!record) return res.status(400).json({ error: "Invalid or expired token" });
-
-    let Model;
-    if (record.user_table === "examiner") Model = examiner;
-    else if (record.user_table === "visiting_staff") Model = visiting_staff;
-    else Model = ROLE_MODEL_MAP[record.role_id];
-
-    const user = await Model.findByPk(record.user_id);
-    if (!user) return res.status(404).json({ error: "User not found" });
-
-    // Activate user
-    user.IsVerified = 1;
-    user.Status = "Active";
-    await user.save();
-
-    await record.destroy();
-    await logAuthEvent(
-      user.EmailId,
-      user.role_id,
-      "VERIFY",
-      req,
-      { table: Model.tableName }
-    );
-
-    res.json({
-      message: "Account verified successfully. You can now log in using your credentials.",
-    });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: err.message });
+    console.error("[LOGIN_ERROR]", err);
+    const status = err.message.includes("Invalid") || err.message.includes("mismatch") ? 401 : 500;
+    return sendError(res, err.message, status);
   }
 };
 
 /* ================= LOGOUT ================= */
 export const logout = async (req, res) => {
   req.session.destroy((err) => {
-    if (err) return res.status(500).json({ error: "Logout failed" });
-    res.clearCookie("sid").json({ message: "Logout successful" });
+    if (err) return sendError(res, "Logout failed", 500);
+    res.clearCookie("sid");
+    return sendSuccess(res, "Logout successful");
   });
 };

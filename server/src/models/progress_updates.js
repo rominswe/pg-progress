@@ -13,8 +13,6 @@ export default class progress_updates extends Model {
             student_id: {
                 type: DataTypes.STRING(20),
                 allowNull: false
-                // No foreign key constraint strictly enforced here to avoid circular dep issues if not needed, 
-                // but ideally should link to student table. For now, just storing the ID is fine.
             },
             title: {
                 type: DataTypes.STRING(255),

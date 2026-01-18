@@ -20,9 +20,10 @@ const ProgressUpdates = () => {
 
   const fetchUpdates = async () => {
     try {
-      const data = await progressService.getUpdates();
+      const res = await progressService.getUpdates();
+      const updatesList = res.data?.updates || [];
       // Map DB fields to UI fields
-      const formatted = data.map(u => ({
+      const formatted = updatesList.map(u => ({
         ...u,
         id: u.update_id,
         date: u.submission_date,

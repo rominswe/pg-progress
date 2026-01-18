@@ -33,7 +33,8 @@ const Analytics = () => {
     const fetchAnalyticsData = async () => {
       try {
         setLoading(true);
-        const data = await documentService.getDashboardStats();
+        const res = await documentService.getDashboardStats();
+        const data = res.data || {};
 
         if (data.analytics) {
           setProgressData(data.analytics.monthlyProgress || []);

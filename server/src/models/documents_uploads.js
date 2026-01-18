@@ -18,8 +18,8 @@ export default class documents_uploads extends Model {
         type: DataTypes.STRING(20),
         allowNull: false,
         references: {
-          model: 'master_stu',
-          key: 'master_id'
+          model: 'pgstudinfo',
+          key: 'pgstud_id'
         }
       },
       role_id: {
@@ -48,11 +48,16 @@ export default class documents_uploads extends Model {
         allowNull: false
       },
       status: {
-        type: DataTypes.STRING(255),
+        type: DataTypes.ENUM('Pending', 'Approved', 'Rejected'),
         allowNull: false,
         defaultValue: "Pending"
       },
       uploaded_at: {
+        type: DataTypes.DATE,
+        allowNull: false,
+        defaultValue: Sequelize.Sequelize.literal('CURRENT_TIMESTAMP')
+      },
+      updated_at: {
         type: DataTypes.DATE,
         allowNull: false,
         defaultValue: Sequelize.Sequelize.literal('CURRENT_TIMESTAMP')
@@ -68,7 +73,7 @@ export default class documents_uploads extends Model {
     }, {
       sequelize,
       tableName: 'documents_uploads',
-      timestamps: true,
+      timestamps: false,
       indexes: [
         {
           name: "PRIMARY",

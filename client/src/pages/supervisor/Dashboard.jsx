@@ -25,16 +25,16 @@ export default function SupervisorDashboard() {
   const fetchData = async () => {
     try {
       setLoading(true);
-      const [studentsData, profileData, statsData, pendingData] = await Promise.all([
+      const [studentsRes, profileRes, statsRes, pendingRes] = await Promise.all([
         progressService.getMyStudents(),
         authService.me(),
         dashboardService.getSupervisorStats(),
         progressService.getPendingEvaluations()
       ]);
-      setStudents(studentsData.students || []);
-      setUserProfile(profileData.data);
-      setRealStats(statsData);
-      setPendingEvaluations(pendingData.evaluations || []);
+      setStudents(studentsRes.data?.students || []);
+      setUserProfile(profileRes.data?.data || profileRes.data); // Fallback for profile
+      setRealStats(statsRes.data || {});
+      setPendingEvaluations(pendingRes.data?.evaluations || []);
     } catch (err) {
       console.error("Dashboard fetch error:", err);
     } finally {
@@ -122,7 +122,7 @@ export default function SupervisorDashboard() {
         <div className="relative z-10">
           <h1 className="text-2xl font-extrabold tracking-tight mb-1">Supervisor Dashboard</h1>
           <p className="text-blue-100 font-medium text-base">
-            Welcome back, {userProfile ? `${userProfile.FirstName} ${userProfile.LastName}` : 'Professor'}. Here is your supervision overview.
+            Welcome back, {userProfile ? userProfile.name : 'Professor'}. Here is your supervision overview.
           </p>
         </div>
       </div>

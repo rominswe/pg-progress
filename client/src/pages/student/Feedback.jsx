@@ -33,10 +33,11 @@ const Feedback = () => {
         return;
       }
 
-      const data = await evaluationService.getStudentEvaluations(studentId);
-      console.log('Evaluations found:', data.evaluations);
+      const res = await evaluationService.getStudentEvaluations(studentId);
+      const evaluationsList = res.data?.evaluations || [];
+      console.log('Evaluations found:', evaluationsList);
 
-      setEvaluations(data.evaluations || []);
+      setEvaluations(evaluationsList);
     } catch (err) {
       console.error('Fetch error:', err);
       setError('Failed to load evaluation data. Please try again later.');

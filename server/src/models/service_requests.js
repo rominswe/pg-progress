@@ -14,8 +14,8 @@ export default class service_requests extends Model {
                 type: DataTypes.STRING(20),
                 allowNull: false,
                 references: {
-                    model: 'master_stu',
-                    key: 'master_id'
+                    model: 'pgstudinfo',
+                    key: 'pgstud_id'
                 }
             },
             full_name: {

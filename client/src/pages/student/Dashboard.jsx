@@ -17,16 +17,16 @@ const Dashboard = () => {
     try {
       setIsLoading(true);
       // Fetch profile and stats in parallel
-      const [profileData, statsData] = await Promise.all([
+      const [profileRes, statsRes] = await Promise.all([
         api.get('/api/profile/me'),
         documentService.getDashboardStats()
       ]);
 
-      if (profileData.data && profileData.data.data) {
-        setUserProfile(profileData.data.data);
+      if (profileRes.data?.data) {
+        setUserProfile(profileRes.data.data);
       }
 
-      const data = statsData;
+      const data = statsRes.data || {};
 
       // Update Stats Cards
       setStats([

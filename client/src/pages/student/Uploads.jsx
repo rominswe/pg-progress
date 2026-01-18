@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
-import { documentService } from "../../services/api";
-import { useAuth } from "../../components/auth/AuthContext";
+import { documentService } from "@/services/api";
+import { useAuth } from "@/components/auth/AuthContext";
 import { UploadCloud, FileText, CheckCircle, Clock, Circle, FolderOpen, Eye, AlertCircle } from "lucide-react";
 import { motion } from "framer-motion";
 
@@ -62,10 +62,11 @@ export default function Uploads() {
     const fetchDocs = async () => {
       if (!user) return;
       try {
-        const data = await documentService.getMyDocuments();
-        console.log("Fetched Docs:", data.documents);
-        setUploadedDocs(data.documents || []);
-        updateRoadmap(data.documents || []);
+        const res = await documentService.getMyDocuments();
+        const docs = res.data?.documents || [];
+        console.log("Fetched Docs:", docs);
+        setUploadedDocs(docs);
+        updateRoadmap(docs);
       } catch (err) {
         console.error("Failed to fetch docs", err);
       }
@@ -207,17 +208,14 @@ export default function Uploads() {
     try {
       setLoading(true);
       const res = await documentService.upload(formData);
-      alert(`Uploaded successfully: ${res.data.documents.length} file(s)`);
-      if (res.data.documents) {
-        setUploadedDocs([...res.data.documents, ...uploadedDocs]);
 
-        // --- Milestone Progression Logic ---
-        // Just re-run the full roadmap logic with updated docs
-        // We can merge the response docs with existing state but it's safer to fetch or rebuild
-        // For now, let's just trigger a re-computation using the helper if possible, 
-        // OR simply rely on the fact that we updated uploadedDocs.
-        // Wait, standard React pattern: we can just call updateRoadmap with the new list.
-        updateRoadmap([...res.data.documents, ...uploadedDocs]);
+      // res is the response body: { success, message, data: { documents: [...] } }
+      const newDocs = res.data?.documents || [];
+
+      alert(`Uploaded successfully: ${newDocs.length} file(s)`);
+      if (newDocs.length > 0) {
+        setUploadedDocs(prev => [...newDocs, ...prev]);
+        updateRoadmap([...newDocs, ...uploadedDocs]);
       }
       setFiles([]);
       // Don't reset documentType here as it should stay as the current goal until refreshed or updated

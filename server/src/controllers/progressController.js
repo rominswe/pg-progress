@@ -1,25 +1,21 @@
-import initModels from "../models/init-models.js";
-import { sequelize } from "../config/config.js";
+import { progress_updates, pgstudinfo, pgstaffinfo, documents_uploads } from "../config/config.js";
 import { Op } from 'sequelize';
-
-const models = initModels(sequelize);
-const { progress_updates, master_stu, supervisor, documents_uploads } = models;
+import { sendSuccess, sendError } from "../utils/responseHandler.js";
 
 export const createUpdate = async (req, res) => {
     try {
-        const userId = req.user.id || req.user.student_id;
+        const userId = req.user.pgstud_id || req.user.id;
 
         if (req.user.role_id !== 'STU') {
-            return res.status(403).json({ error: "Only students can post progress updates" });
+            return sendError(res, "Only students can post progress updates", 403);
         }
 
         const { title, description, achievements, challenges, nextSteps } = req.body;
 
         if (!title || !achievements || !nextSteps) {
-            return res.status(400).json({ error: "Title, Achievements, and Next Steps are required" });
+            return sendError(res, "Title, Achievements, and Next Steps are required", 400);
         }
 
-        // Handle file upload (if present)
         const documentPath = req.file ? req.file.path : null;
 
         const newUpdate = await progress_updates.create({
@@ -33,30 +29,29 @@ export const createUpdate = async (req, res) => {
             status: "Pending Review"
         });
 
-        res.status(201).json(newUpdate);
-
+        sendSuccess(res, "Progress update created successfully", { update: newUpdate }, 201);
     } catch (err) {
         console.error("Create Update Error:", err);
-        res.status(500).json({ error: "Failed to create update" });
+        sendError(res, "Failed to create update", 500);
     }
 };
 
 export const getUpdates = async (req, res) => {
     try {
-        const userId = req.user.id || req.user.student_id;
+        const userId = req.user.pgstud_id || req.user.id;
 
         if (req.user.role_id !== 'STU') {
             if (["SUV", "CGSADM", "CGSS"].includes(req.user.role_id)) {
                 const { student_id } = req.query;
-                if (!student_id) return res.status(400).json({ error: "Student ID required for supervisors" });
+                if (!student_id) return sendError(res, "Student ID required for supervisors", 400);
 
                 const updates = await progress_updates.findAll({
                     where: { student_id },
                     order: [['submission_date', 'DESC'], ['created_at', 'DESC']]
                 });
-                return res.json(updates);
+                return sendSuccess(res, "Updates fetched successfully", { updates });
             }
-            return res.status(403).json({ error: "Access denied" });
+            return sendError(res, "Access denied", 403);
         }
 
         const updates = await progress_updates.findAll({
@@ -64,21 +59,20 @@ export const getUpdates = async (req, res) => {
             order: [['submission_date', 'DESC'], ['created_at', 'DESC']]
         });
 
-        res.json(updates);
+        sendSuccess(res, "Updates fetched successfully", { updates });
 
     } catch (err) {
         console.error("Fetch Updates Error:", err);
-        res.status(500).json({ error: "Failed to fetch updates" });
+        sendError(res, "Failed to fetch updates", 500);
     }
 };
 
 export const getPendingEvaluations = async (req, res) => {
     try {
         if (!["SUV", "CGSADM", "CGSS"].includes(req.user.role_id)) {
-            return res.status(403).json({ error: "Access denied" });
+            return sendError(res, "Access denied", 403);
         }
 
-        // Fetch all pending progress updates with student details
         const pendingUpdates = await progress_updates.findAll({
             where: {
                 status: {
@@ -86,14 +80,13 @@ export const getPendingEvaluations = async (req, res) => {
                 }
             },
             include: [{
-                model: master_stu,
+                model: pgstudinfo,
                 as: 'student',
-                attributes: ['master_id', 'FirstName', 'LastName', 'EmailId', 'Prog_Code']
+                attributes: ['pgstud_id', 'FirstName', 'LastName', 'EmailId', 'Prog_Code']
             }],
             order: [['submission_date', 'DESC']]
         });
 
-        // Format response
         const formatted = pendingUpdates.map(update => ({
             id: update.update_id,
             student_id: update.student_id,
@@ -110,33 +103,27 @@ export const getPendingEvaluations = async (req, res) => {
             program: update.student?.Prog_Code || 'N/A'
         }));
 
-        res.json({ evaluations: formatted });
-
+        sendSuccess(res, "Pending evaluations fetched successfully", { evaluations: formatted });
     } catch (err) {
         console.error("Fetch Pending Evaluations Error:", err);
-        console.error("Error details:", err.message);
-        console.error("Stack trace:", err.stack);
-        res.status(500).json({ error: "Failed to fetch pending evaluations", details: err.message });
+        sendError(res, "Failed to fetch pending evaluations", 500);
     }
 };
 
 export const reviewUpdate = async (req, res) => {
     try {
         if (!["SUV", "CGSADM", "CGSS"].includes(req.user.role_id)) {
-            return res.status(403).json({ error: "Access denied" });
+            return sendError(res, "Access denied", 403);
         }
 
         const { update_id, supervisor_feedback, status } = req.body;
 
         if (!update_id) {
-            return res.status(400).json({ error: "Update ID is required" });
+            return sendError(res, "Update ID is required", 400);
         }
 
         const update = await progress_updates.findByPk(update_id);
-
-        if (!update) {
-            return res.status(404).json({ error: "Progress update not found" });
-        }
+        if (!update) return sendError(res, "Progress update not found", 404);
 
         await update.update({
             supervisor_feedback,
@@ -144,51 +131,24 @@ export const reviewUpdate = async (req, res) => {
             reviewed_at: new Date()
         });
 
-        res.json({ message: "Update reviewed successfully", update });
-
+        sendSuccess(res, "Update reviewed successfully", { update });
     } catch (err) {
         console.error("Review Update Error:", err);
-        res.status(500).json({ error: "Failed to review update" });
+        sendError(res, "Failed to review update", 500);
     }
 };
 
 export const getMyStudents = async (req, res) => {
     try {
-        if (!["SUV", "CGSADM", "CGSS"].includes(req.user.role_id)) {
-            return res.status(403).json({ error: "Access denied" });
+        const { role_id, Dep_Code } = req.user;
+        if (!["SUV", "CGSADM", "CGSS"].includes(role_id)) {
+            return sendError(res, "Access denied", 403);
         }
 
-        const supervisorId = req.user.id || req.user.sup_id;
+        const depCode = Dep_Code || 'CGS';
 
-        // Find supervisor's department
-        const sup = await supervisor.findByPk(supervisorId);
-        if (!sup) {
-            // Fallback for demo or if ID doesn't match sup_id directly
-            const anySup = await supervisor.findOne();
-            const depCode = anySup ? anySup.Dep_Code : 'CGS';
-
-            const students = await master_stu.findAll({
-                where: { Dep_Code: depCode, role_id: 'STU' },
-                include: [{
-                    model: progress_updates,
-                    as: 'progress_updates',
-                    limit: 1,
-                    order: [['submission_date', 'DESC']]
-                }, {
-                    model: documents_uploads,
-                    as: 'documents_uploads',
-                    attributes: ['document_type', 'status']
-                }]
-            });
-            return res.json({ students: formatStudents(students) });
-        }
-
-        // Fetch all students in the same department
-        const students = await master_stu.findAll({
-            where: {
-                Dep_Code: sup.Dep_Code,
-                role_id: 'STU'
-            },
+        const students = await pgstudinfo.findAll({
+            where: { Dep_Code: depCode, Status: 'Active' },
             include: [{
                 model: progress_updates,
                 as: 'progress_updates',
@@ -201,21 +161,18 @@ export const getMyStudents = async (req, res) => {
             }]
         });
 
-        res.json({ students: formatStudents(students) });
-
+        sendSuccess(res, "Students fetched successfully", { students: formatStudents(students) });
     } catch (err) {
         console.error("Fetch My Students Error:", err);
-        res.status(500).json({ error: "Failed to fetch students" });
+        sendError(res, "Failed to fetch students", 500);
     }
 };
 
-// Helper to format student records
 const formatStudents = (students) => {
     return students.map(student => {
         const lastUpdate = student.progress_updates?.[0];
         const uploads = student.documents_uploads || [];
 
-        // Define milestones
         const milestones = [
             'Research Proposal',
             'Literature Review',
@@ -224,7 +181,6 @@ const formatStudents = (students) => {
             'Final Thesis'
         ];
 
-        // Calculate progress based on unique, non-rejected uploads
         const validUploads = new Set(
             uploads
                 .filter(u => u.status !== 'Rejected')
@@ -239,14 +195,13 @@ const formatStudents = (students) => {
         const progress = Math.round((completedCount / milestones.length) * 100);
 
         return {
-            id: student.master_id,
+            id: student.pgstud_id,
             name: `${student.FirstName} ${student.LastName}`,
             email: student.EmailId,
             progress: progress,
             lastSubmissionDate: lastUpdate ? lastUpdate.submission_date : student.RegDate,
-            researchTitle: "", // Left blank as requested unless data is found
+            researchTitle: "",
             program: student.Prog_Code
         };
     });
 };
-

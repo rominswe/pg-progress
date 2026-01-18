@@ -1,5 +1,5 @@
-import bcrypt from 'bcryptjs';
 import _sequelize from 'sequelize';
+import bcrypt from 'bcryptjs';
 const { Model, Sequelize } = _sequelize;
 
 export default class studinfo extends Model {
@@ -131,8 +131,7 @@ export default class studinfo extends Model {
         ]
       },
     ],
-      // 🔐 Password hashing hooks
-      hooks: {
+    hooks: {
         beforeCreate: async (user) => {
           if (user.Password) {
             user.Password = await bcrypt.hash(user.Password, 10);
@@ -144,6 +143,6 @@ export default class studinfo extends Model {
           }
         }
       }
-    });
+  });
   }
 }

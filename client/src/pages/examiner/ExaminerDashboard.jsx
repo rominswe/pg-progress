@@ -23,8 +23,8 @@ const ExaminerDashboard = () => {
     useEffect(() => {
         const fetchStudents = async () => {
             try {
-                const data = await dashboardService.getExaminerStudents();
-                setStudents(data);
+                const res = await dashboardService.getExaminerStudents();
+                setStudents(res.data?.students || []);
             } catch (error) {
                 console.error("Failed to fetch students:", error);
                 // alert("Failed to load students.");
@@ -71,8 +71,8 @@ const ExaminerDashboard = () => {
             alert("Evaluation submitted successfully!");
 
             // Refresh list
-            const updatedStudents = await dashboardService.getExaminerStudents();
-            setStudents(updatedStudents);
+            const res = await dashboardService.getExaminerStudents();
+            setStudents(res.data?.students || []);
 
             setView('list');
             setSelectedStudent(null);

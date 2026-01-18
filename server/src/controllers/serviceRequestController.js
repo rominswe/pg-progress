@@ -1,14 +1,11 @@
-import initModels from "../models/init-models.js";
-import { sequelize } from "../config/config.js";
+import { service_requests, pgstudinfo } from "../config/config.js";
 import { Op } from 'sequelize';
+import { sendSuccess, sendError } from "../utils/responseHandler.js";
 
-const models = initModels(sequelize);
-const { service_requests, master_stu } = models;
 
 export const createRequest = async (req, res) => {
     try {
-        // For students, req.user.id is master_id (or we use req.user.master_id if available)
-        const master_id = (req.user.master_id || req.user.id).toString().trim();
+        const master_id = (req.user.pgstud_id || req.user.id).toString().trim();
 
         const {
             fullName,
@@ -19,7 +16,6 @@ export const createRequest = async (req, res) => {
             signature
         } = req.body;
 
-        // Filter out top-level fields to get the dynamic details
         const request_details = { ...req.body };
         delete request_details.fullName;
         delete request_details.studentId;
@@ -39,10 +35,9 @@ export const createRequest = async (req, res) => {
             signature: signature
         });
 
-        res.status(201).json({ message: "Request created", request: newRequest });
+        sendSuccess(res, "Request created", { request: newRequest }, 201);
     } catch (error) {
-        console.error("Create Request Error:", error);
-        res.status(500).json({ error: error.message });
+        sendError(res, error.message, 500);
     }
 };
 
@@ -52,29 +47,24 @@ export const getRequests = async (req, res) => {
         const where = {};
         if (status && status !== 'All') where.status = status;
 
-        // Filter for student's own requests
         if (req.user.role_id === 'STU') {
-            const userId = String(req.user.id || '').trim();
-            // Use LIKE to match ID even if there are trailing spaces in DB or Session
-            where.master_id = { [Op.like]: `${userId}%` };
+            const userId = (req.user.pgstud_id || req.user.id).toString().trim();
+            where.master_id = userId;
         }
-
-        console.log(`[getRequests] User: ${req.user.id} (${req.user.role_id}), Where:`, where);
 
         const requests = await service_requests.findAll({
             where,
             order: [['submission_date', 'DESC']],
             include: [{
-                model: master_stu,
-                as: 'master',
+                model: pgstudinfo,
+                as: 'student',
                 attributes: ['FirstName', 'LastName', 'EmailId']
             }]
         });
 
-        res.json({ requests });
+        sendSuccess(res, "Requests fetched", { requests });
     } catch (error) {
-        console.error("Get Requests Error:", error);
-        res.status(500).json({ error: error.message, stack: error.stack });
+        sendError(res, error.message, 500);
     }
 };
 
@@ -84,21 +74,17 @@ export const updateRequestStatus = async (req, res) => {
         const { status, comments } = req.body;
 
         const request = await service_requests.findByPk(id);
-        if (!request) return res.status(404).json({ error: "Request not found" });
+        if (!request) return sendError(res, "Request not found", 404);
 
         request.status = status;
-
-        // Update details with comments
         let details = request.request_details || {};
         details.supervisor_comments = comments;
-        // Need to explicitly set changed if updating JSON/Object
         request.request_details = details;
         request.changed('request_details', true);
 
         await request.save();
-        res.json({ message: "Status updated", request });
+        sendSuccess(res, "Status updated", { request });
     } catch (error) {
-        console.error("Update Status Error:", error);
-        res.status(500).json({ error: error.message });
+        sendError(res, error.message, 500);
     }
 };
