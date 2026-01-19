@@ -22,7 +22,7 @@ export default function ReviewSubmissions() {
       const docs = res.data?.documents || [];
       const formatted = docs.map(doc => ({
         id: doc.doc_up_id,
-        studentName: doc.master ? `${doc.master.FirstName} ${doc.master.LastName}` : "Unknown Student",
+        studentName: doc.pg_student ? `${doc.pg_student.FirstName} ${doc.pg_student.LastName}` : "Unknown Student",
         documentType: doc.document_type,
         submittedDate: doc.uploaded_at,
         status: doc.status.toLowerCase(),

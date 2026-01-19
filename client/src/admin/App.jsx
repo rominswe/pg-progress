@@ -12,6 +12,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 // Auth
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import { useAuth, AuthProvider } from "@/components/auth/AuthContext";
+import { NotificationProvider } from "@/components/notifications/NotificationProvider";
 import AdminLogin from "@/components/auth/AdminLogin";
 
 // Pages
@@ -78,13 +79,15 @@ export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <Router>
-          <TooltipProvider>
-            <AppWrapper />
-            <Toaster />
-            <Sonner />
-          </TooltipProvider>
-        </Router>
+        <NotificationProvider>
+          <Router>
+            <TooltipProvider>
+              <AppWrapper />
+              <Toaster />
+              <Sonner />
+            </TooltipProvider>
+          </Router>
+        </NotificationProvider>
       </AuthProvider>
     </QueryClientProvider>
   );

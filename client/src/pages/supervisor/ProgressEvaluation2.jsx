@@ -43,9 +43,9 @@ const ProgressEvaluation2 = () => {
             if (formData.studentId && formData.studentId.trim().length >= 3) {
                 try {
                     setIsSearching(true);
-                    const data = await evaluationService.getStudentById(formData.studentId);
-                    if (data && data.name) {
-                        setFormData(prev => ({ ...prev, studentName: data.name }));
+                    const res = await evaluationService.getStudentById(formData.studentId);
+                    if (res?.data?.name) {
+                        setFormData(prev => ({ ...prev, studentName: res.data.name }));
                         setErrors(prev => ({ ...prev, studentId: '' }));
                     }
                 } catch (error) {
@@ -64,8 +64,8 @@ const ProgressEvaluation2 = () => {
     const fetchHistory = async () => {
         try {
             setLoadingHistory(true);
-            const data = await evaluationService.getAllEvaluations();
-            setHistory(data.evaluations || []);
+            const res = await evaluationService.getAllEvaluations();
+            setHistory(res?.data?.evaluations || []);
         } catch (error) {
             console.error('Error fetching evaluation history:', error);
         } finally {

@@ -138,7 +138,7 @@ export default function UsersList() {
 
     const handleStatusUpdate = async (user, newStatus) => {
         try {
-            const userId = user.id || user.master_id; // Flexible ID handling
+            const userId = user.id || user.pg_student_id; // Flexible ID handling
 
             await adminService.toggleUserStatus(userId, newStatus);
 

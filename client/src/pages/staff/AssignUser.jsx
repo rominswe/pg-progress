@@ -34,9 +34,23 @@ export default function AssignUser() {
     const [searching, setSearching] = useState(false);
     const [assignmentsLoading, setAssignmentsLoading] = useState(false);
 
+    const [assignmentTypes, setAssignmentTypes] = useState([]);
+
     useEffect(() => {
+        fetchTypes();
         fetchData();
     }, [id]);
+
+    const fetchTypes = async () => {
+        try {
+            const res = await adminService.getAssignmentTypes();
+            if (res && res.success) {
+                setAssignmentTypes(res.data);
+            }
+        } catch (err) {
+            console.error("Failed to load assignment types", err);
+        }
+    };
 
     const fetchData = async () => {
         setLoading(true);
@@ -140,7 +154,7 @@ export default function AssignUser() {
 
         // DUPLICATE CHECK
         // DUPLICATE CHECK (Use Internal ID for reliability)
-        const isDuplicate = existingAssignments.some(a => (a.pg_staff_id === searchResult.id || a.pg_student_id === searchResult.id)) ||
+        const isDuplicate = existingAssignments.some(a => (a.pgstaff_id === searchResult.id || a.pg_student_id === searchResult.id)) ||
             pendingAssignments.some(p => p.id === searchResult.id);
 
         if (isDuplicate) {
@@ -267,9 +281,9 @@ export default function AssignUser() {
                                         <SelectValue placeholder="Select..." />
                                     </SelectTrigger>
                                     <SelectContent>
-                                        <SelectItem value="Main Supervisor">Main Supervisor</SelectItem>
-                                        <SelectItem value="Co-Supervisor">Co-Supervisor</SelectItem>
-                                        <SelectItem value="Examiner">Examiner</SelectItem>
+                                        {assignmentTypes.map(type => (
+                                            <SelectItem key={type} value={type}>{type}</SelectItem>
+                                        ))}
                                     </SelectContent>
                                 </Select>
                             </div>

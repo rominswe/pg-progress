@@ -55,7 +55,7 @@ export default function ExternalRegisterForm({ onRegister, isSubmitting }) {
                     api.get('/api/admin/academic-credentials/staff-metadata'),
                     api.get('/api/admin/academic-credentials/expertise')
                 ]);
-                setDepartments(deptsRes.data?.departmentInfoAccess || deptsRes.data || []);
+                setDepartments(deptsRes.data?.data?.departmentInfoAccess || deptsRes.data?.departmentInfoAccess || []);
                 setMetadata(prev => ({
                     ...prev,
                     qualifications: qualRes.data?.data || [],

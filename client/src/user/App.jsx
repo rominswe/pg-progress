@@ -12,6 +12,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 // Auth
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import { useAuth, AuthProvider } from "@/components/auth/AuthContext";
+import { NotificationProvider } from "@/components/notifications/NotificationProvider";
 import UserLogin from "@/components/auth/UserLogin";
 
 // Student pages
@@ -39,14 +40,6 @@ const queryClient = new QueryClient();
 
 function AppWrapper() {
   const { user, loading, logout } = useAuth();
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-screen text-lg font-semibold">
-        Authenticating AIU PG Progress Portal...
-      </div>
-    );
-  }
 
   return (
     <Routes>
@@ -142,13 +135,15 @@ export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <Router>
-          <TooltipProvider>
-            <AppWrapper />
-            <Toaster />
-            <Sonner />
-          </TooltipProvider>
-        </Router>
+        <NotificationProvider>
+          <Router>
+            <TooltipProvider>
+              <AppWrapper />
+              <Toaster />
+              <Sonner />
+            </TooltipProvider>
+          </Router>
+        </NotificationProvider>
       </AuthProvider>
     </QueryClientProvider>
   );

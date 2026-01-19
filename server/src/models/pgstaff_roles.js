@@ -1,5 +1,5 @@
 import _sequelize from 'sequelize';
-const { Model } = _sequelize;
+const { Model, Sequelize } = _sequelize;
 
 export default class pgstaff_roles extends Model {
   static init(sequelize, DataTypes) {
@@ -15,7 +15,7 @@ export default class pgstaff_roles extends Model {
         allowNull: false,
         references: {
           model: 'pgstaffinfo',
-          key: 'pg_staff_id'
+          key: 'pgstaff_id'
         }
       },
       role_id: {

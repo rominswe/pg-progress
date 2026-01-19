@@ -10,25 +10,13 @@ export default class service_requests extends Model {
                 allowNull: false,
                 primaryKey: true
             },
-            master_id: {
+            pg_student_id: {
                 type: DataTypes.STRING(20),
                 allowNull: false,
                 references: {
                     model: 'pgstudinfo',
                     key: 'pgstud_id'
                 }
-            },
-            full_name: {
-                type: DataTypes.STRING(255),
-                allowNull: false
-            },
-            student_id_display: {
-                type: DataTypes.STRING(50),
-                allowNull: false
-            },
-            program: {
-                type: DataTypes.STRING(255),
-                allowNull: false
             },
             current_semester: {
                 type: DataTypes.INTEGER,
@@ -39,39 +27,52 @@ export default class service_requests extends Model {
                 allowNull: false
             },
             request_details: {
-                type: DataTypes.JSON,
+                type: DataTypes.STRING(255),
                 allowNull: true
             },
             status: {
                 type: DataTypes.ENUM('Pending', 'Approved', 'Rejected', 'More Info'),
-                defaultValue: 'Pending',
-                allowNull: false
+                allowNull: false,
+                defaultValue: "Pending"
             },
             submission_date: {
                 type: DataTypes.DATEONLY,
-                defaultValue: DataTypes.NOW,
                 allowNull: false
             },
             signature: {
-                type: DataTypes.TEXT('long'),
+                type: DataTypes.TEXT,
                 allowNull: true
+            },
+            created_at: {
+                type: DataTypes.DATE,
+                allowNull: false
+            },
+            updated_at: {
+                type: DataTypes.DATE,
+                allowNull: false
             }
         }, {
             sequelize,
             tableName: 'service_requests',
             timestamps: true,
+            createdAt: 'created_at',
+            updatedAt: 'updated_at',
             indexes: [
                 {
                     name: "PRIMARY",
                     unique: true,
                     using: "BTREE",
-                    fields: [{ name: "request_id" }]
+                    fields: [
+                        { name: "request_id" },
+                    ]
                 },
                 {
-                    name: "fk_master_service_req",
+                    name: "fk_service_request_pgstud_id",
                     using: "BTREE",
-                    fields: [{ name: "master_id" }]
-                }
+                    fields: [
+                        { name: "pg_student_id" },
+                    ]
+                },
             ]
         });
     }

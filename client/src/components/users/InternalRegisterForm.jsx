@@ -60,8 +60,8 @@ export default function InternalRegisterForm({ onRegister, isSubmitting }) {
                     const filtered = rolesRes.data.data.filter(r => !r.label.toLowerCase().includes('admin'));
                     setRoles(filtered);
                 }
-                setPrograms(programsRes.data?.programs || []);
-                setDepartments(deptsRes.data?.departmentInfoAccess || deptsRes.data || []);
+                setPrograms(programsRes.data?.data?.programs || []);
+                setDepartments(deptsRes.data?.data?.departmentInfoAccess || []);
                 setMetadata(prev => ({
                     ...prev,
                     qualifications: qualRes.data?.data || [],

@@ -110,7 +110,7 @@ function StudentForm({ onSubmit }) {
                     setFormData(prev => ({
                         ...prev,
                         fullName: `${student.FirstName} ${student.LastName}`,
-                        studentId: student.stu_id || student.master_id || '',
+                        studentId: student.id || student.stu_id || student.pgstud_id || '',
                         program: student.program || student.Prog_Code || ''
                     }));
                 }

@@ -23,6 +23,7 @@ import serviceRequestRoutes from "./routes/serviceRequestRoutes.js";
 import evaluationRoutes from "./routes/evaluationRoutes.js";
 import defenseEvaluationRoutes from "./routes/defenseEvaluationRoutes.js";
 import dashboardRoutes from "./routes/dashboardRoutes.js";
+import notificationRoutes from "./routes/notificationRoutes.js";
 
 dotenv.config({ path: path.resolve(process.cwd(), "../.env") });
 
@@ -32,7 +33,7 @@ const app = express();
 app.use((req, res, next) => {
   if (!req.path.startsWith("/health") && !req.path.includes(".")) {
     const sidVal = req.headers.cookie?.split(';')?.find(c => c.trim().startsWith('sid='))?.split('=')[1];
-    console.log(`[REQ_START] ${req.method} ${req.path} - sid_cookie: ${sidVal ? 'FOUND' : 'MISSING'}, Host: ${req.headers.host}, Origin: ${req.headers.origin}`);
+    // console.log(`[REQ_START] ${req.method} ${req.path} - sid_cookie: ${sidVal ? 'FOUND' : 'MISSING'}, Host: ${req.headers.host}, Origin: ${req.headers.origin}`);
   }
   next();
 });
@@ -96,7 +97,7 @@ app.use(sessionMiddleware);
 // Diagnostic logging
 app.use((req, res, next) => {
   if (!req.path.startsWith("/health")) {
-    console.log(`[REQ] ${req.method} ${req.path} - sid: ${req.cookies.sid ? 'YES' : 'NO'}, session.user: ${req.session?.user ? 'YES' : 'NO'}`);
+    // console.log(`[REQ] ${req.method} ${req.path} - sid: ${req.cookies.sid ? 'YES' : 'NO'}, session.user: ${req.session?.user ? 'YES' : 'NO'}`);
   }
   next();
 });
@@ -164,6 +165,7 @@ app.use("/api/service-requests", serviceRequestRoutes);
 app.use("/api/evaluations", evaluationRoutes);
 app.use("/api/defense-evaluations", defenseEvaluationRoutes);
 app.use("/api/dashboard", dashboardRoutes);
+app.use("/api/notifications", notificationRoutes);
 
 /* ================= HEALTH CHECK ================= */
 app.get("/health", (req, res) => {
@@ -174,8 +176,24 @@ app.get("/health", (req, res) => {
 });
 
 /* ================= 404 ================= */
-app.use((req, res) => {
-  res.status(404).json({ error: "Route not found" });
+app.use((req, res, next) => {
+  const error = new Error(`Route not found - ${req.originalUrl}`);
+  error.statusCode = 404;
+  next(error);
+});
+
+/* ================= GLOBAL ERROR HANDLER ================= */
+app.use((err, req, res, next) => {
+  console.error("🔥 Global Error Error:", err);
+
+  const statusCode = err.statusCode || 500;
+  const message = err.message || "Internal Server Error";
+
+  res.status(statusCode).json({
+    success: false,
+    error: message,
+    stack: process.env.NODE_ENV === "production" ? null : err.stack,
+  });
 });
 
 export default app;

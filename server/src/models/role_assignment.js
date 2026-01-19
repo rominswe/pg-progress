@@ -23,7 +23,7 @@ export default class role_assignment extends Model {
         allowNull: false,
         references: {
           model: 'pgstaffinfo',
-          key: 'pg_staff_id'
+          key: 'pgstaff_id'
         }
       },
       pg_staff_type: {
@@ -57,13 +57,12 @@ export default class role_assignment extends Model {
       },
       request_date: {
         type: DataTypes.DATE,
-        allowNull: false,
-        defaultValue: Sequelize.Sequelize.literal('CURRENT_TIMESTAMP')
+        allowNull: false
       },
       approval_date: {
         type: DataTypes.DATE,
         allowNull: true
-      }
+      },
     }, {
       sequelize,
       tableName: 'role_assignment',

@@ -37,7 +37,7 @@ const SupervisorAssessmentForm = ({ studentData, onBack }) => {
         e.preventDefault();
         setIsSubmitting(true);
         try {
-            console.log("Form Submitted for:", studentData.fullName, formData);
+
 
             // Map frontend form to backend expectations
             await progressService.reviewProgressUpdate({

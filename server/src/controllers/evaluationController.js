@@ -1,147 +1,87 @@
-import { defense_evaluations, pgstudinfo, documents_uploads } from '../config/config.js';
+import EvaluationService from '../services/evaluationService.js';
+import { pgstudinfo } from '../config/config.js';
+import { Op } from 'sequelize';
 import { sendSuccess, sendError } from "../utils/responseHandler.js";
 
 export const getStudentById = async (req, res) => {
     try {
         const { id } = req.params;
-        const { role_id, Dep_Code } = req.user;
-
-        const whereClause = { pgstud_id: id };
-
-        if (role_id === 'SUV') {
-            whereClause.Dep_Code = Dep_Code || 'CGS';
-        }
-
         const student = await pgstudinfo.findOne({
-            where: whereClause,
-            attributes: ['FirstName', 'LastName']
+            where: {
+                [Op.or]: [
+                    { pgstud_id: id },
+                    { stu_id: id }
+                ]
+            },
+            attributes: ['pgstud_id', 'FirstName', 'LastName', 'stu_id']
         });
 
-        if (!student) {
-            return sendError(res, 'Student not found in your department', 404);
-        }
+        if (!student) return sendError(res, 'Student not found', 404);
 
-        sendSuccess(res, "Student found", { name: `${student.FirstName} ${student.LastName}` });
+        sendSuccess(res, "Student found", {
+            name: `${student.FirstName} ${student.LastName}`,
+            pgstud_id: student.pgstud_id,
+            stu_id: student.stu_id
+        });
     } catch (err) {
-        console.error('Find Student Error:', err);
+        console.error('getStudentById error:', err);
         sendError(res, 'Failed to find student', 500);
     }
 };
 
 export const createEvaluation = async (req, res) => {
     try {
-        const {
-            studentName,
-            studentId,
-            defenseType,
-            semester,
-            knowledgeRating,
-            presentationRating,
-            responseRating,
-            organizationRating,
-            overallRating,
-            strengths,
-            weaknesses,
-            recommendations,
-            finalComments,
-            supervisorName,
-            evaluationDate
-        } = req.body;
+        const { studentId } = req.body;
 
-        if (!studentName || !studentId || !defenseType || !semester || !supervisorName) {
-            return sendError(res, 'Missing required fields', 400);
-        }
-
-        if (!knowledgeRating || !presentationRating || !responseRating || !organizationRating || !overallRating) {
-            return sendError(res, 'All ratings are required', 400);
-        }
-
+        // Resolve authoritative pg_student_id
         const student = await pgstudinfo.findOne({
-            where: { pgstud_id: studentId }
-        });
-
-        if (!student) {
-            return sendError(res, `Student with ID "${studentId}" does not exist in the system.`, 404);
-        }
-
-        const finalThesis = await documents_uploads.findOne({
             where: {
-                master_id: studentId,
-                document_type: 'Final Thesis'
+                [Op.or]: [
+                    { pgstud_id: studentId },
+                    { stu_id: studentId }
+                ]
             }
         });
 
-        if (!finalThesis) {
-            return sendError(res, `Student has not submitted their Final Thesis yet.`, 403);
-        }
+        if (!student) return sendError(res, "Student not found", 404);
 
-        const evaluation = await defense_evaluations.create({
-            student_name: studentName,
-            student_id: studentId,
-            defense_type: defenseType,
-            semester,
-            knowledge_rating: knowledgeRating,
-            presentation_rating: presentationRating,
-            response_rating: responseRating,
-            organization_rating: organizationRating,
-            overall_rating: overallRating,
-            strengths,
-            weaknesses,
-            recommendations,
-            final_comments: finalComments,
-            supervisor_name: supervisorName,
-            evaluation_date: evaluationDate || new Date(),
+        const evaluationData = {
+            ...req.body,
+            pg_student_id: student.pgstud_id,
+            defense_type: req.body.defenseType,
+            knowledge_rating: req.body.knowledgeRating,
+            presentation_rating: req.body.presentationRating,
+            response_rating: req.body.responseRating,
+            organization_rating: req.body.organizationRating,
+            overall_rating: req.body.overallRating,
+            final_comments: req.body.finalComments,
             evaluator_role: req.user.role_id,
-            evaluator_id: req.user.pg_staff_id || req.user.id
-        });
+            evaluator_id: req.user.pgstaff_id || req.user.id
+        };
 
-        if (defenseType === 'Final Thesis') {
-            const isPass = finalComments === 'Pass';
-            const newStatus = isPass ? 'Completed' : 'Resubmit';
-            await documents_uploads.update(
-                { status: newStatus },
-                { where: { master_id: studentId, document_type: 'Final Thesis' } }
-            );
-        }
-
+        const evaluation = await EvaluationService.createDefenseEvaluation(evaluationData);
         sendSuccess(res, "Evaluation submitted successfully", { evaluation }, 201);
-
     } catch (err) {
         console.error('Create Evaluation Error:', err);
-        sendError(res, 'Failed to submit evaluation', 500);
+        sendError(res, err.message || 'Failed to submit evaluation', err.status || 500);
     }
 };
 
 export const getStudentEvaluations = async (req, res) => {
     try {
         const { studentId } = req.params;
-        if (!studentId) return sendError(res, 'Student ID is required', 400);
-
-        const evaluations = await defense_evaluations.findAll({
-            where: { student_id: studentId },
-            order: [['created_at', 'DESC']]
-        });
+        const evaluations = await EvaluationService.getEvaluationsByStudent(studentId);
         sendSuccess(res, "Evaluations fetched successfully", { evaluations });
     } catch (err) {
-        console.error('Get Student Evaluations Error:', err);
         sendError(res, 'Failed to fetch evaluations', 500);
     }
 };
 
 export const getAllEvaluations = async (req, res) => {
     try {
-        const evaluations = await defense_evaluations.findAll({
-            include: [{
-                model: pgstudinfo,
-                as: 'student',
-                required: true,
-                attributes: []
-            }],
-            order: [['created_at', 'DESC']]
-        });
+        const evaluations = await EvaluationService.getAllEvaluations();
         sendSuccess(res, "Evaluations fetched successfully", { evaluations });
     } catch (err) {
-        console.error('Get All Evaluations Error:', err);
         sendError(res, 'Failed to fetch evaluations', 500);
     }
 };

@@ -171,6 +171,16 @@ export const adminService = {
             console.error("Error in deleteAssignment:", err);
             throw err;
         }
+    },
+
+    async getAssignmentTypes() {
+        try {
+            const res = await api.get('/api/admin/assignments/types');
+            return res.data;
+        } catch (err) {
+            console.error("Error in getAssignmentTypes:", err);
+            throw err;
+        }
     }
 };
 

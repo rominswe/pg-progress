@@ -10,13 +10,13 @@ export default class defense_evaluations extends Model {
                 allowNull: false,
                 primaryKey: true
             },
-            student_name: {
-                type: DataTypes.STRING(255),
-                allowNull: false
-            },
-            student_id: {
+            pg_student_id: {
                 type: DataTypes.STRING(50),
-                allowNull: false
+                allowNull: false,
+                references: {
+                    model: 'pgstudinfo',
+                    key: 'pgstud_id'
+                }
             },
             defense_type: {
                 type: DataTypes.ENUM('Proposal Defense', 'Final Thesis'),
@@ -62,36 +62,40 @@ export default class defense_evaluations extends Model {
                 type: DataTypes.TEXT,
                 allowNull: true
             },
+            evaluation_date: {
+                type: DataTypes.DATEONLY,
+                allowNull: false
+            },
+            evaluator_role: {
+                type: DataTypes.STRING(20),
+                allowNull: false,
+                references: {
+                    model: 'roles',
+                    key: 'role_id'
+                }
+            },
+            evaluator_id: {
+                type: DataTypes.STRING(50),
+                allowNull: true,
+                references: {
+                    model: 'pgstaffinfo',
+                    key: 'pgstaff_id'
+                }
+            },
             viva_outcome: {
                 type: DataTypes.STRING(255),
                 allowNull: true
             },
-            supervisor_name: {
-                type: DataTypes.STRING(255),
-                allowNull: false
-            },
-            evaluation_date: {
-                type: DataTypes.DATE,
-                allowNull: false
-            },
-            evaluator_role: {
-                type: DataTypes.ENUM('SUV', 'EXA'),
-                allowNull: false,
-                defaultValue: 'SUV'
-            },
-            evaluator_id: {
-                type: DataTypes.STRING(50),
-                allowNull: true
-            },
             created_at: {
                 type: DataTypes.DATE,
-                defaultValue: DataTypes.NOW,
                 allowNull: false
             }
         }, {
             sequelize,
             tableName: 'defense_evaluations',
-            timestamps: false,
+            timestamps: true,
+            createdAt: 'created_at',
+            updatedAt: false,
             indexes: [
                 {
                     name: "PRIMARY",
@@ -102,12 +106,26 @@ export default class defense_evaluations extends Model {
                     ]
                 },
                 {
-                    name: "student_idx",
+                    name: "fk_defense_evaluations_roles_id",
                     using: "BTREE",
                     fields: [
-                        { name: "student_id" },
+                        { name: "evaluator_role" },
                     ]
-                }
+                },
+                {
+                    name: "fk_defense_evaluations_pgstud_id",
+                    using: "BTREE",
+                    fields: [
+                        { name: "pg_student_id" },
+                    ]
+                },
+                {
+                    name: "fk_defense_evaluations_pgstaff_id",
+                    using: "BTREE",
+                    fields: [
+                        { name: "evaluator_id" },
+                    ]
+                },
             ]
         });
     }

@@ -21,7 +21,7 @@ export const requestReactivation = async (req, res) => {
         // Try Staff first (most likely scenario for detailed roles)
         let userExists = await pgstaffinfo.findOne({
             where: {
-                [Op.or]: [{ pg_staff_id: userId }, { emp_id: userId }]
+                [Op.or]: [{ pgstaff_id: userId }, { emp_id: userId }]
             }
         });
 

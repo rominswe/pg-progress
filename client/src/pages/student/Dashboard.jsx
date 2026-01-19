@@ -1,101 +1,58 @@
-import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import api, { documentService } from "../../services/api";
-import { FileText, Clock, CheckCircle, TrendingUp, AlertCircle, Calendar, ArrowRight, GraduationCap } from "lucide-react";
+import { FileText, Clock, CheckCircle, TrendingUp, AlertCircle, GraduationCap } from "lucide-react";
 import { motion } from "framer-motion";
+import { useDashboardStats } from "../../hooks/useDashboardStats";
 
 const Dashboard = () => {
   const navigate = useNavigate();
-  const [stats, setStats] = useState([]);
-  const [recentActivities, setRecentActivities] = useState([]);
-  const [upcomingDeadlines, setUpcomingDeadlines] = useState([]);
-  const [overviewData, setOverviewData] = useState({ progress: 0, onTrack: 0, needAttention: 0 });
-  const [userProfile, setUserProfile] = useState(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const { data, isLoading } = useDashboardStats();
 
-  const fetchDashboardData = async () => {
-    try {
-      setIsLoading(true);
-      // Fetch profile and stats in parallel
-      const [profileRes, statsRes] = await Promise.all([
-        api.get('/api/profile/me'),
-        documentService.getDashboardStats()
-      ]);
+  const userProfile = data?.profile;
+  const statsData = data?.stats?.stats || {};
+  const recentActivity = data?.stats?.recentActivity || [];
 
-      if (profileRes.data?.data) {
-        setUserProfile(profileRes.data.data);
-      }
+  // Derived Stats Cards
+  const stats = [
+    {
+      title: "Total Documents",
+      value: statsData.totalDocuments?.toString() || "0",
+      icon: FileText,
+      change: "Current semester",
+      color: "blue",
+      link: "/student/uploads"
+    },
+    {
+      title: "Overall Progress",
+      value: `${statsData.progress || 0}%`,
+      icon: TrendingUp,
+      change: statsData.progress === 100 ? "Completed" : "In Progress",
+      color: "blue",
+      link: "/student/uploads"
+    },
+    {
+      title: "Pending Reviews",
+      value: statsData.pendingReviews?.toString() || "0",
+      icon: Clock,
+      change: "Awaiting Feedback",
+      color: "blue",
+      link: "/student/uploads"
+    },
+    {
+      title: "Verified assets",
+      value: statsData.approved?.toString() || "0",
+      icon: CheckCircle,
+      change: "Successfully verified",
+      color: "blue",
+      link: "/student/feedback"
+    },
+  ];
 
-      const data = statsRes.data || {};
-
-      // Update Stats Cards
-      setStats([
-        {
-          title: "Total Documents",
-          value: data.stats.totalDocuments?.toString() || "0",
-          icon: FileText,
-          change: "Current semester",
-          color: "blue",
-          link: "/student/uploads"
-        },
-        {
-          title: "Overall Progress",
-          value: `${data.stats.progress}%`,
-          icon: TrendingUp,
-          change: data.stats.progress === 100 ? "Completed" : "In Progress",
-          color: "blue",
-          link: "/student/uploads"
-        },
-        {
-          title: "Pending Reviews",
-          value: data.stats.pendingReviews?.toString() || "0",
-          icon: Clock,
-          change: "Awaiting Feedback",
-          color: "blue",
-          link: "/student/uploads"
-        },
-        {
-          title: "Verified assets",
-          value: data.stats.approved?.toString() || "0",
-          icon: CheckCircle,
-          change: "Successfully verified",
-          color: "blue",
-          link: "/student/feedback"
-        },
-      ]);
-
-      const dashboardSummary = {
-        progress: data.stats.progress,
-        onTrack: Math.floor(data.stats.progress / 20), // Calculate milestones met
-        needAttention: data.stats.rejected || 0
-      };
-      setOverviewData(dashboardSummary);
-
-      // Update Recent Activities
-      const formattedActivities = (data.recentActivity || []).map(act => ({
-        action: act.action,
-        time: new Date(act.date).toLocaleDateString(),
-        status: "info",
-        details: act.details
-      }));
-      setRecentActivities(formattedActivities);
-
-      setUpcomingDeadlines([]); // Clear deadlines if not supported yet
-
-    } catch (error) {
-      console.error("Error fetching dashboard data:", error);
-      setStats([
-        { title: "Total Documents", value: "-", icon: FileText, change: "Error", color: "blue" },
-        { title: "Overall Progress", value: "-", icon: TrendingUp, change: "Error", color: "purple" },
-      ]);
-    } finally {
-      setIsLoading(false);
-    }
+  // Overview Data
+  const overviewData = {
+    progress: statsData.progress || 0,
+    onTrack: Math.floor((statsData.progress || 0) / 20),
+    needAttention: statsData.rejected || 0
   };
-
-  useEffect(() => {
-    fetchDashboardData();
-  }, []);
 
   const containerVariants = {
     hidden: { opacity: 0 },
@@ -125,6 +82,14 @@ const Dashboard = () => {
       </div>
     );
   }
+
+  // Format Activities
+  const formattedActivities = recentActivity.map(act => ({
+    action: act.action,
+    time: new Date(act.date).toLocaleDateString(),
+    status: "info",
+    details: act.details
+  }));
 
   return (
     <motion.div
@@ -262,14 +227,14 @@ const Dashboard = () => {
           <h3 className="text-xl font-bold text-slate-800">Recent Activity Log</h3>
         </div>
         <div className="p-8">
-          {recentActivities.length === 0 ? (
+          {formattedActivities.length === 0 ? (
             <p className="text-slate-500 text-center">No recent activities found.</p>
           ) : (
             <div className="space-y-6">
-              {recentActivities.map((activity, index) => (
+              {formattedActivities.map((activity, index) => (
                 <div key={index} className="flex items-start gap-5 relative">
                   {/* Timeline Line */}
-                  {index !== recentActivities.length - 1 && (
+                  {index !== formattedActivities.length - 1 && (
                     <div className="absolute left-[22px] top-12 bottom-[-24px] w-0.5 bg-slate-100"></div>
                   )}
 

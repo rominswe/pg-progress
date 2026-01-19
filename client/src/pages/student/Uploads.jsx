@@ -64,7 +64,7 @@ export default function Uploads() {
       try {
         const res = await documentService.getMyDocuments();
         const docs = res.data?.documents || [];
-        console.log("Fetched Docs:", docs);
+
         setUploadedDocs(docs);
         updateRoadmap(docs);
       } catch (err) {

@@ -109,6 +109,7 @@ export const updateProfile = async (req, res) => {
       if (data.Affiliation) user.Affiliation = data.Affiliation;
     }
 
+    user.updated_at = new Date();
     await user.save();
 
     return sendSuccess(res, "Profile successfully updated");
@@ -121,20 +122,21 @@ export const updateProfile = async (req, res) => {
 /* ================= UPLOAD PROFILE IMAGE ================= */
 export const uploadProfileImage = async (req, res) => {
   try {
-    if (!req.user) return res.status(401).json({ message: "Unauthorized" });
-    if (!req.file) return res.status(400).json({ message: "No file uploaded" });
+    if (!req.user) return sendError(res, "Unauthorized", 401);
+    if (!req.file) return sendError(res, "No file uploaded", 400);
 
     const { id, role_id } = req.user;
 
     const Model = ROLE_MODEL_MAP[role_id];
-    if (!Model) return res.status(400).json({ message: "Invalid role" });
+    if (!Model) return sendError(res, "Invalid role", 400);
     const user = await Model.findByPk(id);
 
-    if (!user) return res.status(404).json({ message: "User not found" });
+    if (!user) return sendError(res, "User not found", 404);
 
     // The file path relative to the server root
     const filePath = `/uploads/profiles/${req.file.filename}`;
     user.Profile_Image = filePath;
+    user.updated_at = new Date();
     await user.save();
 
     return sendSuccess(res, "Profile image uploaded successfully", { Profile_Image: filePath });

@@ -89,7 +89,7 @@ export const sendReactivationRequestEmail = async ({
     };
 
     await transporter.sendMail(mailOptions);
-    console.log(`✅ Reactivation request email sent to ${adminEmail} for user ${userId}`);
+    // console.log(`✅ Reactivation request email sent to ${adminEmail} for user ${userId}`);
   } catch (err) {
     console.error("❌ Failed to send reactivation request email:", err);
     throw new Error("Unable to send reactivation request email");

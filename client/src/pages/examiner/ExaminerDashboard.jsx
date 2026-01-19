@@ -36,13 +36,13 @@ const ExaminerDashboard = () => {
     }, []);
 
     const handleEvaluateClick = (student) => {
-        console.log("Evaluating student:", student);
+
         setSelectedStudent(student);
         setView('form');
     };
 
     const handleFormSubmit = async (data) => {
-        console.log("Submitting Evaluation:", data);
+
 
         try {
             // Calculate overall rating
@@ -94,7 +94,7 @@ const ExaminerDashboard = () => {
                 documentId={selectedStudent.documentId}
                 documentName={selectedStudent.thesisTitle}
                 onClose={() => {
-                    console.log("DocumentViewer - Back button clicked");
+
                     setView('list');
                     setSelectedStudent(null);
                 }}
@@ -109,7 +109,7 @@ const ExaminerDashboard = () => {
                 existingData={selectedStudent.evaluationData}
                 onSubmit={handleFormSubmit}
                 onCancel={() => {
-                    console.log("Back button clicked - Returning to list view");
+
                     setView('list');
                     setSelectedStudent(null);
                 }}

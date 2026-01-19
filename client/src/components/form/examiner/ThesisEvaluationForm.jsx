@@ -67,7 +67,7 @@ export default function ThesisEvaluationForm({ studentData, existingData, onSubm
                 <button
                     onClick={(e) => {
                         e.preventDefault();
-                        console.log("Back button clicked in Form");
+
                         onCancel();
                     }}
                     className="absolute top-8 right-8 z-50 flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-xl transition-all font-bold text-sm backdrop-blur-md border border-white/10 cursor-pointer"

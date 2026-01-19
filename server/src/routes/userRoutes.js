@@ -1,7 +1,7 @@
 import express from "express";
 import { getAllPGUsers, searchUser, getSystemUser, getUserDetails, registerUser, toggleUserStatus, getDashboardStats } from "../controllers/userController.js";
 import { getAssignableRoles } from "../controllers/rolesController.js";
-import { requestAssignment, approveAssignment, rejectAssignment, getAssignments, getAllPendingAssignments, getPendingExecutiveAssignments, getAssignmentStats, deleteAssignment } from "../controllers/roleAssignmentController.js";
+import { requestAssignment, approveAssignment, rejectAssignment, getAssignments, getAllPendingAssignments, getPendingExecutiveAssignments, getAssignmentStats, deleteAssignment, getAssignmentTypes } from "../controllers/roleAssignmentController.js";
 import { requestReactivation } from "../controllers/reactivationController.js";
 import { protect, allowAdminOrDirector } from "../middleware/authmiddleware.js";
 import { searchUserForAssignment } from "../controllers/roleAssignmentController.js";
@@ -30,6 +30,7 @@ router.post("/request-reactivation", protect, requireRole("CGSADM", "CGSS"), req
 
 // ================= ROLE(Supervisor or Examiner) ASSIGNMENT MANAGEMENT =================
 router.get("/assignments/search", protect, requireRole("CGSADM", "CGSS"), searchUserForAssignment);
+router.get("/assignments/types", protect, requireRole("CGSADM", "CGSS"), getAssignmentTypes);
 router.post("/assignments/request", protect, requireRole("CGSADM", "CGSS"), requestAssignment);
 router.post("/assignments/approve", protect, allowAdminOrDirector, approveAssignment);
 router.get("/assignments/pending", protect, requireRole("CGSADM", "CGSS"), getAllPendingAssignments);

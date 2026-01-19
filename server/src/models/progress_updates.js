@@ -10,9 +10,13 @@ export default class progress_updates extends Model {
                 allowNull: false,
                 primaryKey: true
             },
-            student_id: {
+            pg_student_id: {
                 type: DataTypes.STRING(20),
-                allowNull: false
+                allowNull: false,
+                references: {
+                    model: 'pgstudinfo',
+                    key: 'pgstud_id'
+                }
             },
             title: {
                 type: DataTypes.STRING(255),
@@ -34,14 +38,10 @@ export default class progress_updates extends Model {
                 type: DataTypes.TEXT,
                 allowNull: false
             },
-            document_path: {
-                type: DataTypes.STRING(500),
-                allowNull: true
-            },
             status: {
                 type: DataTypes.ENUM('Pending Review', 'Reviewed'),
-                defaultValue: 'Pending Review',
-                allowNull: false
+                allowNull: false,
+                defaultValue: "Pending Review"
             },
             supervisor_feedback: {
                 type: DataTypes.TEXT,
@@ -53,18 +53,22 @@ export default class progress_updates extends Model {
             },
             submission_date: {
                 type: DataTypes.DATEONLY,
-                defaultValue: DataTypes.NOW,
                 allowNull: false
+            },
+            document_path: {
+                type: DataTypes.STRING(500),
+                allowNull: true
             },
             created_at: {
                 type: DataTypes.DATE,
-                defaultValue: DataTypes.NOW,
                 allowNull: false
             }
         }, {
             sequelize,
             tableName: 'progress_updates',
-            timestamps: false,
+            timestamps: true,
+            createdAt: 'created_at',
+            updatedAt: false,
             indexes: [
                 {
                     name: "PRIMARY",
@@ -75,12 +79,12 @@ export default class progress_updates extends Model {
                     ]
                 },
                 {
-                    name: "student_idx",
+                    name: "fk_progress_updates_pgstud_id",
                     using: "BTREE",
                     fields: [
-                        { name: "student_id" },
+                        { name: "pg_student_id" },
                     ]
-                }
+                },
             ]
         });
     }

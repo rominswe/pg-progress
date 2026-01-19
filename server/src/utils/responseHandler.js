@@ -9,7 +9,8 @@ export const sendSuccess = (res, message, data = null, statusCode = 200) => {
 export const sendError = (res, message, statusCode = 500, meta = null) => {
   return res.status(statusCode).json({
     success: false,
-    error: message,
+    message: message, // Standard UI message field
+    error: message,   // Redundant but ensures compatibility with global error handler format
     meta,
   });
 };

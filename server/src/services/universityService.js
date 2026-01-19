@@ -15,12 +15,12 @@ export const searchUniversities = async (query) => {
         // 1. Check Cache
         const cachedData = await redisClient.get(cacheKey);
         if (cachedData) {
-            console.log(`[UniversityService] Cache HIT for: ${query}`);
+            // console.log(`[UniversityService] Cache HIT for: ${query}`);
             return JSON.parse(cachedData);
         }
 
         // 2. Fetch from API
-        console.log(`[UniversityService] Cache MISS for: ${query}. Fetching from API...`);
+        // console.log(`[UniversityService] Cache MISS for: ${query}. Fetching from API...`);
         const response = await fetch(`${HIPO_API_URL}?name=${encodeURIComponent(query)}`);
 
         if (!response.ok) {

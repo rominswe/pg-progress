@@ -8,12 +8,8 @@ export const socket = io(SOCKET_URL, {
   transports: ["websocket"],
 });
 
-socket.on("connect", () => {
-  console.log("🔌 Socket connected:", socket.id);
-});
 
 socket.on("disconnect", () => {
-  console.log("🔌 Socket disconnected");
 });
 
 socket.on("connect_error", (err) => {

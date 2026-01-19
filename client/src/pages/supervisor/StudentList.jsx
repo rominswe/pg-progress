@@ -1,45 +1,29 @@
-import { useState, useEffect } from 'react';
+import { useState, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search, Mail, TrendingUp, Calendar, BookOpen, ChevronRight, Filter, Loader2 } from 'lucide-react';
-import { Card } from '@/components/ui/card';
 import { motion, AnimatePresence } from 'framer-motion';
-import { progressService } from '@/services/api';
+import { useMyStudents } from '../../hooks/useStudents';
 
 export default function StudentList() {
   const navigate = useNavigate();
-  const [students, setStudents] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const { data: students = [], isLoading: loading } = useMyStudents();
   const [searchTerm, setSearchTerm] = useState('');
   const [progressFilter, setProgressFilter] = useState('all');
 
-  useEffect(() => {
-    fetchStudents();
-  }, []);
+  const filteredStudents = useMemo(() => {
+    return students.filter((student) => {
+      const matchesSearch =
+        student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        student.researchTitle.toLowerCase().includes(searchTerm.toLowerCase());
 
-  const fetchStudents = async () => {
-    try {
-      setLoading(true);
-      const data = await progressService.getMyStudents();
-      setStudents(data.students || []);
-    } catch (err) {
-      console.error("Failed to fetch students:", err);
-    } finally {
-      setLoading(false);
-    }
-  };
+      let matchesProgress = true;
+      if (progressFilter === 'low') matchesProgress = student.progress < 50;
+      if (progressFilter === 'medium') matchesProgress = student.progress >= 50 && student.progress < 80;
+      if (progressFilter === 'high') matchesProgress = student.progress >= 80;
 
-  const filteredStudents = students.filter((student) => {
-    const matchesSearch =
-      student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      student.researchTitle.toLowerCase().includes(searchTerm.toLowerCase());
-
-    let matchesProgress = true;
-    if (progressFilter === 'low') matchesProgress = student.progress < 50;
-    if (progressFilter === 'medium') matchesProgress = student.progress >= 50 && student.progress < 80;
-    if (progressFilter === 'high') matchesProgress = student.progress >= 80;
-
-    return matchesSearch && matchesProgress;
-  });
+      return matchesSearch && matchesProgress;
+    });
+  }, [students, searchTerm, progressFilter]);
 
   const getProgressColor = (progress) => {
     if (progress >= 80) return 'text-blue-700 bg-blue-50 border-blue-200';

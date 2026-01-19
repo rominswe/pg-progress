@@ -84,10 +84,6 @@ export const protect = async (req, res, next) => {
       _table: role_id === "STU" ? "pgstudinfo" : "pgstaffinfo"
     };
 
-    console.log(
-      `[AUTH_ACTIVE] role=${req.user.role_id} id=${req.user.id}`
-    );
-
     next();
   } catch (err) {
     console.error("[PROTECT_ERROR]", err);

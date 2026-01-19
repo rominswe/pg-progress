@@ -16,7 +16,8 @@ export default class pgstudinfo extends Model {
         references: {
           model: 'studinfo',
           key: 'stu_id'
-        }
+        },
+        unique: "fk_stu_pg"
       },
       FirstName: {
         type: DataTypes.STRING(100),
@@ -132,6 +133,14 @@ export default class pgstudinfo extends Model {
           ]
         },
         {
+          name: "uniq_stu_id",
+          unique: true,
+          using: "BTREE",
+          fields: [
+            { name: "stu_id" },
+          ]
+        },
+        {
           name: "fk_stu_pgstu",
           using: "BTREE",
           fields: [
@@ -154,6 +163,27 @@ export default class pgstudinfo extends Model {
         },
         {
           name: "fk_role_pgstu",
+          using: "BTREE",
+          fields: [
+            { name: "role_id" },
+          ]
+        },
+        {
+          name: "idx_dep_code",
+          using: "BTREE",
+          fields: [
+            { name: "Dep_Code" },
+          ]
+        },
+        {
+          name: "idx_prog_code",
+          using: "BTREE",
+          fields: [
+            { name: "Prog_Code" },
+          ]
+        },
+        {
+          name: "idx_role_id",
           using: "BTREE",
           fields: [
             { name: "role_id" },

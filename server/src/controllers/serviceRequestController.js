@@ -1,38 +1,30 @@
-import { service_requests, pgstudinfo } from "../config/config.js";
-import { Op } from 'sequelize';
+import ServiceRequestService from "../services/serviceRequestService.js";
 import { sendSuccess, sendError } from "../utils/responseHandler.js";
-
 
 export const createRequest = async (req, res) => {
     try {
-        const master_id = (req.user.pgstud_id || req.user.id).toString().trim();
+        const studentId = (req.user.pgstud_id || req.user.id).toString().trim();
 
         const {
-            fullName,
-            studentId,
-            program,
             currentSemester,
             serviceCategory,
             signature
         } = req.body;
 
-        const request_details = { ...req.body };
-        delete request_details.fullName;
-        delete request_details.studentId;
-        delete request_details.program;
-        delete request_details.currentSemester;
-        delete request_details.serviceCategory;
-        delete request_details.signature;
+        const otherDetails = { ...req.body };
+        delete otherDetails.fullName;
+        delete otherDetails.studentId;
+        delete otherDetails.program;
+        delete otherDetails.currentSemester;
+        delete otherDetails.serviceCategory;
+        delete otherDetails.signature;
 
-        const newRequest = await service_requests.create({
-            master_id,
-            full_name: fullName,
-            student_id_display: studentId,
-            program,
-            current_semester: currentSemester,
-            service_category: serviceCategory,
-            request_details: request_details,
-            signature: signature
+        const newRequest = await ServiceRequestService.createRequest({
+            studentId,
+            currentSemester,
+            serviceCategory,
+            signature,
+            otherDetails
         });
 
         sendSuccess(res, "Request created", { request: newRequest }, 201);
@@ -44,22 +36,13 @@ export const createRequest = async (req, res) => {
 export const getRequests = async (req, res) => {
     try {
         const { status } = req.query;
-        const where = {};
-        if (status && status !== 'All') where.status = status;
+        const userId = (req.user.pgstud_id || req.user.id).toString().trim();
+        const roleId = req.user.role_id;
 
-        if (req.user.role_id === 'STU') {
-            const userId = (req.user.pgstud_id || req.user.id).toString().trim();
-            where.master_id = userId;
-        }
-
-        const requests = await service_requests.findAll({
-            where,
-            order: [['submission_date', 'DESC']],
-            include: [{
-                model: pgstudinfo,
-                as: 'student',
-                attributes: ['FirstName', 'LastName', 'EmailId']
-            }]
+        const requests = await ServiceRequestService.getRequests({
+            status,
+            userId,
+            roleId
         });
 
         sendSuccess(res, "Requests fetched", { requests });
@@ -73,18 +56,14 @@ export const updateRequestStatus = async (req, res) => {
         const { id } = req.params;
         const { status, comments } = req.body;
 
-        const request = await service_requests.findByPk(id);
-        if (!request) return sendError(res, "Request not found", 404);
+        const request = await ServiceRequestService.updateRequestStatus(id, {
+            status,
+            comments
+        });
 
-        request.status = status;
-        let details = request.request_details || {};
-        details.supervisor_comments = comments;
-        request.request_details = details;
-        request.changed('request_details', true);
-
-        await request.save();
         sendSuccess(res, "Status updated", { request });
     } catch (error) {
-        sendError(res, error.message, 500);
+        console.error("[UPDATE_REQUEST_ERROR]", error);
+        sendError(res, error.message, error.status || 500);
     }
 };

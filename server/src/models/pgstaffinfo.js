@@ -5,7 +5,7 @@ const { Model } = _sequelize;
 export default class pgstaffinfo extends Model {
   static init(sequelize, DataTypes) {
     return super.init({
-      pg_staff_id: {
+      pgstaff_id: {
         type: DataTypes.STRING(20),
         allowNull: false,
         primaryKey: true
@@ -83,7 +83,7 @@ export default class pgstaffinfo extends Model {
         defaultValue: "Not Provided"
       },
       Academic_Rank: {
-        type: DataTypes.ENUM('Professor', 'Associate Professor', 'Senior Lecturer', 'Lecturer', 'Assistant Lecturer', 'Research Fellow', 'Adjunct Professor', 'Visiting Professor'),
+        type: DataTypes.ENUM('Associate Professor', 'Professor', 'Senior Lecturer', 'Lecturer', 'Assistant Lecturer', 'Research Fellow', 'Adjunct Professor', 'Visiting Professor'),
         allowNull: true
       },
       Honorific_Titles: {
@@ -108,7 +108,7 @@ export default class pgstaffinfo extends Model {
           unique: true,
           using: "BTREE",
           fields: [
-            { name: "pg_staff_id" },
+            { name: "pgstaff_id" },
           ]
         },
         {

@@ -43,6 +43,7 @@ export const {
   roles,
   studinfo,
   tbldepartments,
+  notifications,
   // Functionate features
   progress_updates,
   service_requests,

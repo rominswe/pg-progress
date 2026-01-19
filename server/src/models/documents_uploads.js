@@ -10,24 +10,12 @@ export default class documents_uploads extends Model {
         allowNull: false,
         primaryKey: true
       },
-      uploaded_by: {
-        type: DataTypes.STRING(20),
-        allowNull: false
-      },
-      master_id: {
+      pg_student_id: {
         type: DataTypes.STRING(20),
         allowNull: false,
         references: {
           model: 'pgstudinfo',
           key: 'pgstud_id'
-        }
-      },
-      role_id: {
-        type: DataTypes.STRING(100),
-        allowNull: false,
-        references: {
-          model: 'roles',
-          key: 'role_id'
         }
       },
       document_name: {
@@ -54,26 +42,18 @@ export default class documents_uploads extends Model {
       },
       uploaded_at: {
         type: DataTypes.DATE,
-        allowNull: false,
-        defaultValue: Sequelize.Sequelize.literal('CURRENT_TIMESTAMP')
+        allowNull: false
       },
       updated_at: {
         type: DataTypes.DATE,
-        allowNull: false,
-        defaultValue: Sequelize.Sequelize.literal('CURRENT_TIMESTAMP')
-      },
-      Dep_Code: {
-        type: DataTypes.STRING(100),
-        allowNull: false,
-        references: {
-          model: 'tbldepartments',
-          key: 'Dep_Code'
-        }
+        allowNull: false
       }
     }, {
       sequelize,
       tableName: 'documents_uploads',
-      timestamps: false,
+      timestamps: true,
+      createdAt: false,
+      updatedAt: 'updated_at',
       indexes: [
         {
           name: "PRIMARY",
@@ -84,24 +64,10 @@ export default class documents_uploads extends Model {
           ]
         },
         {
-          name: "fk_role_doc_up",
+          name: "fk_doc_up_pgstudent_id",
           using: "BTREE",
           fields: [
-            { name: "role_id" },
-          ]
-        },
-        {
-          name: "fk_master_doc_up",
-          using: "BTREE",
-          fields: [
-            { name: "master_id" },
-          ]
-        },
-        {
-          name: "fk_dep_code_doc_up",
-          using: "BTREE",
-          fields: [
-            { name: "Dep_Code" },
+            { name: "pg_student_id" },
           ]
         },
       ]

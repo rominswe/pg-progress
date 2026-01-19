@@ -12,6 +12,7 @@ import {
 } from '../../components/ui/dropdown-menu';
 import { cn } from '../../lib/utils';
 import { useAuth } from '../../components/auth/AuthContext';
+import { useNotifications } from '../../components/notifications/NotificationProvider';
 import { API_BASE_URL } from '../../services/api';
 
 /**
@@ -72,25 +73,12 @@ export default function Layout({
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
   const { user, logout, loading } = useAuth();
+  const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotifications();
   const navigate = useNavigate();
 
-  const [notifications, setNotifications] = useState(notificationsProp);
-  const notificationsCount = notifications.length;
-
-  // Keep state in sync with props
-  useEffect(() => {
-    setNotifications(notificationsProp);
-  }, [notificationsProp]);
-
   const handleNotificationClick = (n) => {
-    // Navigate to the link
-    navigate(n.link);
-    // Remove from local list (marking as "finished")
-    setNotifications(prev => prev.filter(item => item.id !== n.id));
-  };
-
-  const markAllAsRead = () => {
-    setNotifications([]);
+    markAsRead(n.id);
+    if (n.link) navigate(n.link);
   };
 
   const handleLogoutConfirm = async () => {
@@ -223,9 +211,9 @@ export default function Layout({
               <DropdownMenuTrigger asChild>
                 <Button variant="ghost" size="icon" className="relative group">
                   <Bell className="h-5 w-5 group-hover:text-blue-600 transition-colors" />
-                  {notificationsCount > 0 && (
+                  {unreadCount > 0 && (
                     <span className="absolute right-1 top-1 flex h-4 w-4 items-center justify-center rounded-full bg-red-500 text-[10px] font-bold text-white ring-2 ring-white">
-                      {notificationsCount}
+                      {unreadCount}
                     </span>
                   )}
                 </Button>
@@ -233,7 +221,7 @@ export default function Layout({
               <DropdownMenuContent align="end" className="w-80 p-0 overflow-hidden rounded-2xl border-slate-100 shadow-2xl bg-white">
                 <div className="bg-slate-50/50 p-4 border-b border-slate-100 flex items-center justify-between">
                   <h4 className="text-sm font-bold text-slate-800">Notifications</h4>
-                  {notificationsCount > 0 && (
+                  {unreadCount > 0 && (
                     <button
                       onClick={markAllAsRead}
                       className="text-[10px] font-bold text-blue-600 hover:text-blue-700 hover:underline px-2 py-1"
@@ -243,15 +231,26 @@ export default function Layout({
                   )}
                 </div>
                 <div className="max-h-96 overflow-y-auto">
-                  {notificationsCount > 0 ? (
+                  {notifications.length > 0 ? (
                     notifications.map((n) => (
                       <DropdownMenuItem
                         key={n.id}
                         onClick={() => handleNotificationClick(n)}
-                        className="flex flex-col items-start gap-1 p-4 cursor-pointer hover:bg-slate-50 border-b border-slate-50 last:border-0 focus:bg-blue-50/50"
+                        className={cn(
+                          "flex flex-col items-start gap-1 p-4 cursor-pointer hover:bg-slate-50 border-b border-slate-50 last:border-0 focus:bg-blue-50/50",
+                          !n.is_read && "bg-blue-50/10"
+                        )}
                       >
-                        <span className="text-sm font-bold text-slate-700">{n.label}</span>
-                        <span className="text-[10px] font-medium text-slate-400">Click to view details</span>
+                        <div className="flex items-center justify-between w-full">
+                          <span className={cn("text-sm font-bold", n.is_read ? "text-slate-700" : "text-blue-700")}>
+                            {n.title}
+                          </span>
+                          {!n.is_read && <span className="h-2 w-2 rounded-full bg-blue-600" />}
+                        </div>
+                        <p className="text-xs text-slate-500 line-clamp-2">{n.message}</p>
+                        <span className="text-[10px] font-medium text-slate-400">
+                          {n.created_at ? new Date(n.created_at).toLocaleDateString() : 'Just now'}
+                        </span>
                       </DropdownMenuItem>
                     ))
                   ) : (

@@ -27,6 +27,31 @@ api.interceptors.request.use((config) => {
   return config;
 });
 
+/* ===================== ERROR INTERCEPTOR ===================== */
+api.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const { response } = error;
+    if (response) {
+      // 401: Unauthorized -> Auto Logout
+      if (response.status === 401) {
+        if (!window.location.pathname.includes('/login')) {
+          console.warn("Unauthorized! Redirecting to login...");
+          // Disconnect socket if connected
+          if (socket.connected) socket.disconnect();
+
+          await authService.logout().catch(() => { }); // Attempt cleaner logout
+          window.location.href = '/login';
+        }
+      }
+
+      // 403: Forbidden -> Optional: Show a toast? 
+      // Usually handled by key components, but we could emit an event.
+    }
+    return Promise.reject(error);
+  }
+);
+
 /* ===================== AUTH SERVICE ===================== */
 export const authService = {
   async initCsrf() {
@@ -203,6 +228,18 @@ export const dashboardService = {
   },
   getExaminerStudents: async () => {
     const res = await api.get("/api/dashboard/examiner/students");
+    return res.data;
+  }
+};
+
+/* ===================== NOTIFICATION SERVICE ===================== */
+export const notificationService = {
+  getNotifications: async () => {
+    const res = await api.get("/api/notifications");
+    return res.data;
+  },
+  markAsRead: async (id) => {
+    const res = await api.put(`/api/notifications/${id}/read`);
     return res.data;
   }
 };

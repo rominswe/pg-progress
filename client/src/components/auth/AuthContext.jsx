@@ -16,20 +16,20 @@ export const AuthProvider = ({ children }) => {
     let mounted = true;
 
     const checkAuth = async () => {
-      console.log("[AuthContext] Mounting: starting checkAuth...");
+
       try {
         const res = await authService.me();
-        console.log("[AuthContext] checkAuth response received:", res);
+
 
         if (mounted && res?.success && res.data) {
-          console.log("[AuthContext] checkAuth success, setting user:", res.data.id || res.data.email);
+
           setUser(res.data);
           localStorage.setItem("user", JSON.stringify(res.data));
           if (!socket.connected) {
             socket.connect();
           }
         } else {
-          console.warn("[AuthContext] checkAuth failed or no data:", res);
+
           setUser(null);
           localStorage.removeItem("user");
         }
@@ -38,7 +38,7 @@ export const AuthProvider = ({ children }) => {
         setUser(null);
         localStorage.removeItem("user");
       } finally {
-        console.log("[AuthContext] checkAuth finished, loading set to false");
+
         if (mounted) setLoading(false);
       }
     };
@@ -73,6 +73,7 @@ export const AuthProvider = ({ children }) => {
     } finally {
       setUser(null);
       localStorage.removeItem("user");
+      socket.disconnect();
     }
   };
 

@@ -21,11 +21,9 @@ const Feedback = () => {
       setError(null); // Clear previous errors
 
       // Attempt to find the student ID from the user object
-      const studentId = user?.stu_id || user?.student_id || user?.master_id || user?.id;
+      const studentId = user?.stu_id || user?.student_id || user?.pgstud_id || user?.id;
 
-      console.log('--- Evaluation Debug ---');
-      console.log('Logged in user:', user);
-      console.log('Effective Student ID:', studentId);
+
 
       if (!studentId) {
         setError("Student identity could not be verified. Please log in again.");
@@ -35,7 +33,7 @@ const Feedback = () => {
 
       const res = await evaluationService.getStudentEvaluations(studentId);
       const evaluationsList = res.data?.evaluations || [];
-      console.log('Evaluations found:', evaluationsList);
+
 
       setEvaluations(evaluationsList);
     } catch (err) {
