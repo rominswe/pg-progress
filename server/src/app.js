@@ -24,6 +24,7 @@ import evaluationRoutes from "./routes/evaluationRoutes.js";
 import defenseEvaluationRoutes from "./routes/defenseEvaluationRoutes.js";
 import dashboardRoutes from "./routes/dashboardRoutes.js";
 import notificationRoutes from "./routes/notificationRoutes.js";
+import calendarRoutes from "./routes/calendarRoutes.js";
 
 dotenv.config({ path: path.resolve(process.cwd(), "../.env") });
 
@@ -166,6 +167,7 @@ app.use("/api/evaluations", evaluationRoutes);
 app.use("/api/defense-evaluations", defenseEvaluationRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/notifications", notificationRoutes);
+app.use("/api/calendar", calendarRoutes);
 
 /* ================= HEALTH CHECK ================= */
 app.get("/health", (req, res) => {

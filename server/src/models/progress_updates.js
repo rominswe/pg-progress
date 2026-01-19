@@ -52,7 +52,7 @@ export default class progress_updates extends Model {
                 allowNull: true
             },
             submission_date: {
-                type: DataTypes.DATEONLY,
+                type: DataTypes.DATE,
                 allowNull: false
             },
             document_path: {

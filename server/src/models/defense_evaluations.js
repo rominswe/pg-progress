@@ -63,7 +63,7 @@ export default class defense_evaluations extends Model {
                 allowNull: true
             },
             evaluation_date: {
-                type: DataTypes.DATEONLY,
+                type: DataTypes.DATE,
                 allowNull: false
             },
             evaluator_role: {

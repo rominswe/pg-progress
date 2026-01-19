@@ -1,9 +1,11 @@
 import { useState, useEffect } from 'react';
-import { Users, FileCheck, CheckCircle, FileText, ArrowRight, TrendingUp, Clock, GraduationCap, Loader2 } from "lucide-react";
+import { Users, FileCheck, CheckCircle, FileText, ArrowRight, TrendingUp, Clock, GraduationCap, Loader2, Eye, Calendar as CalendarIcon } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
 import { progressService, authService, dashboardService } from '@/services/api';
+import { useCalendar } from '@/hooks/useCalendar';
+import CalendarComponent from '@/components/common/CalendarComponent';
 
 export default function SupervisorDashboard() {
   const navigate = useNavigate();
@@ -21,6 +23,9 @@ export default function SupervisorDashboard() {
   useEffect(() => {
     fetchData();
   }, []);
+
+  const { data: calendarData, isLoading: calendarLoading } = useCalendar('staff');
+  const calendarEvents = calendarData?.data || [];
 
   const fetchData = async () => {
     try {
@@ -288,6 +293,11 @@ export default function SupervisorDashboard() {
         </motion.div>
 
       </div>
+      {/* Academic Calendar Section */}
+      <motion.div variants={itemVariants} className="w-full">
+        <CalendarComponent events={calendarEvents} type="staff" />
+      </motion.div>
     </motion.div>
   );
+
 }

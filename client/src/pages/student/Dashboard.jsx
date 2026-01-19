@@ -2,14 +2,18 @@ import { useNavigate } from "react-router-dom";
 import { FileText, Clock, CheckCircle, TrendingUp, AlertCircle, GraduationCap } from "lucide-react";
 import { motion } from "framer-motion";
 import { useDashboardStats } from "../../hooks/useDashboardStats";
+import { useCalendar } from "../../hooks/useCalendar";
+import CalendarComponent from "../../components/common/CalendarComponent";
 
 const Dashboard = () => {
   const navigate = useNavigate();
-  const { data, isLoading } = useDashboardStats();
+  const { data, isLoading: statsLoading } = useDashboardStats();
+  const { data: calendarData, isLoading: calendarLoading } = useCalendar('student');
 
   const userProfile = data?.profile;
   const statsData = data?.stats?.stats || {};
   const recentActivity = data?.stats?.recentActivity || [];
+  const calendarEvents = calendarData?.data || [];
 
   // Derived Stats Cards
   const stats = [
@@ -72,7 +76,7 @@ const Dashboard = () => {
     }
   };
 
-  if (isLoading) {
+  if (statsLoading || calendarLoading) {
     return (
       <div className="flex justify-center items-center h-[80vh] text-slate-400">
         <div className="flex flex-col items-center gap-4">
@@ -145,13 +149,13 @@ const Dashboard = () => {
         })}
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {/* Student Progress Overview */}
         <motion.div
           variants={itemVariants}
-          className="lg:col-span-2 bg-white rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 overflow-hidden flex flex-col"
+          className="bg-white rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 overflow-hidden flex flex-col"
         >
-          <div className="p-6 border-b border-slate-100 flex justify-between items-center">
+          <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
             <h3 className="text-xl font-bold text-slate-800 flex items-center gap-2">
               <GraduationCap className="w-6 h-6 text-blue-600" />
               Student Progress Overview
@@ -183,40 +187,58 @@ const Dashboard = () => {
 
             <div className="grid grid-cols-3 border-t border-slate-100 pt-8 mt-auto">
               <div className="text-center border-r border-slate-100">
-                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Thesis Submission Progress</p>
+                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Thesis Progress</p>
                 <p className="text-2xl font-black text-slate-800">{overviewData.progress}%</p>
               </div>
               <div className="text-center border-r border-slate-100">
-                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Milestones Met</p>
+                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Milestones</p>
                 <p className="text-2xl font-black text-blue-600">{overviewData.onTrack}</p>
               </div>
               <div className="text-center">
-                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Rejected Docs</p>
+                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Rejected</p>
                 <p className="text-2xl font-black text-blue-400">{overviewData.needAttention}</p>
               </div>
             </div>
           </div>
         </motion.div>
 
-        {/* Deadlines - Side Card */}
+        {/* Quick Recent Activity Sidebar */}
         <motion.div
           variants={itemVariants}
           className="bg-white rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 overflow-hidden"
         >
           <div className="p-6 border-b border-slate-100 bg-slate-50/50">
             <h3 className="text-xl font-bold text-slate-800 flex items-center gap-2">
-              <Clock className="w-5 h-5 text-orange-500" />
-              Upcoming Deadlines
+              <Clock className="w-5 h-5 text-blue-600" />
+              Latest activity
             </h3>
           </div>
           <div className="p-6">
-            <div className="text-center py-10">
-              <Clock className="w-10 h-10 text-slate-200 mx-auto mb-3" />
-              <p className="text-slate-400 text-sm italic">No upcoming deadlines at the moment.</p>
+            <div className="space-y-4">
+              {formattedActivities.slice(0, 3).map((activity, index) => (
+                <div key={index} className="flex items-start gap-4 p-3 rounded-2xl hover:bg-slate-50 transition-colors">
+                  <div className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center text-blue-600">
+                    <TrendingUp className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-bold text-slate-800">{activity.action}</p>
+                    <p className="text-[10px] font-medium text-slate-400 uppercase tracking-wider">{activity.time}</p>
+                  </div>
+                </div>
+              ))}
+              {formattedActivities.length === 0 && (
+                <p className="text-sm text-slate-400 text-center py-4">No recent activity</p>
+              )}
             </div>
           </div>
         </motion.div>
       </div>
+
+      {/* Full Width Academic Calendar Section */}
+      <motion.div variants={itemVariants} className="w-full">
+        <CalendarComponent events={calendarEvents} type="student" />
+      </motion.div>
+
 
       {/* Recent Activities - Full Width */}
       <motion.div

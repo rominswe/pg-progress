@@ -4,6 +4,7 @@ import { Server } from "socket.io";
 import { sequelize } from "./config/config.js";
 import { sessionMiddleware } from "./app.js";
 import redisClient from "./config/redis.js";
+import calendarService from "./services/calendarService.js";
 
 /* ================= HTTP + SOCKET ================= */
 const server = http.createServer(app);
@@ -70,6 +71,16 @@ const setupSocket = (io) => {
       serverTime: new Date().toISOString(),
     });
   }, 30000);
+
+  // ⏰ DEADLINE MONITORING HEARTBEAT (Every 24 hours)
+  setInterval(() => {
+    calendarService.checkUpcomingDeadlines();
+  }, 1000 * 60 * 60 * 24);
+
+  // Trigger initial check after a short delay to ensure DB is ready
+  setTimeout(() => {
+    calendarService.checkUpcomingDeadlines();
+  }, 60000);
 };
 
 setupSocket(io);

@@ -2,6 +2,8 @@ import { useEffect, useState, useMemo } from "react";
 import { Users, UserCheck, Clock, FileText, Loader2 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import adminService from "@/services/adminService";
+import { useCalendar } from "@/hooks/useCalendar";
+import CalendarComponent from "@/components/common/CalendarComponent";
 
 /**
  * Dashboard Component
@@ -11,6 +13,8 @@ export default function Dashboard() {
   // --- States ---
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+  const { data: calendarData } = useCalendar('admin');
+  const calendarEvents = calendarData?.data || [];
   const [statsData, setStatsData] = useState({
     totalStudents: 0,
     totalStaff: 0,
@@ -96,11 +100,17 @@ export default function Dashboard() {
   ];
 
   return (
-    <div className="space-y-6">
-      <header>
-        <h1 className="text-2xl font-bold text-foreground">Dashboard</h1>
-        <p className="text-muted-foreground">Welcome back! Here's an overview of the system.</p>
-      </header>
+    <div className="space-y-8 max-w-full px-6 mx-auto animate-in fade-in duration-500">
+      {/* Premium Header */}
+      <div className="bg-gradient-to-r from-blue-700 to-blue-600 rounded-3xl p-8 text-white shadow-xl relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none"></div>
+        <div className="relative z-10">
+          <h1 className="text-3xl font-extrabold tracking-tight mb-2">CGS Admin Dashboard</h1>
+          <p className="text-blue-100 font-medium text-lg italic opacity-90">
+            System-wide oversight and academic management portal.
+          </p>
+        </div>
+      </div>
 
       {/* Error State */}
       {error && (
@@ -167,6 +177,11 @@ export default function Dashboard() {
           </CardContent>
         </Card>
       </section>
+      {/* Academic Calendar Section */}
+      <section className="mt-8">
+        <CalendarComponent events={calendarEvents} type="admin" />
+      </section>
     </div>
   );
+
 }

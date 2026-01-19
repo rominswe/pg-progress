@@ -5,12 +5,20 @@ export const createDefenseEvaluation = async (req, res) => {
     try {
         const examinerId = req.user.pgstaff_id || req.user.id;
 
+        const evaluationDate = req.body.evaluation_date ? new Date(req.body.evaluation_date) : new Date();
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        if (evaluationDate < today) {
+            return sendError(res, 'Cannot schedule a defense for a past date', 400);
+        }
+
         const evaluationData = {
             ...req.body,
             pg_student_id: req.body.student_id,
             evaluator_role: 'EXA',
             evaluator_id: examinerId,
-            evaluation_date: req.body.evaluation_date || new Date()
+            evaluation_date: evaluationDate
         };
 
         const newEvaluation = await EvaluationService.createDefenseEvaluation(evaluationData);

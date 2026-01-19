@@ -15,8 +15,8 @@ const ProgressEvaluation = () => {
 
     const fetchPendingEvaluations = async () => {
         try {
-            const data = await progressService.getPendingEvaluations();
-            setReports(data.evaluations || []);
+            const res = await progressService.getPendingEvaluations();
+            setReports(res.data?.evaluations || []);
         } catch (error) {
             console.error('Error fetching pending evaluations:', error);
         } finally {
