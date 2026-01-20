@@ -9,7 +9,9 @@ export const useMyStudents = () => {
         queryKey: ["my-students"],
         queryFn: async () => {
             const data = await progressService.getMyStudents();
-            return data.students || [];
+            // API response structure: { success: true, data: { students: [...] } }
+            // progressService.getMyStudents() returns the body aka { success, data }
+            return data.data?.students || [];
         },
         staleTime: 1000 * 60 * 5, // 5 minutes fresh
         retry: 1,

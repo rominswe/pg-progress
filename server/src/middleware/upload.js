@@ -67,4 +67,34 @@ const upload = multer({
   },
 });
 
+// Profile upload middleware
+const PROFILE_UPLOAD_DIR = "./uploads/profiles";
+if (!fs.existsSync(PROFILE_UPLOAD_DIR)) {
+  fs.mkdirSync(PROFILE_UPLOAD_DIR, { recursive: true });
+}
+
+const profileStorage = multer.diskStorage({
+  destination: (req, file, cb) => {
+    cb(null, PROFILE_UPLOAD_DIR);
+  },
+  filename: (req, file, cb) => {
+    const ext = path.extname(file.originalname);
+    const uniqueSuffix = Date.now() + "-" + Math.round(Math.random() * 1e9);
+    cb(null, `profile-${uniqueSuffix}${ext}`);
+  },
+});
+
+export const profileUpload = multer({
+  storage: profileStorage,
+  limits: { fileSize: 5 * 1024 * 1024 }, // 5MB max for profiles
+  fileFilter: (req, file, cb) => {
+    const allowedTypes = /jpg|jpeg|png/;
+    const ext = path.extname(file.originalname).toLowerCase().slice(1);
+    if (allowedTypes.test(ext)) {
+      return cb(null, true);
+    }
+    cb(new Error("Only images (JPG, PNG) are allowed for profile pictures"));
+  },
+});
+
 export default upload;

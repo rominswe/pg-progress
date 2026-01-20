@@ -35,15 +35,21 @@ export const getUpdates = async (req, res) => {
 
         let studentId = userId;
         if (role_id !== 'STU') {
-            if (["SUV", "CGSADM", "CGSS"].includes(role_id)) {
+            // For staff, we allow fetching by student_id query param, OR fetch all associated with them if not provided (handled in service)
+            // But the original logic required student_id for supervisors.
+            // We'll keep the logic but pass role/user context to service for filtering.
+            if (["SUV", "CGSADM", "CGSS", "EXA"].includes(role_id)) {
                 studentId = req.query.student_id;
+                // We don't force student_id here if we want to fetch "all my students' updates", but service signature `getUpdatesByStudent` implies single student.
+                // If studentId is missing, we might want to return 400 or handle "all" in service.
+                // The current implementation returns 400. We will stick to that for this specific endpoint.
                 if (!studentId) return sendError(res, "Student ID required for supervisors", 400);
             } else {
                 return sendError(res, "Access denied", 403);
             }
         }
 
-        const updates = await EvaluationService.getUpdatesByStudent(studentId);
+        const updates = await EvaluationService.getUpdatesByStudent(studentId, req.user.id, role_id);
         sendSuccess(res, "Updates fetched successfully", { updates });
     } catch (err) {
         sendError(res, "Failed to fetch updates", 500);
@@ -52,9 +58,9 @@ export const getUpdates = async (req, res) => {
 
 export const getPendingEvaluations = async (req, res) => {
     try {
-        if (!["SUV", "CGSADM", "CGSS"].includes(req.user.role_id)) return sendError(res, "Access denied", 403);
+        if (!["SUV", "CGSADM", "CGSS", "EXA"].includes(req.user.role_id)) return sendError(res, "Access denied", 403);
 
-        const pendingUpdates = await EvaluationService.getPendingProgressUpdates();
+        const pendingUpdates = await EvaluationService.getPendingProgressUpdates(req.user.id, req.user.role_id);
         const formatted = pendingUpdates.map(update => ({
             id: update.update_id,
             student_id: update.pg_student_id,
@@ -79,14 +85,16 @@ export const getPendingEvaluations = async (req, res) => {
 
 export const reviewUpdate = async (req, res) => {
     try {
-        if (!["SUV", "CGSADM", "CGSS"].includes(req.user.role_id)) return sendError(res, "Access denied", 403);
+        if (!["SUV", "CGSADM", "CGSS", "EXA"].includes(req.user.role_id)) return sendError(res, "Access denied", 403);
 
         const { update_id, supervisor_feedback, status } = req.body;
         if (!update_id) return sendError(res, "Update ID is required", 400);
 
         const update = await EvaluationService.reviewProgressUpdate(update_id, {
             supervisor_feedback,
-            status
+            status,
+            userId: req.user.id,
+            roleId: req.user.role_id
         });
 
         sendSuccess(res, "Update reviewed successfully", { update });
@@ -97,13 +105,62 @@ export const reviewUpdate = async (req, res) => {
 
 export const getMyStudents = async (req, res) => {
     try {
-        const { role_id, Dep_Code } = req.user;
-        if (!["SUV", "CGSADM", "CGSS"].includes(role_id)) return sendError(res, "Access denied", 403);
+        const { role_id, Dep_Code, id: userId } = req.user;
+        if (!["SUV", "CGSADM", "CGSS", "EXA"].includes(role_id)) return sendError(res, "Access denied", 403);
 
-        const students = await EvaluationService.getActiveStudentsInDepartment(Dep_Code || 'CGS');
+        const students = await EvaluationService.getStudentsForUser(userId, role_id, Dep_Code);
         sendSuccess(res, "Students fetched successfully", { students: formatStudents(students) });
     } catch (err) {
         sendError(res, "Failed to fetch students", 500);
+    }
+};
+
+export const getStudentDetailView = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const data = await EvaluationService.getStudentDetailViewData(id);
+        sendSuccess(res, "Student details fetched successfully", data);
+    } catch (err) {
+        sendError(res, err.message || "Failed to fetch student details", err.status || 500);
+    }
+};
+
+export const updateMilestoneDeadline = async (req, res) => {
+    try {
+        const { pg_student_id, milestone_name, deadline_date, reason } = req.body;
+        const updated_by = req.user.id;
+
+        if (!pg_student_id || !milestone_name || !deadline_date) {
+            return sendError(res, "Missing required fields", 400);
+        }
+
+        const deadline = await EvaluationService.updateMilestoneDeadline({
+            pg_student_id,
+            milestone_name,
+            deadline_date,
+            reason,
+            updated_by
+        });
+
+        sendSuccess(res, "Deadline updated successfully", { deadline });
+    } catch (err) {
+        sendError(res, err.message || "Failed to update deadline", err.status || 500);
+    }
+};
+
+export const manualCompleteMilestone = async (req, res) => {
+    try {
+        const { pg_student_id, milestone_name } = req.body;
+        const staffId = req.user.id;
+
+        if (!pg_student_id || !milestone_name) {
+            return sendError(res, "Missing student ID or milestone name", 400);
+        }
+
+        const completion = await EvaluationService.manualCompleteMilestone(pg_student_id, milestone_name, staffId);
+        sendSuccess(res, "Milestone marked as completed", { completion });
+    } catch (err) {
+        sendError(res, err.message || "Failed to update milestone", err.status || 500);
     }
 };
 
@@ -113,9 +170,20 @@ const formatStudents = (students) => {
         const uploads = student.documents_uploads || [];
         const milestones = ['Research Proposal', 'Literature Review', 'Methodology', 'Data Analysis', 'Final Thesis'];
 
-        const validUploads = new Set(uploads.filter(u => u.status !== 'Rejected').map(u => u.document_type));
+        const validUploads = new Set(uploads.filter(u => u.status === 'Approved').map(u => u.document_type));
         let completedCount = 0;
         milestones.forEach(m => { if (validUploads.has(m)) completedCount++; });
+
+        const researchProposal = uploads.find(u => u.document_type === 'Research Proposal');
+        const researchTitle = researchProposal ? researchProposal.document_name : "N/A";
+
+        // Extract supervisor name (prioritize Main Supervisor)
+        const mainSupervisor = student.role_assignments?.find(a => a.assignment_type === 'Main Supervisor')?.pg_staff;
+        const supervisorName = mainSupervisor
+            ? `${mainSupervisor.Honorific_Titles || ''} ${mainSupervisor.FirstName} ${mainSupervisor.LastName}`.trim()
+            : (student.role_assignments?.[0]?.pg_staff
+                ? `${student.role_assignments[0].pg_staff.Honorific_Titles || ''} ${student.role_assignments[0].pg_staff.FirstName} ${student.role_assignments[0].pg_staff.LastName}`.trim()
+                : "N/A");
 
         return {
             id: student.pgstud_id,
@@ -123,8 +191,9 @@ const formatStudents = (students) => {
             email: student.EmailId,
             progress: Math.round((completedCount / milestones.length) * 100),
             lastSubmissionDate: lastUpdate ? lastUpdate.submission_date : student.RegDate,
-            researchTitle: "",
-            program: student.Prog_Code
+            researchTitle: researchTitle,
+            program: student.Prog_Code_program_info?.prog_name || student.Prog_Code,
+            supervisor: supervisorName
         };
     });
 };

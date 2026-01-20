@@ -34,7 +34,6 @@ const app = express();
 app.use((req, res, next) => {
   if (!req.path.startsWith("/health") && !req.path.includes(".")) {
     const sidVal = req.headers.cookie?.split(';')?.find(c => c.trim().startsWith('sid='))?.split('=')[1];
-    // console.log(`[REQ_START] ${req.method} ${req.path} - sid_cookie: ${sidVal ? 'FOUND' : 'MISSING'}, Host: ${req.headers.host}, Origin: ${req.headers.origin}`);
   }
   next();
 });
@@ -57,14 +56,16 @@ app.use(
     },
     credentials: true,
     methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
-    allowedHeaders: ["Content-Type", "Authorization", "X-CSRF-Token"],
+    allowedHeaders: ["Content-Type", "Authorization", "X-CSRF-Token", "X-Auth-Token", "X-Source-Port"],
   })
 );
 
 /* ================= MIDDLEWARE ================= */
 app.use(express.json({ limit: "1gb" })); // Keep functionate limit for file uploads
 app.use(express.urlencoded({ extended: true, limit: "1gb" }));
+
 app.use(cookieParser());
+
 app.use(logger);
 app.use("/uploads", express.static(path.join(process.cwd(), "uploads")));
 
@@ -78,9 +79,9 @@ if (redisClient.isOpen) {
   store = new session.MemoryStore();
 }
 
-export const sessionMiddleware = session({
+// Base session configuration
+const baseSessionConfig = {
   store: store,
-  name: "sid",
   secret: process.env.SESSION_SECRET,
   resave: false,
   saveUninitialized: false,
@@ -89,16 +90,74 @@ export const sessionMiddleware = session({
     httpOnly: true,
     secure: process.env.NODE_ENV === "production",
     sameSite: process.env.NODE_ENV === "production" ? "strict" : "lax",
-    maxAge: 1000 * 60 * 60 * 3, // 3 hours
+    maxAge: 1000 * 60 * 60 * 24, // 24 hours
   },
+};
+
+// Pre-create session middleware instances to prevent memory leaks (MaxListenersExceededWarning)
+const userSession = session({
+  ...baseSessionConfig,
+  name: "user_session",
 });
 
-app.use(sessionMiddleware);
+const adminSession = session({
+  ...baseSessionConfig,
+  name: "admin_session",
+});
+
+const defaultSession = session({
+  ...baseSessionConfig,
+  name: "sid",
+});
+
+// Dynamic session middleware dispatcher
+// Uses cached middleware instances instead of creating new ones per request
+const dynamicSessionMiddleware = (req, res, next) => {
+  const origin = req.headers.origin;
+  // Fallback: Check custom X-Source-Port header for robustness
+  const sourcePort = req.headers['x-source-port'];
+  // Check cookie string for socket/direct access if headers are missing
+  const cookieString = req.headers.cookie || "";
+
+  // DEBUG: Trace session selection
+  // console.log(`[Session] ${req.method} ${req.url} | Origin: ${origin} | Port: ${sourcePort} | Cookies: ${cookieString ? 'Present' : 'None'}`);
+
+  // Prioritize User Session
+  if (
+    origin === process.env.FRONTEND_USER_URL ||
+    req.headers.referer?.startsWith(process.env.FRONTEND_USER_URL) ||
+    sourcePort === '5173' ||
+    cookieString.includes("user_session=")
+  ) {
+    // console.log(" -> Selected: USER Session");
+    return userSession(req, res, next);
+  }
+
+  // Check Admin Session
+  if (
+    origin === process.env.FRONTEND_ADMIN_URL ||
+    req.headers.referer?.startsWith(process.env.FRONTEND_ADMIN_URL) ||
+    sourcePort === '5174' ||
+    cookieString.includes("admin_session=")
+  ) {
+    // console.log(" -> Selected: ADMIN Session");
+    return adminSession(req, res, next);
+  }
+
+  // Fallback
+  // console.log(" -> Selected: DEFAULT Session (Fallback)");
+  return defaultSession(req, res, next);
+};
+
+// Apply dynamic middleware to app
+app.use(dynamicSessionMiddleware);
+
+// Export for Socket.IO
+export const sessionMiddleware = dynamicSessionMiddleware;
 
 // Diagnostic logging
 app.use((req, res, next) => {
   if (!req.path.startsWith("/health")) {
-    // console.log(`[REQ] ${req.method} ${req.path} - sid: ${req.cookies.sid ? 'YES' : 'NO'}, session.user: ${req.session?.user ? 'YES' : 'NO'}`);
   }
   next();
 });

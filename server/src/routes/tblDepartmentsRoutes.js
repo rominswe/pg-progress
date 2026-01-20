@@ -1,6 +1,6 @@
 import express from "express";
 import { getAllDepartmentInfo } from "../controllers/tblDepartmentsController.js";
-import { protect } from "../middleware/authmiddleware.js";
+import { protect } from "../middleware/authMiddleware.js";
 
 import { requireRole } from "../middleware/rbacMiddleware.js";
 

@@ -18,7 +18,15 @@ const io = new Server(server, {
 
 // Share session with Socket.IO
 io.use((socket, next) => {
-  sessionMiddleware(socket.request, {}, next);
+  // Create a mock response object for express-session (needed because rolling: true tries to set cookies)
+  const res = {
+    writeHead: () => { },
+    setHeader: () => { },
+    getHeader: () => { },
+    end: () => { },
+    cookie: () => { },  // for cookie-parser compatibility if needed
+  };
+  sessionMiddleware(socket.request, res, next);
 });
 
 /* ================= SOCKET LOGIC ================= */
@@ -45,8 +53,6 @@ const setupSocket = (io) => {
     // Join role-based room for broadcast notifications
     if (roleId) socket.join(`role:${roleId}`);
 
-    // console.log(`🔌 Socket connected: user ${userId} joined room user:${userId}`);
-
     // 🔁 Restore state on refresh / reconnect
     const savedState = await redisClient.get(stateKey);
     socket.emit("STATE_SYNC", savedState ? JSON.parse(savedState) : {
@@ -61,7 +67,6 @@ const setupSocket = (io) => {
     });
 
     socket.on("disconnect", () => {
-      // console.log(`🔌 Socket disconnected: user ${userId}`);
     });
   });
 

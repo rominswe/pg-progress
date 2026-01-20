@@ -63,6 +63,24 @@ class RoleAssignmentService {
         return !!existing;
     }
 
+    async getAssignedStudentIds(staffId, allowedAssignmentTypes = []) {
+        const whereClause = {
+            pg_staff_id: staffId,
+            status: 'Approved'
+        };
+
+        if (allowedAssignmentTypes && allowedAssignmentTypes.length > 0) {
+            whereClause.assignment_type = { [Op.in]: allowedAssignmentTypes };
+        }
+
+        const assignments = await role_assignment.findAll({
+            where: whereClause,
+            attributes: ['pg_student_id'],
+            raw: true
+        });
+        return assignments.map(a => a.pg_student_id);
+    }
+
     async createAssignment(data, transaction) {
         return role_assignment.create({
             ...data,
@@ -226,6 +244,18 @@ class RoleAssignmentService {
             },
             group: ['pgstaffinfo.pgstaff_id'],
             subQuery: false
+        });
+    }
+
+    async getAssignedStaff(studentId) {
+        return role_assignment.findAll({
+            where: { pg_student_id: studentId, status: 'Approved' },
+            include: [{
+                model: pgstaffinfo,
+                as: 'pg_staff',
+                attributes: ['FirstName', 'LastName', 'Honorific_Titles', 'EmailId', 'pgstaff_id', 'emp_id']
+            }],
+            order: [['request_date', 'ASC']]
         });
     }
 

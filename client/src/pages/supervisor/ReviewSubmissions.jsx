@@ -3,7 +3,7 @@ import { documentService, API_BASE_URL } from "../../services/api";
 import { FileText, CheckCircle, XCircle, Eye, Clock, Download, Filter, Search, MoreHorizontal } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Modal } from "@/components/ui/modal";
+import { Modal, ModalContent, ModalHeader, ModalTitle } from "@/components/ui/modal";
 import { motion, AnimatePresence } from "framer-motion";
 
 export default function ReviewSubmissions() {
@@ -41,8 +41,12 @@ export default function ReviewSubmissions() {
   const [isEvaluationModalOpen, setIsEvaluationModalOpen] = useState(false);
   const [evaluationForm, setEvaluationForm] = useState({ comments: "", score: "" });
 
-  const openEvaluationModal = (submission) => {
+  const [reviewAction, setReviewAction] = useState("approved"); // 'approved' or 'rejected'
+  // NEW: State to track which action triggered the modal
+
+  const openEvaluationModal = (submission, action = "approved") => {
     setSelectedSubmission(submission);
+    setReviewAction(action);
     setEvaluationForm({ comments: "", score: "" });
     setIsEvaluationModalOpen(true);
   };
@@ -67,24 +71,35 @@ export default function ReviewSubmissions() {
     }
   };
 
-  const handleStatusUpdate = (id, status) => {
-    // Only used for direct reject button now
-    // We confirm rejection
-    if (status === 'rejected') {
-      if (window.confirm("Are you sure you want to REJECT this document?")) {
-        submitReview(id, 'rejected');
-      }
-    }
-  };
+  // function deleted
 
   const handleSubmitEvaluation = async (e) => {
     e.preventDefault();
-    if (selectedSubmission) {
-      // Call API for Approval with details
-      await submitReview(selectedSubmission.id, 'approved', evaluationForm.score, evaluationForm.comments);
-      setIsEvaluationModalOpen(false);
-      setSelectedSubmission(null);
+    if (!selectedSubmission) return;
+
+    // VALIDATION LOGIC
+    if (!evaluationForm.score) {
+      alert("Please provide a score (0-100).");
+      return;
     }
+    if (reviewAction === 'rejected' && !evaluationForm.comments.trim()) {
+      alert("Comments are required for rejection.");
+      return;
+    }
+
+    if (reviewAction === 'rejected') {
+      if (!window.confirm("Confirm rejection of this document?")) return;
+    }
+
+    await submitReview(
+      selectedSubmission.id,
+      reviewAction,
+      evaluationForm.score,
+      evaluationForm.comments
+    );
+
+    setIsEvaluationModalOpen(false);
+    setSelectedSubmission(null);
   };
 
   const handleViewDocument = (filePath) => {
@@ -221,7 +236,7 @@ export default function ReviewSubmissions() {
                         </span>
                       </td>
                       <td className="py-4 px-6">
-                        <div className="flex justify-end gap-2 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
+                        <div className="flex justify-end gap-2 text-slate-500 relative z-10 pointer-events-auto">
                           <button
                             onClick={() => handleViewDocument(submission.file_path)}
                             className="p-2 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
@@ -233,15 +248,15 @@ export default function ReviewSubmissions() {
                           {submission.status === "pending" && submission.documentType !== "Final Thesis" && (
                             <>
                               <button
-                                onClick={() => openEvaluationModal(submission)}
-                                className="p-2 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
+                                onClick={() => openEvaluationModal(submission, 'approved')}
+                                className="p-2 text-slate-500 hover:text-green-600 hover:bg-green-50 rounded-lg transition-all"
                                 title="Approve"
                               >
                                 <CheckCircle size={18} />
                               </button>
                               <button
-                                onClick={() => handleStatusUpdate(submission.id, "rejected")}
-                                className="p-2 text-slate-500 hover:text-blue-900 hover:bg-slate-100 rounded-lg transition-all"
+                                onClick={() => openEvaluationModal(submission, 'rejected')}
+                                className="p-2 text-slate-500 hover:text-red-900 hover:bg-red-50 rounded-lg transition-all"
                                 title="Reject"
                               >
                                 <XCircle size={18} />
@@ -266,69 +281,74 @@ export default function ReviewSubmissions() {
       </div>
 
       <Modal
-        isOpen={isEvaluationModalOpen}
-        onClose={() => setIsEvaluationModalOpen(false)}
-        title="Submission Evaluation"
-        size="md"
+        open={isEvaluationModalOpen}
+        onOpenChange={setIsEvaluationModalOpen}
       >
-        <form onSubmit={handleSubmitEvaluation} className="space-y-6">
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-1">
-              <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">Student</label>
-              <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 font-semibold text-slate-700 text-sm">
-                {selectedSubmission?.studentName}
+        <ModalContent className="max-w-md w-full">
+          <ModalHeader>
+            <ModalTitle>Submission Evaluation ({reviewAction.toUpperCase()})</ModalTitle>
+          </ModalHeader>
+          <div className="p-6 pt-0">
+            <form onSubmit={handleSubmitEvaluation} className="space-y-6">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">Student</label>
+                  <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 font-semibold text-slate-700 text-sm">
+                    {selectedSubmission?.studentName}
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">Document</label>
+                  <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 font-semibold text-slate-700 text-sm">
+                    {selectedSubmission?.documentType}
+                  </div>
+                </div>
               </div>
-            </div>
-            <div className="space-y-1">
-              <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">Document</label>
-              <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 font-semibold text-slate-700 text-sm">
-                {selectedSubmission?.documentType}
+
+              <div>
+                <label className="block text-sm font-bold text-slate-700 mb-2">Score (0–100)</label>
+                <input
+                  type="number"
+                  min="0"
+                  max="100"
+                  value={evaluationForm.score}
+                  onChange={(e) => setEvaluationForm({ ...evaluationForm, score: e.target.value })}
+                  className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all font-bold text-lg"
+                  placeholder="0"
+                  required
+                />
               </div>
-            </div>
-          </div>
 
-          <div>
-            <label className="block text-sm font-bold text-slate-700 mb-2">Score (0–100)</label>
-            <input
-              type="number"
-              min="0"
-              max="100"
-              value={evaluationForm.score}
-              onChange={(e) => setEvaluationForm({ ...evaluationForm, score: e.target.value })}
-              className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all font-bold text-lg"
-              placeholder="0"
-              required
-            />
-          </div>
+              <div>
+                <label className="block text-sm font-bold text-slate-700 mb-2">Feedback & Comments</label>
+                <textarea
+                  value={evaluationForm.comments}
+                  onChange={(e) => setEvaluationForm({ ...evaluationForm, comments: e.target.value })}
+                  className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all resize-none font-medium"
+                  rows={5}
+                  placeholder="Provide constructive feedback..."
+                  required
+                />
+              </div>
 
-          <div>
-            <label className="block text-sm font-bold text-slate-700 mb-2">Feedback & Comments</label>
-            <textarea
-              value={evaluationForm.comments}
-              onChange={(e) => setEvaluationForm({ ...evaluationForm, comments: e.target.value })}
-              className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all resize-none font-medium"
-              rows={5}
-              placeholder="Provide constructive feedback..."
-              required
-            />
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setIsEvaluationModalOpen(false)}
+                  className="flex-1 py-3 border border-slate-200 text-slate-600 rounded-xl font-bold hover:bg-slate-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 hover:shadow-lg transition-all"
+                >
+                  Submit Evaluation
+                </button>
+              </div>
+            </form>
           </div>
-
-          <div className="flex gap-3 pt-2">
-            <button
-              type="button"
-              onClick={() => setIsEvaluationModalOpen(false)}
-              className="flex-1 py-3 border border-slate-200 text-slate-600 rounded-xl font-bold hover:bg-slate-50 transition-colors"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className="flex-1 py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 hover:shadow-lg transition-all"
-            >
-              Submit Evaluation
-            </button>
-          </div>
-        </form>
+        </ModalContent>
       </Modal>
     </motion.div>
   );

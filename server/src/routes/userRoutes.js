@@ -3,7 +3,7 @@ import { getAllPGUsers, searchUser, getSystemUser, getUserDetails, registerUser,
 import { getAssignableRoles } from "../controllers/rolesController.js";
 import { requestAssignment, approveAssignment, rejectAssignment, getAssignments, getAllPendingAssignments, getPendingExecutiveAssignments, getAssignmentStats, deleteAssignment, getAssignmentTypes } from "../controllers/roleAssignmentController.js";
 import { requestReactivation } from "../controllers/reactivationController.js";
-import { protect, allowAdminOrDirector } from "../middleware/authmiddleware.js";
+import { protect, allowAdminOrDirector } from "../middleware/authMiddleware.js";
 import { searchUserForAssignment } from "../controllers/roleAssignmentController.js";
 import { requireRole } from "../middleware/rbacMiddleware.js";
 import { getAssignableProgramInfo } from "../controllers/programInfoController.js";

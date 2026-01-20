@@ -4,6 +4,12 @@ import { socket } from "./socket";
 const isDev = import.meta.env.DEV;
 export const API_BASE_URL = import.meta.env.VITE_API_URL || (isDev ? "" : (import.meta.env.API_BASE_URL || ""));
 
+// Port-specific user data key to prevent data conflicts
+const getStorageKey = () => {
+  const port = window.location.port || '80';
+  return `user_${port}`;
+};
+
 const api = axios.create({
   baseURL: API_BASE_URL,
   withCredentials: true, // 🔑 cookie-based session
@@ -24,8 +30,15 @@ api.interceptors.request.use((config) => {
     config.headers["X-CSRF-Token"] = csrfToken;
   }
 
+  // Robust Source Identification
+  // We send the current port to help the backend identify which portal is calling
+  // This is critical because GET requests (like page refresh) often lack the 'Origin' header
+  const port = window.location.port || '80';
+  config.headers['X-Source-Port'] = port;
+
   return config;
 });
+
 
 /* ===================== ERROR INTERCEPTOR ===================== */
 api.interceptors.response.use(
@@ -82,6 +95,12 @@ export const authService = {
       await api.post("/api/auth/logout");
     } catch (err) {
       console.error("Logout failed:", err);
+    } finally {
+      // Clear ALL port-specific user data
+      const ports = ['5173', '5174', '80'];
+      ports.forEach(port => {
+        sessionStorage.removeItem(`user_${port}`);
+      });
     }
   },
 };
@@ -162,6 +181,18 @@ export const progressService = {
   getMyStudents: async () => {
     const res = await api.get("/api/progress/my-students");
     return res.data;
+  },
+  getStudentDetails: async (id) => {
+    const res = await api.get(`/api/progress/student-details/${id}`);
+    return res.data;
+  },
+  updateDeadline: async (data) => {
+    const res = await api.post("/api/progress/update-deadline", data);
+    return res.data;
+  },
+  manualComplete: async (data) => {
+    const res = await api.post("/api/progress/manual-complete", data);
+    return res.data;
   }
 };
 
@@ -240,6 +271,18 @@ export const notificationService = {
   },
   markAsRead: async (id) => {
     const res = await api.put(`/api/notifications/${id}/read`);
+    return res.data;
+  },
+  sendNotification: async (data) => {
+    const res = await api.post("/api/notifications/send", data);
+    return res.data;
+  },
+  dismiss: async (id) => {
+    const res = await api.delete(`/api/notifications/${id}`);
+    return res.data;
+  },
+  dismissAll: async () => {
+    const res = await api.delete("/api/notifications/all");
     return res.data;
   }
 };

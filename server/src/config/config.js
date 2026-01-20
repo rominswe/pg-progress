@@ -48,7 +48,8 @@ export const {
   // Functionate features
   progress_updates,
   service_requests,
-  defense_evaluations
+  defense_evaluations,
+  milestone_deadlines
 } = models;
 
 export { sequelize };

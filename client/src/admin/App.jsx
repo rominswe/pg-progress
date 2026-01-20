@@ -26,6 +26,7 @@ import VerifyUserDetail from "@/pages/staff/VerifyUserDetail";
 import AssignUser from "@/pages/staff/AssignUser";
 import UserAssignmentApproval from "@/pages/staff/UserAssignmentApproval";
 import UserAssignmentOverview from "@/pages/staff/UserAssignmentOverview";
+import StudentDetailView from "@/pages/staff/StudentDetailView";
 
 // Query client
 const queryClient = new QueryClient();
@@ -65,6 +66,7 @@ function AppWrapper() {
         <Route path="approvals" element={<UserAssignmentApproval />} />
         <Route path="register" element={<UserRegistration />} />
         <Route path="monitoring" element={<Monitoring />} />
+        <Route path="monitoring/student/:id" element={<StudentDetailView />} />
         <Route path="assignment-overview" element={<UserAssignmentOverview />} />
         <Route path="profile" element={<Profile />} />
       </Route>

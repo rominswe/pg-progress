@@ -6,6 +6,9 @@ import upload from "../middleware/upload.js"; // 1. Import the upload middleware
 
 const router = express.Router();
 
+// Supervisors / Examiners review documents - MOVED TO TOP to avoid overlap with /:id
+router.post("/review", protect, requireRole("SUV", "EXA", "CGSS", "CGSADM"), reviewDocument);
+
 // 2. ADD upload.array("files") into the route chain here
 router.post(
     "/upload",
@@ -25,8 +28,7 @@ router.get("/:id/download", protect, (req, res, next) => {
 router.get("/:id/view", protect, viewDocument);
 router.delete("/:id", protect, requireRole("STU"), deleteDocument);
 
-// Supervisors / Examiners review documents
-router.post("/review", protect, requireRole("SUV", "EXA", "CGSS", "CGSADM"), reviewDocument);
+// Supervisors / Examiners review documents - MOVED TO TOP to avoid overlap with /:id
 
 // Supervisor views department documents
 router.get("/supervisor/list", protect, requireRole("SUV", "CGSADM", "CGSS"), getSupervisorDocuments);

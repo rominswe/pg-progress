@@ -73,7 +73,7 @@ export default function Layout({
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [isLogoutModalOpen, setIsLogoutModalOpen] = useState(false);
   const { user, logout, loading } = useAuth();
-  const { notifications, unreadCount, markAsRead, markAllAsRead } = useNotifications();
+  const { notifications, unreadCount, markAsRead, markAllAsRead, dismiss, dismissAll } = useNotifications();
   const navigate = useNavigate();
 
   const handleNotificationClick = (n) => {
@@ -221,12 +221,12 @@ export default function Layout({
               <DropdownMenuContent align="end" className="w-80 p-0 overflow-hidden rounded-2xl border-slate-100 shadow-2xl bg-white">
                 <div className="bg-slate-50/50 p-4 border-b border-slate-100 flex items-center justify-between">
                   <h4 className="text-sm font-bold text-slate-800">Notifications</h4>
-                  {unreadCount > 0 && (
+                  {notifications.length > 0 && (
                     <button
-                      onClick={markAllAsRead}
+                      onClick={dismissAll}
                       className="text-[10px] font-bold text-blue-600 hover:text-blue-700 hover:underline px-2 py-1"
                     >
-                      Clear All
+                      Dismiss All
                     </button>
                   )}
                 </div>
@@ -235,17 +235,28 @@ export default function Layout({
                     notifications.map((n) => (
                       <DropdownMenuItem
                         key={n.id}
-                        onClick={() => handleNotificationClick(n)}
                         className={cn(
-                          "flex flex-col items-start gap-1 p-4 cursor-pointer hover:bg-slate-50 border-b border-slate-50 last:border-0 focus:bg-blue-50/50",
+                          "flex flex-col items-start gap-1 p-4 cursor-pointer hover:bg-slate-50 border-b border-slate-50 last:border-0 focus:bg-blue-50/50 group/item",
                           !n.is_read && "bg-blue-50/10"
                         )}
+                        onClick={() => handleNotificationClick(n)}
                       >
                         <div className="flex items-center justify-between w-full">
                           <span className={cn("text-sm font-bold", n.is_read ? "text-slate-700" : "text-blue-700")}>
                             {n.title}
                           </span>
-                          {!n.is_read && <span className="h-2 w-2 rounded-full bg-blue-600" />}
+                          <div className="flex items-center gap-2">
+                            {!n.is_read && <span className="h-2 w-2 rounded-full bg-blue-600" />}
+                            <button
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                dismiss(n.id);
+                              }}
+                              className="opacity-0 group-hover/item:opacity-100 p-1 hover:bg-slate-200 rounded-md transition-all"
+                            >
+                              <X className="h-3 w-3 text-slate-400" />
+                            </button>
+                          </div>
                         </div>
                         <p className="text-xs text-slate-500 line-clamp-2">{n.message}</p>
                         <span className="text-[10px] font-medium text-slate-400">

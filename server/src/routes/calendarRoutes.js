@@ -1,11 +1,12 @@
 import express from 'express';
 import calendarController from '../controllers/calendarController.js';
-import { restrictTo } from '../middleware/authmiddleware.js';
+import { protect } from '../middleware/authMiddleware.js';
+import { requireRole } from '../middleware/rbacMiddleware.js';
 
 const router = express.Router();
 
-router.get('/student', restrictTo('Master Student', 'Doctoral Student'), calendarController.getStudentCalendar);
-router.get('/staff', restrictTo('SUV', 'EXA'), calendarController.getStaffCalendar);
-router.get('/admin', restrictTo('DIR', 'CGS'), calendarController.getAdminCalendar);
+router.get('/student', protect, requireRole('STU'), calendarController.getStudentCalendar);
+router.get('/staff', protect, requireRole('SUV', 'EXA', 'CGSADM', 'CGSS'), calendarController.getStaffCalendar);
+router.get('/admin', protect, requireRole('CGSADM', 'CGSS'), calendarController.getAdminCalendar);
 
 export default router;

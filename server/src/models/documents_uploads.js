@@ -23,7 +23,7 @@ export default class documents_uploads extends Model {
         allowNull: false
       },
       document_type: {
-        type: DataTypes.ENUM('Thesis Chapter', 'Research Proposal', 'Progress Report', 'Literature Review', 'Other'),
+        type: DataTypes.ENUM('Research Proposal', 'Literature Review', 'Methodology', 'Data Analysis', 'Final Thesis', 'Thesis Chapter', 'Progress Report', 'Other'),
         allowNull: false,
         defaultValue: "Other"
       },
@@ -36,7 +36,7 @@ export default class documents_uploads extends Model {
         allowNull: false
       },
       status: {
-        type: DataTypes.ENUM('Pending', 'Approved', 'Rejected'),
+        type: DataTypes.ENUM('Pending', 'Approved', 'Rejected', 'Completed', 'Resubmit'),
         allowNull: false,
         defaultValue: "Pending"
       },

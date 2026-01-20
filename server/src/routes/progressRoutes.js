@@ -1,5 +1,14 @@
 import express from "express";
-import { createUpdate, getUpdates, getPendingEvaluations, reviewUpdate, getMyStudents } from "../controllers/progressController.js";
+import {
+    createUpdate,
+    getUpdates,
+    getPendingEvaluations,
+    reviewUpdate,
+    getMyStudents,
+    getStudentDetailView,
+    updateMilestoneDeadline,
+    manualCompleteMilestone
+} from "../controllers/progressController.js";
 import { protect } from "../middleware/authMiddleware.js";
 import { requireRole } from "../middleware/rbacMiddleware.js";
 import multer from "multer";
@@ -7,7 +16,7 @@ import path from "path";
 
 const router = express.Router();
 
-// Configure multer for file uploads (50MB limit)
+// Configure multer for file uploads (1GB limit)
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
         cb(null, 'uploads/progress-reports');
@@ -20,7 +29,7 @@ const storage = multer.diskStorage({
 
 const upload = multer({
     storage: storage,
-    limits: { fileSize: 50 * 1024 * 1024 }, // 50MB limit
+    limits: { fileSize: 1024 * 1024 * 1024 }, // 1GB limit
     fileFilter: (req, file, cb) => {
         const allowedTypes = /pdf|doc|docx|txt|zip/;
         const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
@@ -35,9 +44,14 @@ const upload = multer({
 });
 
 router.post("/", protect, requireRole("STU"), upload.single('document'), createUpdate);
-router.get("/", protect, getUpdates);
+router.get("/", protect, requireRole("STU", "SUV", "EXA", "CGSADM", "CGSS"), getUpdates);
 router.get("/pending-evaluations", protect, requireRole("SUV", "CGSADM", "CGSS"), getPendingEvaluations);
 router.get("/my-students", protect, requireRole("SUV", "CGSADM", "CGSS"), getMyStudents);
 router.post("/review", protect, requireRole("SUV", "CGSADM", "CGSS"), reviewUpdate);
+
+
+router.get("/student-details/:id", protect, requireRole("CGSADM", "CGSS"), getStudentDetailView);
+router.post("/update-deadline", protect, requireRole("CGSADM", "CGSS"), updateMilestoneDeadline);
+router.post("/manual-complete", protect, requireRole("CGSADM", "CGSS"), manualCompleteMilestone);
 
 export default router;

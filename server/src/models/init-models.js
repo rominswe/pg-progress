@@ -19,6 +19,7 @@ import _service_requests from "./service_requests.js";
 import _notifications from "./notifications.js";
 import _studinfo from "./studinfo.js";
 import _tbldepartments from "./tbldepartments.js";
+import _milestone_deadlines from "./milestone_deadlines.js";
 
 export default function initModels(sequelize) {
   const defense_evaluations = _defense_evaluations.init(sequelize, DataTypes);
@@ -40,6 +41,7 @@ export default function initModels(sequelize) {
   const notifications = _notifications.init(sequelize, DataTypes);
   const studinfo = _studinfo.init(sequelize, DataTypes);
   const tbldepartments = _tbldepartments.init(sequelize, DataTypes);
+  const milestone_deadlines = _milestone_deadlines.init(sequelize, DataTypes);
 
   // Document Reviews & Uploads
   documents_reviews.belongsTo(documents_uploads, { as: "doc_up", foreignKey: "doc_up_id" });
@@ -81,6 +83,12 @@ export default function initModels(sequelize) {
   // Role Assignments & Students
   role_assignment.belongsTo(pgstudinfo, { as: "pg_student", foreignKey: "pg_student_id" });
   pgstudinfo.hasMany(role_assignment, { as: "role_assignments", foreignKey: "pg_student_id" });
+
+  // Milestone Deadlines
+  milestone_deadlines.belongsTo(pgstudinfo, { as: "pg_student", foreignKey: "pgstudent_id" });
+  pgstudinfo.hasMany(milestone_deadlines, { as: "milestone_deadlines", foreignKey: "pgstudent_id" });
+  milestone_deadlines.belongsTo(pgstaffinfo, { as: "staff", foreignKey: "updated_by" });
+  pgstaffinfo.hasMany(milestone_deadlines, { as: "milestone_deadlines", foreignKey: "updated_by" });
 
   // Add association for requester (staff who requested the assignment)
   role_assignment.belongsTo(pgstaffinfo, { as: "requester", foreignKey: "requested_by" });
@@ -139,5 +147,6 @@ export default function initModels(sequelize) {
     notifications,
     studinfo,
     tbldepartments,
+    milestone_deadlines,
   };
 }

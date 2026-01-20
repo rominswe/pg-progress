@@ -64,9 +64,13 @@ class AuthService {
     }
 
     async activatePendingUser(user) {
-        if (user.Status === "Pending" && (user.IsVerified === 0 || !user.IsVerified)) {
+        // Auto-activate if not verified, regardless of 'Pending' status
+        // This handles cases where status might be 'Active' but IsVerified is still 0
+        if (user.IsVerified === 0 || !user.IsVerified) {
             user.IsVerified = 1;
-            user.Status = "Active";
+            if (user.Status === "Pending") {
+                user.Status = "Active";
+            }
             await user.save();
             await user.reload();
         }

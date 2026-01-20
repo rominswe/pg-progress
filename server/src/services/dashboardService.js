@@ -1,16 +1,60 @@
-import { defense_evaluations, progress_updates, pgstudinfo, documents_uploads, studinfo, program_info } from '../config/config.js';
+import { defense_evaluations, progress_updates, pgstudinfo, documents_uploads, studinfo, program_info, role_assignment, pgstaffinfo, notifications, milestone_deadlines } from '../config/config.js';
 import { Op } from 'sequelize';
+import roleAssignmentService from './roleAssignmentService.js';
 
 class DashboardService {
-    async getSupervisorStats(depCode) {
+    async getSupervisorStats(depCode, userId, roleId) {
+        const isSupervisor = ['SUV', 'EXA'].includes(roleId);
+        let studentFilter = {};
+
+        if (isSupervisor) {
+            const assignedIds = await roleAssignmentService.getAssignedStudentIds(userId);
+            if (assignedIds.length === 0) {
+                return {
+                    totalStudents: 0,
+                    pendingReviews: 0,
+                    thesisApproved: 0,
+                    proposalsReviewed: 0
+                };
+            }
+            studentFilter = { pgstud_id: { [Op.in]: assignedIds } };
+        } else {
+            studentFilter = { Dep_Code: depCode }; // For admins/staff
+        }
+
         const [totalStudents, pendingReviews, thesisApproved, proposalsReviewed] = await Promise.all([
-            pgstudinfo.count({ where: { Dep_Code: depCode, Status: 'Active' } }),
-            progress_updates.count({ where: { status: 'Pending Review' } }),
-            defense_evaluations.count({
-                where: { defense_type: 'Final Thesis', final_comments: { [Op.like]: 'Pass%' } }
+            pgstudinfo.count({
+                where: {
+                    ...studentFilter,
+                    Status: { [Op.in]: ['Active', 'Pending'] }
+                }
+            }),
+            progress_updates.count({
+                where: { status: 'Pending Review' },
+                include: [{
+                    model: pgstudinfo,
+                    as: 'pg_student',
+                    where: studentFilter,
+                    required: true
+                }]
             }),
             defense_evaluations.count({
-                where: { defense_type: 'Proposal Defense', final_comments: { [Op.like]: 'Pass%' } }
+                where: { defense_type: 'Final Thesis', final_comments: { [Op.like]: 'Pass%' } },
+                include: [{
+                    model: pgstudinfo,
+                    as: 'pg_student',
+                    where: studentFilter,
+                    required: true
+                }]
+            }),
+            defense_evaluations.count({
+                where: { defense_type: 'Proposal Defense', final_comments: { [Op.like]: 'Pass%' } },
+                include: [{
+                    model: pgstudinfo,
+                    as: 'pg_student',
+                    where: studentFilter,
+                    required: true
+                }]
             })
         ]);
 
@@ -22,12 +66,18 @@ class DashboardService {
         };
     }
 
-    async getExaminerDashboardData(examinerId, depCode) {
-        // 1. Get all students approved by supervisors
+    async getExaminerDashboardData(examinerId) {
+        // 1. Get assigned students (Examiners are assigned via role_assignment)
+        const assignedStudentIds = await roleAssignmentService.getAssignedStudentIds(examinerId);
+
+        if (assignedStudentIds.length === 0) return [];
+
+        // 2. Get all students approved by supervisors (Foundation check)
         const approvedBySupervisor = await defense_evaluations.findAll({
             where: {
                 evaluator_role: 'SUV',
-                final_comments: { [Op.like]: 'Pass%' }
+                final_comments: { [Op.like]: 'Pass%' },
+                pg_student_id: { [Op.in]: assignedStudentIds }
             },
             attributes: ['pg_student_id', 'defense_type']
         });
@@ -36,7 +86,7 @@ class DashboardService {
 
         const studentIds = approvedBySupervisor.map(e => e.pg_student_id);
 
-        // 2. Get relevant submissions
+        // 3. Get relevant submissions
         const submissions = await documents_uploads.findAll({
             where: {
                 pg_student_id: { [Op.in]: studentIds },
@@ -49,7 +99,7 @@ class DashboardService {
                 {
                     model: pgstudinfo,
                     as: 'pg_student',
-                    where: { Dep_Code: depCode },
+                    // REMOVED: where: { Dep_Code: depCode } -> Examiner can examine any department
                     include: [
                         {
                             model: studinfo,

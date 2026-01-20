@@ -1,5 +1,6 @@
 import AuthService from "../services/authService.js";
 import { sendSuccess, sendError } from "../utils/responseHandler.js";
+import { sign } from "cookie-signature";
 
 /* ================= LOGIN HANDLER ================= */
 export const login = async (req, res) => {
@@ -42,7 +43,10 @@ export const login = async (req, res) => {
 
     req.session.user = sessionUser;
 
-    return sendSuccess(res, "Login successful", sessionUser);
+    // Sign the session ID for concurrent session support via X-Auth-Token header
+    const signedSessionId = `s:${sign(req.sessionID, process.env.SESSION_SECRET)}`;
+
+    return sendSuccess(res, "Login successful", { ...sessionUser, sessionId: signedSessionId });
   } catch (err) {
     console.error("[LOGIN_ERROR]", err);
     const status = err.message.includes("Invalid") || err.message.includes("mismatch") ? 401 : 500;
@@ -52,19 +56,22 @@ export const login = async (req, res) => {
 
 /* ================= LOGOUT ================= */
 export const logout = async (req, res) => {
-  if (!req.session) {
-    res.clearCookie("sid");
-    return sendSuccess(res, "Logout successful (No session was active)");
-  }
-
-  req.session.destroy((err) => {
-    if (err) {
-      console.error("[LOGOUT_ERROR]", err);
-      // Even if destroy fails, we want the client to clear cookie
-      res.clearCookie("sid");
-      return sendError(res, "Logout failed during session destruction", 500);
+  try {
+    if (req.session) {
+      req.session.destroy((err) => {
+        if (err) console.error("[LOGOUT_SESSION_DESTROY_ERROR]", err);
+      });
     }
-    res.clearCookie("sid");
+    // Clear both possible cookie names to ensure complete logout
+    res.clearCookie("user_session");
+    res.clearCookie("admin_session");
+    res.clearCookie("sid"); // Legacy fallback
     return sendSuccess(res, "Logout successful");
-  });
+  } catch (err) {
+    console.error("[LOGOUT_ERROR]", err);
+    res.clearCookie("user_session");
+    res.clearCookie("admin_session");
+    res.clearCookie("sid");
+    return sendSuccess(res, "Logout successful"); // Return success anyway to clear client state
+  }
 };

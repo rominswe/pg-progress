@@ -10,6 +10,7 @@ import {
     pgstaff_expertise,
     qualification,
     expertise,
+    documents_uploads,
     sequelize
 } from "../config/config.js";
 import { Op } from "sequelize";
@@ -105,18 +106,50 @@ class UserService {
     }
 
     async getSystemCounts() {
-        const [totalStudents, totalStaff, pendingStudents, pendingStaff] = await Promise.all([
+        const startOfMonth = new Date();
+        startOfMonth.setDate(1);
+        startOfMonth.setHours(0, 0, 0, 0);
+
+        const [
+            totalStudents,
+            totalStaff,
+            pendingStudents,
+            pendingStaff,
+            totalDocuments,
+            newStudentsMonth,
+            newStaffMonth,
+            newDocsMonth
+        ] = await Promise.all([
             pgstudinfo.count(),
             pgstaffinfo.count(),
             pgstudinfo.count({ where: { Status: 'Pending' } }),
             pgstaffinfo.count({ where: { Status: 'Pending' } }),
+            documents_uploads.count(),
+            pgstudinfo.count({ where: { RegDate: { [Op.gte]: startOfMonth } } }),
+            pgstaffinfo.count({ where: { RegDate: { [Op.gte]: startOfMonth } } }),
+            documents_uploads.count({ where: { uploaded_at: { [Op.gte]: startOfMonth } } })
         ]);
+
+        const calcGrowth = (total, newItems) => {
+            if (total === 0) return 0;
+            const previous = total - newItems;
+            if (previous <= 0) return 100; // All are new
+            return Math.round(((newItems) / previous) * 100);
+        };
 
         return {
             totalStudents,
             totalStaff,
             totalPending: pendingStudents + pendingStaff,
-            totalDocuments: 0
+            totalDocuments,
+            studentGrowth: calcGrowth(totalStudents, newStudentsMonth),
+            staffGrowth: calcGrowth(totalStaff, newStaffMonth),
+            docGrowth: calcGrowth(totalDocuments, totalDocuments) // For docs "This Month" logic in UI is confusing. UI says "Total Documents This Month" but values imply Total All Time?
+            // Wait, UI text is "Total Documents This Month". If so, the value should be newDocsMonth.
+            // But usually dashboard cards show All Time Total.
+            // Let's assume UI Title is slightly misleading or expects specific month data.
+            // Standard dashboard: "Total Documents" (All time) and "+X% from last month".
+            // I will use All Time Total for value, and growth based on this month.
         };
     }
 

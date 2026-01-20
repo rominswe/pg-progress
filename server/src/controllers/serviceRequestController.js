@@ -55,10 +55,14 @@ export const updateRequestStatus = async (req, res) => {
     try {
         const { id } = req.params;
         const { status, comments } = req.body;
+        const userId = req.user.pgstud_id || req.user.id;
+        const { role_id } = req.user;
 
         const request = await ServiceRequestService.updateRequestStatus(id, {
             status,
-            comments
+            comments,
+            userId,
+            roleId: role_id
         });
 
         sendSuccess(res, "Status updated", { request });

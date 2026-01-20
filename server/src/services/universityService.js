@@ -15,12 +15,10 @@ export const searchUniversities = async (query) => {
         // 1. Check Cache
         const cachedData = await redisClient.get(cacheKey);
         if (cachedData) {
-            // console.log(`[UniversityService] Cache HIT for: ${query}`);
             return JSON.parse(cachedData);
         }
 
         // 2. Fetch from API
-        // console.log(`[UniversityService] Cache MISS for: ${query}. Fetching from API...`);
         const response = await fetch(`${HIPO_API_URL}?name=${encodeURIComponent(query)}`);
 
         if (!response.ok) {
@@ -43,7 +41,6 @@ export const searchUniversities = async (query) => {
         return normalizedData;
     } catch (err) {
         console.error("[UniversityService] Error searching universities:", err);
-        // Fallback to empty list or throw to allow "Custom Entry" on frontend
         return [];
     }
 };

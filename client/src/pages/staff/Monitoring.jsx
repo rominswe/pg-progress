@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { Link } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { Progress } from '../../components/ui/progress';
 import { Badge } from '../../components/ui/badge';
@@ -167,6 +168,7 @@ export default function CGSMonitoring() {
                       <TableHead className="py-5 px-6 font-bold text-slate-500 uppercase tracking-wider text-xs">Program</TableHead>
                       <TableHead className="py-5 px-6 font-bold text-slate-500 uppercase tracking-wider text-xs">Progress</TableHead>
                       <TableHead className="py-5 px-6 font-bold text-slate-500 uppercase tracking-wider text-xs">Status</TableHead>
+                      <TableHead className="py-5 px-6 font-bold text-slate-500 uppercase tracking-wider text-xs">Actions</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody className="divide-y divide-slate-100">
@@ -191,7 +193,7 @@ export default function CGSMonitoring() {
                             </div>
                           </TableCell>
                           <TableCell>
-                            <span className="text-sm font-medium text-slate-400 italic">N/A</span>
+                            <span className="text-sm font-bold text-slate-900 line-clamp-1">{student.supervisor || 'N/A'}</span>
                           </TableCell>
                           <TableCell>
                             <span className="text-xs font-bold text-slate-400 uppercase tracking-wide bg-slate-50 px-2 py-1 rounded border border-slate-100">
@@ -215,6 +217,15 @@ export default function CGSMonitoring() {
                             </div>
                           </TableCell>
                           <TableCell className="px-6">{getStatusBadge(getDerivedStatus(student.progress))}</TableCell>
+                          <TableCell className="px-6 text-right">
+                            <Link
+                              to={`/cgs/monitoring/student/${student.id}`}
+                              className="inline-flex items-center gap-2 px-4 py-2 bg-blue-50 text-blue-600 rounded-xl font-bold text-xs hover:bg-blue-600 hover:text-white transition-all shadow-sm border border-blue-100"
+                            >
+                              View Details
+                              <ArrowUpRight className="w-3 h-3" />
+                            </Link>
+                          </TableCell>
                         </TableRow>
                       ))
                     )}

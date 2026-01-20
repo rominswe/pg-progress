@@ -67,11 +67,37 @@ export const NotificationProvider = ({ children }) => {
     };
 
     const markAllAsRead = async () => {
-        // Backend doesn't have a specific markAllAsRead yet, 
-        // but we can loop or just update frontend state if preferred.
-        // For now, let's just update local state if we don't want to loop.
-        setUnreadCount(0);
-        setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
+        try {
+            await notificationService.markAllAsRead();
+            setUnreadCount(0);
+            setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
+        } catch (err) {
+            console.error("Failed to mark all as read:", err);
+        }
+    };
+
+    const dismiss = async (id) => {
+        try {
+            await notificationService.dismiss(id);
+            setNotifications(prev => prev.filter(n => n.id !== id));
+            // Recalculate unread if necessary (or decrement if the dismissed one was unread)
+            setUnreadCount(prev => {
+                const dismissed = notifications.find(n => n.id === id);
+                return (dismissed && !dismissed.is_read) ? Math.max(0, prev - 1) : prev;
+            });
+        } catch (err) {
+            console.error("Failed to dismiss notification:", err);
+        }
+    };
+
+    const dismissAll = async () => {
+        try {
+            await notificationService.dismissAll();
+            setNotifications([]);
+            setUnreadCount(0);
+        } catch (err) {
+            console.error("Failed to dismiss all notifications:", err);
+        }
     };
 
     return (
@@ -81,6 +107,8 @@ export const NotificationProvider = ({ children }) => {
                 unreadCount,
                 markAsRead,
                 markAllAsRead,
+                dismiss,
+                dismissAll,
                 fetchNotifications
             }}
         >

@@ -9,7 +9,7 @@ const cgsNav = [
   { name: 'Postgraduate Users', href: '/cgs/users', icon: User },
   { name: 'Assignment Overview', href: '/cgs/assignment-overview', icon: BarChart3 },
   { name: 'User Registration', href: '/cgs/register', icon: UserPlus },
-  { name: 'Monitoring', href: '/cgs/monitoring', icon: Activity },
+  { name: 'Progress Monitoring', href: '/cgs/monitoring', icon: Activity },
 ];
 
 // Optional notifications (can be dynamic)

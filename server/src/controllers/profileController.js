@@ -12,25 +12,31 @@ const ROLE_MODEL_MAP = {
 
 // Define what can be seen/returned
 const allowedAttributes = {
-  EXA: ["FirstName", "LastName", "EmailId", "Phonenumber", "Status", "Profile_Image", "Affiliation", "Expertise"],
-  STU: ["FirstName", "LastName", "EmailId", "Phonenumber", "Status", "Profile_Image", "role_level"],
-  default: ["FirstName", "LastName", "EmailId", "Phonenumber", "Status", "Profile_Image"]
+  EXA: ["FirstName", "LastName", "EmailId", "Phonenumber", "Status", "Profile_Image", "Affiliation", "Expertise", "Gender", "Dob", "Address", "Country", "Passport", "Honorific_Titles", "Academic_Rank", "Univ_Domain"],
+  SUV: ["FirstName", "LastName", "EmailId", "Phonenumber", "Status", "Profile_Image", "Affiliation", "Expertise", "Gender", "Dob", "Address", "Country", "Passport", "Honorific_Titles", "Academic_Rank", "Univ_Domain"],
+  STU: ["FirstName", "LastName", "EmailId", "Phonenumber", "Status", "Profile_Image", "role_level", "Gender", "Dob", "Address", "Country", "Passport"],
+  default: ["FirstName", "LastName", "EmailId", "Phonenumber", "Status", "Profile_Image", "Gender", "Dob", "Address", "Country", "Passport", "Honorific_Titles", "Academic_Rank"]
+};
+
+const ROLE_LABELS = {
+  STU: "Postgraduate Student",
+  SUV: "Academic Supervisor",
+  EXA: "Viva/Defense Examiner",
+  CGSADM: "System Administrator",
+  CGSS: "CGS Staff",
 };
 
 /* ================= GET PROFILE (me) ================= */
 export const me = async (req, res) => {
   try {
-    // req.user is populated by protect middleware
     const { id, role_id } = req.user;
 
-    // Use the model mapping to find the user in the correct table
     const Model = ROLE_MODEL_MAP[role_id];
     if (!Model) return sendError(res, "Invalid role mapping", 400);
 
     const user = await Model.findByPk(id);
     if (!user) return sendError(res, "Profile not found", 404);
 
-    // Filter attributes based on role permissions
     const allowed = allowedAttributes[role_id] || allowedAttributes.default;
     const responseData = {};
 
@@ -38,15 +44,15 @@ export const me = async (req, res) => {
       responseData[attr] = user[attr] ?? null;
     });
 
-    // Attach identity metadata
+    // Identity metadata
     responseData.id = id;
     responseData.role_id = role_id;
+    responseData.role_name = ROLE_LABELS[role_id] || role_id;
     responseData.role_level = req.user.role_level;
     responseData.stu_id = req.user.stu_id;
     responseData.emp_id = req.user.emp_id;
-    responseData.name = `${user.FirstName} ${user.LastName}`; // Standardize name access
+    responseData.name = `${user.FirstName} ${user.LastName}`;
 
-    // Fetch Department info if Dep_Code exists
     if (user.Dep_Code) {
       const dept = await tbldepartments.findOne({ where: { Dep_Code: user.Dep_Code } });
       responseData.department_name = dept?.DepartmentName || "N/A";
@@ -63,21 +69,18 @@ export const me = async (req, res) => {
 /* ================= UPDATE PROFILE (updateMe) ================= */
 export const updateProfile = async (req, res) => {
   try {
-    const { id: loggedInId, role_id: loggedInRole } = req.user; // Session-derived role
+    const { id: loggedInId, role_id: loggedInRole } = req.user;
 
-    // Determine the target user (self or another user)
     const targetId = req.params.targetId || loggedInId;
     const targetRole = req.params.targetRole || loggedInRole;
 
-    // SECURITY: Only allow editing others if logged-in user is CGSADM
     const isEditingSelf = loggedInId === targetId;
     const isAdmin = loggedInRole === "CGSADM";
 
     if (!isEditingSelf && !isAdmin) {
-      return sendError(res, "Access denied. Only admins can edit other users.", 403);
+      return sendError(res, "Access denied", 403);
     }
 
-    // Get the correct model
     const Model = ROLE_MODEL_MAP[targetRole];
     if (!Model) return sendError(res, "Invalid role mapping", 400);
 
@@ -86,16 +89,27 @@ export const updateProfile = async (req, res) => {
 
     const data = req.body;
 
-    /* --- 1. Fields anyone can update on self --- */
-    if (data.Phonenumber) user.Phonenumber = data.Phonenumber;
-    if (data.Profile_Image) user.Profile_Image = data.Profile_Image;
+    // Fields that any user can update for themselves
+    const personalFields = ["Phonenumber", "Dob", "Gender", "Address", "Country", "Passport", "Profile_Image"];
+    personalFields.forEach(field => {
+      if (data[field] !== undefined) user[field] = data[field];
+    });
 
     if (data.Password) {
-      if (data.Password.length < 6) return sendError(res, "Password must be >= 6 chars", 400);
-      user.Password = data.Password; // Ensure bcrypt hook exists
+      if (data.Password.length < 6) return sendError(res, "Password must be at least 6 characters", 400);
+      user.Password = data.Password;
     }
 
-    /* --- 2. Admin-only fields (editable for self if admin or editing others) --- */
+    // Role-specific professional fields
+    if (targetRole !== "STU") {
+      if (data.Expertise !== undefined) user.Expertise = data.Expertise;
+      if (data.Affiliation !== undefined) user.Affiliation = data.Affiliation;
+      if (data.Univ_Domain !== undefined) user.Univ_Domain = data.Univ_Domain;
+      if (data.Honorific_Titles !== undefined) user.Honorific_Titles = data.Honorific_Titles;
+      if (data.Academic_Rank !== undefined) user.Academic_Rank = data.Academic_Rank;
+    }
+
+    // Admin-only fields
     if (isAdmin) {
       if (data.FirstName) user.FirstName = data.FirstName;
       if (data.LastName) user.LastName = data.LastName;
@@ -103,16 +117,10 @@ export const updateProfile = async (req, res) => {
       if (data.Status) user.Status = data.Status;
     }
 
-    /* --- 3. Role-specific fields (staff only) --- */
-    if (targetRole !== "STU") {
-      if (data.Expertise) user.Expertise = data.Expertise;
-      if (data.Affiliation) user.Affiliation = data.Affiliation;
-    }
-
     user.updated_at = new Date();
     await user.save();
 
-    return sendSuccess(res, "Profile successfully updated");
+    return sendSuccess(res, "Profile successfully updated", user);
   } catch (err) {
     console.error("[UPDATE_PROFILE_ERROR]", err);
     return sendError(res, err.message, 500);

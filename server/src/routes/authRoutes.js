@@ -1,7 +1,6 @@
 import express from "express";
 import rateLimit from "express-rate-limit";
 import { login, logout } from "../controllers/authController.js";
-import { protect } from "../middleware/authmiddleware.js";
 
 const router = express.Router();
 

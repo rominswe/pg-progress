@@ -14,7 +14,7 @@ export const useDashboardStats = () => {
             ]);
 
             const profile = profileRes.data?.data;
-            const stats = statsRes.data?.data;
+            const stats = statsRes.data;
 
             return { profile, stats };
         },

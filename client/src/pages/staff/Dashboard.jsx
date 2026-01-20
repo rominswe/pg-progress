@@ -4,12 +4,14 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import adminService from "@/services/adminService";
 import { useCalendar } from "@/hooks/useCalendar";
 import CalendarComponent from "@/components/common/CalendarComponent";
+import { useAuth } from "@/components/auth/AuthContext";
 
 /**
  * Dashboard Component
  * Displays system-wide overview statistics for Post Graduate users and recent activities.
  */
 export default function Dashboard() {
+  const { user } = useAuth();
   // --- States ---
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -23,35 +25,34 @@ export default function Dashboard() {
   });
 
   // --- Data Fetching ---
+
+  // --- Data Fetching ---
   useEffect(() => {
     let isMounted = true;
 
-    const fetchDashboardData = async () => {
+    const fetchData = async () => {
       try {
         setLoading(true);
         setError(null);
 
-        // Fetch accurate statistics from the dedicated backend endpoint
-        const res = await adminService.getDashboardStats();
+        const [statsRes] = await Promise.all([
+          adminService.getDashboardStats()
+        ]);
 
-        if (res?.success && res?.data) {
-          if (isMounted) {
-            setStatsData(res.data);
+        if (isMounted) {
+          if (statsRes?.success && statsRes?.data) {
+            setStatsData(statsRes.data);
           }
         }
       } catch (err) {
-        console.error("Dashboard stats fetch error:", err);
-        if (isMounted) {
-          setError("Failed to load dashboard statistics");
-        }
+        console.error("Dashboard fetch error:", err);
+        if (isMounted) setError("Failed to load dashboard data");
       } finally {
-        if (isMounted) {
-          setLoading(false);
-        }
+        if (isMounted) setLoading(false);
       }
     };
 
-    fetchDashboardData();
+    fetchData();
 
     return () => {
       isMounted = false;
@@ -63,41 +64,34 @@ export default function Dashboard() {
     {
       title: 'Total Post Graduate Students',
       value: statsData.totalStudents,
-      change: '+12%', // Mock trend
+      change: `+${statsData.studentGrowth || 0}%`,
       icon: Users,
       color: 'bg-blue-500/10 text-blue-600',
     },
     {
       title: 'Total Academic Staff',
       value: statsData.totalStaff,
-      change: '+3%', // Mock trend
+      change: `+${statsData.staffGrowth || 0}%`,
       icon: UserCheck,
       color: 'bg-emerald-500/10 text-emerald-600',
     },
     {
       title: 'Total Account Pending Verifications',
       value: statsData.totalPending,
-      change: '-8%', // Mock trend
+      change: 'Active',
       icon: Clock,
       color: 'bg-amber-500/10 text-amber-600',
     },
     {
-      title: 'Total Documents This Month',
+      title: 'Total Documents Processed',
       value: statsData.totalDocuments,
-      change: '+23%', // Mock trend
+      change: `+${statsData.docGrowth || 0}%`,
       icon: FileText,
       color: 'bg-purple-500/10 text-purple-600',
     },
   ], [statsData, loading]);
 
-  // --- Static Recent Activities (Mock) ---
-  const recentActivities = [
-    { id: 1, action: 'New student registered', user: 'Ahmad bin Ibrahim', time: '2 mins ago' },
-    { id: 2, action: 'Document approved', user: 'Dr. Razak bin Abdullah', time: '15 mins ago' },
-    { id: 3, action: 'Progress report submitted', user: 'Siti Nurhaliza', time: '1 hour ago' },
-    { id: 4, action: 'Supervisor assigned', user: 'Prof. Dr. Aminah', time: '2 hours ago' },
-    { id: 5, action: 'Thesis draft uploaded', user: 'Muhammad Farhan', time: '3 hours ago' },
-  ];
+
 
   return (
     <div className="space-y-8 max-w-full px-6 mx-auto animate-in fade-in duration-500">
@@ -105,9 +99,13 @@ export default function Dashboard() {
       <div className="bg-gradient-to-r from-blue-700 to-blue-600 rounded-3xl p-8 text-white shadow-xl relative overflow-hidden">
         <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none"></div>
         <div className="relative z-10">
-          <h1 className="text-3xl font-extrabold tracking-tight mb-2">CGS Admin Dashboard</h1>
+          <h1 className="text-3xl font-extrabold tracking-tight mb-2">
+            {user?.role_id === 'CGSADM' ? 'CGS Admin Dashboard' : 'CGS Staff Dashboard'}
+          </h1>
           <p className="text-blue-100 font-medium text-lg italic opacity-90">
-            System-wide oversight and academic management portal.
+            {user?.role_id === 'CGSADM'
+              ? 'System-wide oversight and academic management portal.'
+              : 'Institutional monitoring and postgraduate support portal.'}
           </p>
         </div>
       </div>
@@ -153,30 +151,6 @@ export default function Dashboard() {
         })}
       </section>
 
-      {/* Recent Activity Section */}
-      <section>
-        <Card>
-          <CardHeader>
-            <CardTitle>Recent Activity</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-4">
-              {recentActivities.map((activity) => (
-                <div
-                  key={activity.id}
-                  className="flex items-center justify-between border-b border-border pb-3 last:border-0 last:pb-0"
-                >
-                  <div>
-                    <p className="font-medium text-foreground">{activity.action}</p>
-                    <p className="text-sm text-muted-foreground">{activity.user}</p>
-                  </div>
-                  <span className="text-sm text-muted-foreground">{activity.time}</span>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      </section>
       {/* Academic Calendar Section */}
       <section className="mt-8">
         <CalendarComponent events={calendarEvents} type="admin" />

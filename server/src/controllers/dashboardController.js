@@ -3,7 +3,7 @@ import { sendSuccess, sendError } from "../utils/responseHandler.js";
 
 export const getSupervisorStats = async (req, res) => {
     try {
-        const stats = await DashboardService.getSupervisorStats(req.user.Dep_Code || 'CGS');
+        const stats = await DashboardService.getSupervisorStats(req.user.Dep_Code, req.user.id, req.user.role_id);
         sendSuccess(res, "Supervisor stats fetched successfully", stats);
     } catch (err) {
         console.error('Get Supervisor Stats Error:', err);
@@ -14,9 +14,8 @@ export const getSupervisorStats = async (req, res) => {
 export const getExaminerStudents = async (req, res) => {
     try {
         const examinerId = req.user.pgstaff_id || req.user.id;
-        const depCode = req.user.Dep_Code || 'CGS';
 
-        const result = await DashboardService.getExaminerDashboardData(examinerId, depCode);
+        const result = await DashboardService.getExaminerDashboardData(examinerId);
         sendSuccess(res, "Examiner students fetched successfully", { students: result });
     } catch (err) {
         console.error('Get Examiner Students Error:', err);

@@ -4,9 +4,15 @@ import { socket } from "@/services/socket";
 
 const AuthContext = createContext(null);
 
+// Port-specific storage key to prevent session conflicts
+const getStorageKey = () => {
+  const port = window.location.port || '80';
+  return `user_${port}`;
+};
+
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(() => {
-    const saved = localStorage.getItem("user");
+    const saved = sessionStorage.getItem(getStorageKey());
     return saved ? JSON.parse(saved) : null;
   });
   const [loading, setLoading] = useState(true);
@@ -16,29 +22,34 @@ export const AuthProvider = ({ children }) => {
     let mounted = true;
 
     const checkAuth = async () => {
+      // CRITICAL: Only check auth if we have a stored session for THIS port
+      // This prevents loading wrong user data from cookies belonging to other ports
+      const storedUser = sessionStorage.getItem(getStorageKey());
+
+      if (!storedUser) {
+        // No session for this port - show login page
+        if (mounted) setLoading(false);
+        return;
+      }
 
       try {
         const res = await authService.me();
 
-
         if (mounted && res?.success && res.data) {
-
           setUser(res.data);
-          localStorage.setItem("user", JSON.stringify(res.data));
+          sessionStorage.setItem(getStorageKey(), JSON.stringify(res.data));
           if (!socket.connected) {
             socket.connect();
           }
         } else {
-
           setUser(null);
-          localStorage.removeItem("user");
+          sessionStorage.removeItem(getStorageKey());
         }
       } catch (err) {
         console.error("[AuthContext] checkAuth exception:", err.message, err.response?.status);
         setUser(null);
-        localStorage.removeItem("user");
+        sessionStorage.removeItem(getStorageKey());
       } finally {
-
         if (mounted) setLoading(false);
       }
     };
@@ -60,19 +71,31 @@ export const AuthProvider = ({ children }) => {
 
     if (res?.success && res.data) {
       setUser(res.data);
-      localStorage.setItem("user", JSON.stringify(res.data));
+      sessionStorage.setItem(getStorageKey(), JSON.stringify(res.data));
       return res.data;
     }
 
     throw new Error(res?.error || "Login failed");
   };
 
+  const updateUser = (userData) => {
+    const newUser = { ...user, ...userData };
+    setUser(newUser);
+    sessionStorage.setItem(getStorageKey(), JSON.stringify(newUser));
+  };
+
   const logout = async () => {
     try {
       await authService.logout();
     } finally {
+      // Clear session data for ALL ports to prevent cross-portal session pollution
+      // This ensures logging out from :5173 also clears :5174 and vice versa
+      const ports = ['5173', '5174', '80'];
+      ports.forEach(port => {
+        sessionStorage.removeItem(`user_${port}`);
+      });
+
       setUser(null);
-      localStorage.removeItem("user");
       socket.disconnect();
     }
   };
@@ -85,6 +108,7 @@ export const AuthProvider = ({ children }) => {
         isAuthenticated: !!user,
         login,
         logout,
+        updateUser
       }}
     >
       {children}

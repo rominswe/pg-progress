@@ -141,10 +141,10 @@ export const getStudentDashboardStats = async (req, res) => {
 
 export const getSupervisorDocuments = async (req, res) => {
   try {
-    const { role_id, Dep_Code } = req.user;
-    if (!["SUV", "CGSADM", "CGSS"].includes(role_id)) return sendError(res, "Access denied", 403);
+    const { role_id, Dep_Code, id: userId } = req.user;
+    if (!["SUV", "CGSADM", "CGSS", "EXA"].includes(role_id)) return sendError(res, "Access denied", 403);
 
-    const documents = await DocumentService.getSupervisorDocuments(Dep_Code);
+    const documents = await DocumentService.getSupervisorDocuments(Dep_Code, userId, role_id);
     sendSuccess(res, "Documents fetched successfully", { documents });
   } catch (err) {
     sendError(res, err.message, 500);

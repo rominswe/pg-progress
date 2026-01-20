@@ -1,5 +1,7 @@
 import { service_requests, pgstudinfo, pgstaffinfo, pgstaff_roles } from "../config/config.js";
+import { Op } from "sequelize";
 import notificationService from "./notificationService.js";
+import roleAssignmentService from "./roleAssignmentService.js";
 
 class ServiceRequestService {
     async createRequest({ studentId, currentSemester, serviceCategory, signature, otherDetails }) {
@@ -44,6 +46,13 @@ class ServiceRequestService {
         if (status && status !== 'All') where.status = status;
         if (roleId === 'STU') where.pg_student_id = userId;
 
+        // Filter for Supervisors/Examiners
+        if (['SUV', 'EXA'].includes(roleId)) {
+            const assignedIds = await roleAssignmentService.getAssignedStudentIds(userId);
+            if (assignedIds.length === 0) return []; // Return empty if no students assigned
+            where.pg_student_id = { [Op.in]: assignedIds };
+        }
+
         return service_requests.findAll({
             where,
             order: [['submission_date', 'DESC']],
@@ -55,7 +64,7 @@ class ServiceRequestService {
         });
     }
 
-    async updateRequestStatus(id, { status, comments }) {
+    async updateRequestStatus(id, { status, comments, userId, roleId }) {
         const request = await service_requests.findByPk(id);
         if (!request) {
             const error = new Error("Request not found");
@@ -63,12 +72,18 @@ class ServiceRequestService {
             throw error;
         }
 
+        // Access Control: If Supervisor/Examiner, verify assignment
+        if (['SUV', 'EXA'].includes(roleId)) {
+            const assignedIds = await roleAssignmentService.getAssignedStudentIds(userId);
+            if (!assignedIds.includes(request.pg_student_id)) {
+                const error = new Error("Access denied: You are not assigned to this student.");
+                error.status = 403;
+                throw error;
+            }
+        }
+
         request.status = status;
         let details = request.request_details || {};
-        // Handle if request_details is a string that needs parsing
-        if (typeof details === 'string') {
-            try { details = JSON.parse(details); } catch (e) { details = { legacy_details: details }; }
-        }
         details.supervisor_comments = comments;
         request.request_details = details;
         request.changed('request_details', true);
@@ -76,11 +91,14 @@ class ServiceRequestService {
         const result = await request.save();
 
         // Notify Student
+        const staff = await pgstaffinfo.findByPk(userId);
+        const staffName = staff ? `${staff.Honorific_Titles || ''} ${staff.FirstName} ${staff.LastName}`.trim() : "CGS staff";
+
         await notificationService.createNotification({
             userId: request.pg_student_id,
             roleId: 'STU',
             title: 'Service Request Update',
-            message: `Your ${request.service_category} request has been ${status.toLowerCase()}.`,
+            message: `Your ${request.service_category} request has been ${status.toLowerCase()} by ${staffName}.`,
             type: 'REQUEST_UPDATED',
             link: `/student/requests`
         });

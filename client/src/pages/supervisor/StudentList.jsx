@@ -14,27 +14,35 @@ export default function StudentList() {
     return students.filter((student) => {
       const matchesSearch =
         student.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        student.researchTitle.toLowerCase().includes(searchTerm.toLowerCase());
+        (student.researchTitle && student.researchTitle.toLowerCase().includes(searchTerm.toLowerCase())) ||
+        student.id.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        student.email.toLowerCase().includes(searchTerm.toLowerCase());
 
       let matchesProgress = true;
-      if (progressFilter === 'low') matchesProgress = student.progress < 50;
-      if (progressFilter === 'medium') matchesProgress = student.progress >= 50 && student.progress < 80;
-      if (progressFilter === 'high') matchesProgress = student.progress >= 80;
+      if (progressFilter === 'low') matchesProgress = student.progress < 30;
+      if (progressFilter === 'medium') matchesProgress = student.progress >= 30 && student.progress <= 70;
+      if (progressFilter === 'high') matchesProgress = student.progress > 70;
 
       return matchesSearch && matchesProgress;
     });
   }, [students, searchTerm, progressFilter]);
 
   const getProgressColor = (progress) => {
-    if (progress >= 80) return 'text-blue-700 bg-blue-50 border-blue-200';
-    if (progress >= 50) return 'text-blue-600 bg-blue-50 border-blue-200';
-    return 'text-blue-400 bg-blue-50 border-blue-100';
+    if (progress > 70) return 'text-green-700 bg-green-50 border-green-200';
+    if (progress >= 30) return 'text-blue-600 bg-blue-50 border-blue-200';
+    return 'text-red-500 bg-red-50 border-red-200';
   };
 
   const getProgressBg = (progress) => {
-    if (progress >= 80) return 'bg-blue-700';
-    if (progress >= 50) return 'bg-blue-500';
-    return 'bg-blue-300';
+    if (progress > 70) return 'bg-green-600 shadow-green-200';
+    if (progress >= 30) return 'bg-blue-600 shadow-blue-200';
+    return 'bg-red-500 shadow-red-200';
+  };
+
+  const getStatusLabel = (progress) => {
+    if (progress > 70) return 'High Progress';
+    if (progress >= 30) return 'On Track';
+    return 'At Risk';
   };
 
   return (
@@ -57,7 +65,7 @@ export default function StudentList() {
           <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400" size={20} />
           <input
             type="text"
-            placeholder="Search by student name or research title..."
+            placeholder="Search by student name, ID or research title..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="w-full pl-12 pr-4 py-3 bg-slate-50 border border-slate-200 rounded-xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all font-medium text-slate-700"
@@ -107,14 +115,18 @@ export default function StudentList() {
                 <div className="flex flex-col lg:flex-row lg:items-center gap-6">
                   {/* Avatar */}
                   <div className="flex-shrink-0">
-                    <div className="w-20 h-20 bg-gradient-to-br from-blue-500 to-blue-600 rounded-2xl flex items-center justify-center text-white font-bold text-2xl shadow-lg shadow-blue-200 group-hover:scale-105 transition-transform">
-                      {student.name.split(' ').map((n) => n[0]).join('')}
+                    <div className={`w-20 h-20 rounded-2xl flex items-center justify-center text-white font-bold text-2xl shadow-lg transition-transform group-hover:scale-105 ${student.progress > 70 ? 'bg-gradient-to-br from-green-500 to-green-600 shadow-green-200' : student.progress >= 30 ? 'bg-gradient-to-br from-blue-500 to-blue-600 shadow-blue-200' : 'bg-gradient-to-br from-red-500 to-red-600 shadow-red-200'}`}>
+                      {student.name.split(' ').map((n) => n[0]).join('').substring(0, 2)}
                     </div>
                   </div>
 
                   {/* Info */}
                   <div className="flex-1 min-w-0 space-y-3">
                     <div>
+                      <div className="flex items-center gap-2 mb-1">
+                        <span className="bg-slate-100 text-slate-500 text-xs font-bold px-2 py-0.5 rounded border border-slate-200">{student.id}</span>
+                        {student.program && <span className="bg-slate-100 text-slate-500 text-xs font-bold px-2 py-0.5 rounded border border-slate-200">{student.program}</span>}
+                      </div>
                       <h3 className="text-xl font-bold text-slate-900 group-hover:text-blue-600 transition-colors">{student.name}</h3>
                       <p className="text-sm font-medium text-slate-500 flex items-center gap-2">
                         <Mail size={14} className="text-blue-400" />
@@ -144,15 +156,15 @@ export default function StudentList() {
                     <div className="flex justify-between items-center mb-3">
                       <span className="text-xs font-bold text-slate-500 uppercase">Current Progress</span>
                       <span className={`text-xs font-bold px-2 py-0.5 rounded-full border ${getProgressColor(student.progress)}`}>
-                        {student.progress >= 80 ? 'Excellent' : student.progress >= 50 ? 'On Track' : 'Need Action'}
+                        {getStatusLabel(student.progress)}
                       </span>
                     </div>
 
                     <div className="flex items-end gap-2 mb-2">
-                      <span className={`text-4xl font-extrabold ${student.progress >= 80 ? 'text-blue-700' : student.progress >= 50 ? 'text-blue-600' : 'text-blue-400'}`}>
+                      <span className={`text-4xl font-extrabold ${student.progress > 70 ? 'text-green-600' : student.progress >= 30 ? 'text-blue-600' : 'text-red-500'}`}>
                         {student.progress}%
                       </span>
-                      <TrendingUp size={20} className={`mb-1.5 ${student.progress >= 80 ? 'text-blue-600' : student.progress >= 50 ? 'text-blue-500' : 'text-blue-300'}`} />
+                      <TrendingUp size={20} className={`mb-1.5 ${student.progress > 70 ? 'text-green-500' : student.progress >= 30 ? 'text-blue-500' : 'text-red-400'}`} />
                     </div>
 
                     <div className="w-full bg-slate-200 rounded-full h-2.5 overflow-hidden">

@@ -1,5 +1,7 @@
 import { documents_uploads, documents_reviews, pgstudinfo, role_assignment, pgstaffinfo } from "../config/config.js";
+import { Op } from "sequelize";
 import notificationService from "./notificationService.js";
+import roleAssignmentService from "./roleAssignmentService.js";
 import fs from "node:fs";
 import path from "node:path";
 
@@ -72,10 +74,13 @@ class DocumentService {
         const documents = await this.getStudentDocuments(userId);
 
         const milestones = ["Research Proposal", "Literature Review", "Methodology", "Data Analysis", "Final Thesis"];
-        const uploadedTypes = new Set(documents.map(d => d.document_type));
 
+        // Count milestone as progress if any document of that type is Pending or Approved
         let progress = 0;
-        milestones.forEach(m => { if (uploadedTypes.has(m)) progress += 20; });
+        milestones.forEach(m => {
+            const hasSubmission = documents.some(d => d.document_type === m && (d.status === 'Approved' || d.status === 'Pending' || d.status === 'Completed'));
+            if (hasSubmission) progress += 20;
+        });
 
         const stats = {
             totalDocuments: documents.length,
@@ -103,24 +108,51 @@ class DocumentService {
         return { stats, analytics: { docStats }, recentActivity };
     }
 
-    async getSupervisorDocuments(depCode) {
+    async getSupervisorDocuments(depCode, userId, roleId) {
+        const whereClause = {};
+
+        // If Supervisor or Examiner, strictly filter by assigned students
+        if (['SUV', 'EXA'].includes(roleId)) {
+            const assignedStudentIds = await roleAssignmentService.getAssignedStudentIds(userId);
+            if (assignedStudentIds.length === 0) return []; // No students assigned
+            whereClause.pg_student_id = { [Op.in]: assignedStudentIds };
+        } else {
+            // Admins see department data
+            if (depCode) {
+                // We need to filter by student's department.
+                // The include logic below handles this, but we can't easily put it in the top-level whereClause without nesting or separate query.
+                // Actually, the existing logic puts Dep_Code in the include where.
+            }
+        }
+
         return documents_uploads.findAll({
+            where: whereClause,
             include: [{
                 model: pgstudinfo,
                 as: "pg_student",
                 attributes: ["FirstName", "LastName", "stu_id", "Dep_Code"],
-                where: depCode ? { Dep_Code: depCode } : undefined
+                where: (roleId === 'CGSADM' || roleId === 'CGSS') && depCode ? { Dep_Code: depCode } : undefined
             }],
             order: [["uploaded_at", "DESC"]]
         });
     }
 
-    async reviewDocument({ docUpId, userId, status, comments, score }) {
+    async reviewDocument({ docUpId, userId, status, comments, score, roleId }) {
         const doc = await documents_uploads.findByPk(docUpId);
         if (!doc) {
             const error = new Error("Document not found");
             error.status = 404;
             throw error;
+        }
+
+        // Access Control: Verify Assignment if NOT Admin
+        if (['SUV', 'EXA'].includes(roleId)) {
+            const assignedIds = await roleAssignmentService.getAssignedStudentIds(userId);
+            if (!assignedIds.includes(doc.pg_student_id)) {
+                const error = new Error("Access denied: You are not assigned to this student.");
+                error.status = 403;
+                throw error;
+            }
         }
 
         const existing = await documents_reviews.findOne({ where: { doc_up_id: docUpId, reviewed_by: userId } });
@@ -143,11 +175,14 @@ class DocumentService {
         await doc.save();
 
         // Notify student of review
+        const staff = await pgstaffinfo.findByPk(userId);
+        const staffName = staff ? `${staff.Honorific_Titles || ''} ${staff.FirstName} ${staff.LastName}`.trim() : "A staff member";
+
         await notificationService.createNotification({
             userId: doc.pg_student_id,
             roleId: 'STU',
             title: 'Document Reviewed',
-            message: `Your document "${doc.document_name}" has been ${status.toLowerCase()}.`,
+            message: `Your document "${doc.document_name}" has been ${status.toLowerCase()} by ${staffName}.`,
             type: 'REVIEW_COMPLETED',
             link: `/student/documents`
         });

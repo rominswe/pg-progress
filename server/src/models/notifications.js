@@ -41,6 +41,11 @@ export default class notifications extends Model {
                 allowNull: false,
                 defaultValue: false
             },
+            is_dismissed: {
+                type: DataTypes.BOOLEAN,
+                allowNull: false,
+                defaultValue: false
+            },
             created_at: {
                 type: DataTypes.DATE,
                 allowNull: false,
