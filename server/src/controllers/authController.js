@@ -49,7 +49,26 @@ export const login = async (req, res) => {
     return sendSuccess(res, "Login successful", { ...sessionUser, sessionId: signedSessionId });
   } catch (err) {
     console.error("[LOGIN_ERROR]", err);
-    const status = err.message.includes("Invalid") || err.message.includes("mismatch") ? 401 : 500;
+
+    // Default to 500
+    let status = 500;
+
+    // Map specific auth errors to correct status codes
+    const message = err.message.toLowerCase();
+    if (
+      message.includes("invalid email") ||
+      message.includes("invalid password") ||
+      message.includes("not verified")
+    ) {
+      status = 401;
+    } else if (
+      message.includes("not authorized") ||
+      message.includes("deactivated") ||
+      message.includes("expired")
+    ) {
+      status = 403;
+    }
+
     return sendError(res, err.message, status);
   }
 };

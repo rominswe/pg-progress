@@ -110,42 +110,82 @@ const defaultSession = session({
   name: "sid",
 });
 
+const parsePortalPort = (urlString) => {
+  if (!urlString) return null;
+  try {
+    const parsed = new URL(urlString);
+    if (parsed.port) return parsed.port;
+    return parsed.protocol === "https:" ? "443" : "80";
+  } catch {
+    return null;
+  }
+};
+
+const FRONTEND_USER_ORIGIN = process.env.FRONTEND_USER_URL?.toLowerCase() || "";
+const FRONTEND_ADMIN_ORIGIN = process.env.FRONTEND_ADMIN_URL?.toLowerCase() || "";
+const FRONTEND_USER_PORT = parsePortalPort(process.env.FRONTEND_USER_URL);
+const FRONTEND_ADMIN_PORT = parsePortalPort(process.env.FRONTEND_ADMIN_URL);
+
+const PORTAL_CSRF_COOKIE_NAMES = {
+  user: "USER-XSRF-TOKEN",
+  admin: "ADMIN-XSRF-TOKEN",
+};
+
+const detectPortalType = (req) => {
+  const origin = (req.headers.origin || "").toLowerCase();
+  const referer = (req.headers.referer || "").toLowerCase();
+  const sourcePortHeader = req.headers["x-source-port"];
+  const sourcePort =
+    typeof sourcePortHeader === "string"
+      ? sourcePortHeader.trim()
+      : sourcePortHeader?.toString() || "";
+  const cookieString = req.headers.cookie || "";
+
+  const portalHints = [
+    { name: "user", origin: FRONTEND_USER_ORIGIN, port: FRONTEND_USER_PORT },
+    { name: "admin", origin: FRONTEND_ADMIN_ORIGIN, port: FRONTEND_ADMIN_PORT },
+  ];
+
+  for (const portal of portalHints) {
+    if (portal.origin && origin === portal.origin) {
+      return portal.name;
+    }
+    if (portal.origin && referer.startsWith(portal.origin)) {
+      return portal.name;
+    }
+    if (portal.port && sourcePort === portal.port) {
+      return portal.name;
+    }
+  }
+
+  const hasAdminSessionCookie = cookieString.includes("admin_session=");
+  const hasUserSessionCookie = cookieString.includes("user_session=");
+
+  if (hasAdminSessionCookie && !hasUserSessionCookie) {
+    return "admin";
+  }
+
+  if (hasUserSessionCookie && !hasAdminSessionCookie) {
+    return "user";
+  }
+
+  return null;
+};
+
 // Dynamic session middleware dispatcher
 // Uses cached middleware instances instead of creating new ones per request
 const dynamicSessionMiddleware = (req, res, next) => {
-  const origin = req.headers.origin;
-  // Fallback: Check custom X-Source-Port header for robustness
-  const sourcePort = req.headers['x-source-port'];
-  // Check cookie string for socket/direct access if headers are missing
-  const cookieString = req.headers.cookie || "";
+  const portalType = detectPortalType(req);
+  req.portalType = portalType || "unknown";
 
-  // DEBUG: Trace session selection
-  // console.log(`[Session] ${req.method} ${req.url} | Origin: ${origin} | Port: ${sourcePort} | Cookies: ${cookieString ? 'Present' : 'None'}`);
-
-  // Prioritize User Session
-  if (
-    origin === process.env.FRONTEND_USER_URL ||
-    req.headers.referer?.startsWith(process.env.FRONTEND_USER_URL) ||
-    sourcePort === '5173' ||
-    cookieString.includes("user_session=")
-  ) {
-    // console.log(" -> Selected: USER Session");
+  if (portalType === "user") {
     return userSession(req, res, next);
   }
 
-  // Check Admin Session
-  if (
-    origin === process.env.FRONTEND_ADMIN_URL ||
-    req.headers.referer?.startsWith(process.env.FRONTEND_ADMIN_URL) ||
-    sourcePort === '5174' ||
-    cookieString.includes("admin_session=")
-  ) {
-    // console.log(" -> Selected: ADMIN Session");
+  if (portalType === "admin") {
     return adminSession(req, res, next);
   }
 
-  // Fallback
-  // console.log(" -> Selected: DEFAULT Session (Fallback)");
   return defaultSession(req, res, next);
 };
 
@@ -164,7 +204,7 @@ app.use((req, res, next) => {
 
 
 /* ================= SECURE CSRF TOKEN ================= */
-// Middleware to generate CSRF token per session and set cookie
+// Middleware to generate CSRF token per session and set portal-specific cookie
 app.use((req, res, next) => {
   // Generate token only once per session
   if (!req.session.csrfToken) {
@@ -172,7 +212,10 @@ app.use((req, res, next) => {
   }
 
   // Expose token to frontend via cookie
-  res.cookie("XSRF-TOKEN", req.session.csrfToken, {
+  const portalCookieName =
+    PORTAL_CSRF_COOKIE_NAMES[req.portalType] || "XSRF-TOKEN";
+
+  res.cookie(portalCookieName, req.session.csrfToken, {
     httpOnly: false, // frontend JS can read
     secure: process.env.NODE_ENV === "production",
     sameSite: process.env.NODE_ENV === "production" ? "strict" : "lax",
