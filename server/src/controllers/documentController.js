@@ -20,7 +20,7 @@ export const uploadDocument = async (req, res) => {
     if (document_type === "Others") document_type = "Other";
 
     const validTypes = [
-      "Progress Report", "Final Thesis", "Proposal", "Research Proposal",
+      "Progress Report", "Final Thesis Draft", "Final Thesis", "Proposal", "Research Proposal",
       "Literature Review", "Methodology", "Data Analysis", "Ethics Form",
       "Supervisor Feedback", "Other"
     ];

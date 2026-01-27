@@ -72,34 +72,17 @@ class DashboardService {
 
         if (assignedStudentIds.length === 0) return [];
 
-        // 2. Get all students approved by supervisors (Foundation check)
-        const approvedBySupervisor = await defense_evaluations.findAll({
-            where: {
-                evaluator_role: 'SUV',
-                final_comments: { [Op.like]: 'Pass%' },
-                pg_student_id: { [Op.in]: assignedStudentIds }
-            },
-            attributes: ['pg_student_id', 'defense_type']
-        });
-
-        if (approvedBySupervisor.length === 0) return [];
-
-        const studentIds = approvedBySupervisor.map(e => e.pg_student_id);
-
-        // 3. Get relevant submissions
+        // 2. Get relevant submissions
+        // We ONLY look for Final Thesis for examiners.
         const submissions = await documents_uploads.findAll({
             where: {
-                pg_student_id: { [Op.in]: studentIds },
-                [Op.or]: [
-                    { document_type: 'Research Proposal' },
-                    { document_type: 'Final Thesis' }
-                ]
+                pg_student_id: { [Op.in]: assignedStudentIds },
+                document_type: 'Final Thesis'
             },
             include: [
                 {
                     model: pgstudinfo,
                     as: 'pg_student',
-                    // REMOVED: where: { Dep_Code: depCode } -> Examiner can examine any department
                     include: [
                         {
                             model: studinfo,
@@ -117,47 +100,90 @@ class DashboardService {
             order: [['uploaded_at', 'DESC']]
         });
 
-        // 3. Get examiner's own evaluations
-        const examinerEvaluations = await defense_evaluations.findAll({
+        if (submissions.length === 0) return [];
+
+        const studentIdsWithDocs = [...new Set(submissions.map(s => s.pg_student_id))];
+
+        // 3. Get evaluations (Supervisor for pass check, Examiner for history)
+        const allEvaluations = await defense_evaluations.findAll({
             where: {
-                evaluator_role: 'EXA',
-                evaluator_id: examinerId
-            }
+                pg_student_id: { [Op.in]: studentIdsWithDocs }
+            },
+            order: [['evaluation_date', 'DESC']]
         });
 
-        // 4. Map and filter
-        return submissions.map(doc => {
+        // 4. Map results
+        return submissions.map((doc, index) => {
             const student = doc.pg_student;
             if (!student) return null;
 
             const stuInfo = student.stu;
             const program = student.Prog_Code_program_info;
 
-            const supEval = approvedBySupervisor.find(e =>
+            // Use the next document version's date as a limit for this version's evaluation
+            const uploadDate = new Date(doc.uploaded_at);
+            const nextUploadDate = index > 0 ? new Date(submissions[index - 1].uploaded_at) : null;
+
+            // Find if there is a supervisor pass for Final Thesis
+            const supEval = allEvaluations.find(e =>
                 e.pg_student_id === student.pgstud_id &&
-                ((doc.document_type === 'Research Proposal' && e.defense_type === 'Proposal Defense') ||
-                    (doc.document_type === 'Final Thesis' && e.defense_type === 'Final Thesis'))
+                e.evaluator_role === 'SUV' &&
+                (e.viva_outcome === 'Pass' || (e.final_comments && e.final_comments.startsWith('Pass'))) &&
+                e.defense_type === 'Final Thesis'
             );
 
-            if (!supEval) return null;
+            // Find if I have evaluated this SPECIFIC version
+            const myEval = allEvaluations.find(e => {
+                const evalDate = new Date(e.evaluation_date);
+                const isMatching = e.pg_student_id === student.pgstud_id &&
+                    e.evaluator_role === 'EXA' &&
+                    e.evaluator_id === examinerId &&
+                    e.defense_type === 'Final Thesis';
 
-            const myEval = examinerEvaluations.find(e =>
+                if (!isMatching) return false;
+
+                const isAfterThis = evalDate >= uploadDate;
+                const isBeforeNext = nextUploadDate ? evalDate < nextUploadDate : true;
+                return isAfterThis && isBeforeNext;
+            });
+
+            // Fallback for visual continuity
+            const mostRelevantEval = myEval || allEvaluations.find(e =>
                 e.pg_student_id === student.pgstud_id &&
-                e.defense_type === supEval.defense_type
+                e.evaluator_role === 'EXA' &&
+                e.evaluator_id === examinerId &&
+                e.defense_type === 'Final Thesis' &&
+                new Date(e.evaluation_date) >= uploadDate
             );
+
+            // Classification Logic
+            let listType = null;
+
+            if (doc.status === 'Approved') {
+                listType = 'active';
+            } else if (myEval || mostRelevantEval) {
+                listType = 'history';
+            } else if (doc.status === 'Pending' && supEval) {
+                listType = 'active';
+            } else if (['Completed', 'Rejected', 'Resubmit'].includes(doc.status)) {
+                listType = 'history';
+            }
+
+            if (!listType) return null;
 
             return {
-                id: `${student.pgstud_id}-${doc.document_type}`,
+                id: `${student.pgstud_id}-${doc.document_type}-${doc.doc_up_id}`,
                 fullName: stuInfo ? `${stuInfo.FirstName} ${stuInfo.LastName}` : 'Unknown Student',
                 studentId: student.pgstud_id,
                 programme: program ? program.Prog_Name : 'N/A',
                 thesisTitle: doc.document_name,
-                defenseType: supEval.defense_type,
-                status: myEval ? 'Submitted' : 'Pending',
+                defenseType: doc.document_type === 'Research Proposal' ? 'Proposal Defense' : 'Final Thesis',
+                status: doc.status,
                 documentId: doc.doc_up_id,
                 documentPath: doc.file_path,
                 uploadedAt: doc.uploaded_at,
-                evaluationData: myEval || null
+                evaluationData: myEval || (doc.status !== 'Approved' ? mostRelevantEval : null),
+                type: listType
             };
         }).filter(Boolean);
     }

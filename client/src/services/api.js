@@ -2,7 +2,11 @@ import axios from "axios";
 import { socket } from "./socket";
 
 const isDev = import.meta.env.DEV;
-export const API_BASE_URL = import.meta.env.VITE_API_URL || (isDev ? "" : (import.meta.env.API_BASE_URL || ""));
+export const API_BASE_URL =
+  import.meta.env.VITE_API_URL || "http://localhost:5000";
+
+const getCsrfCookieName = (port) =>
+  port === "5174" ? "ADMIN-XSRF-TOKEN" : "USER-XSRF-TOKEN";
 
 // Port-specific user data key to prevent data conflicts
 const getStorageKey = () => {
@@ -21,20 +25,23 @@ const api = axios.create({
 
 /* ===================== CSRF ===================== */
 api.interceptors.request.use((config) => {
+  const port = window.location.port || "80";
+  const csrfCookieName = getCsrfCookieName(port);
+
   const csrfToken = document.cookie
     .split("; ")
-    .find((row) => row.startsWith("XSRF-TOKEN="))
+    .find((row) => row.startsWith(`${csrfCookieName}=`))
     ?.split("=")[1];
 
-  if (csrfToken && config.method !== "get") {
+  const method = config.method?.toLowerCase() || "get";
+  if (csrfToken && method !== "get") {
     config.headers["X-CSRF-Token"] = csrfToken;
   }
 
   // Robust Source Identification
   // We send the current port to help the backend identify which portal is calling
   // This is critical because GET requests (like page refresh) often lack the 'Origin' header
-  const port = window.location.port || '80';
-  config.headers['X-Source-Port'] = port;
+  config.headers["X-Source-Port"] = port;
 
   return config;
 });

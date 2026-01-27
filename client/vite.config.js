@@ -30,7 +30,7 @@ export default defineConfig(({ command, mode }) => {
     ].filter(Boolean),
 
     define: {
-      "import.meta.env.VITE_API_URL": JSON.stringify(API_BASE_URL),
+      "import.meta.env.API_BASE_URL": JSON.stringify(API_BASE_URL),
     },
 
     resolve: {
@@ -43,7 +43,7 @@ export default defineConfig(({ command, mode }) => {
       ? {
         host: "0.0.0.0",
         port: isAdmin ? 5174 : 5173,
-        open: isAdmin ? "/admin.html" : "/user.html",
+        open: !process.env.DOCKER && (isAdmin ? "/admin.html" : "/user.html"),
         strictPort: true,
         proxy: {
           "/api": {

@@ -18,10 +18,21 @@ export const getStudentById = async (req, res) => {
 
         if (!student) return sendError(res, 'Student not found', 404);
 
+        // Check for Final Thesis status
+        const { documents_uploads } = await import('../config/config.js');
+        const finalThesis = await documents_uploads.findOne({
+            where: {
+                pg_student_id: student.pgstud_id,
+                document_type: 'Final Thesis'
+            },
+            order: [['uploaded_at', 'DESC']]
+        });
+
         sendSuccess(res, "Student found", {
             name: `${student.FirstName} ${student.LastName}`,
             pgstud_id: student.pgstud_id,
-            stu_id: student.stu_id
+            stu_id: student.stu_id,
+            finalThesisStatus: finalThesis ? finalThesis.status : null
         });
     } catch (err) {
         console.error('getStudentById error:', err);

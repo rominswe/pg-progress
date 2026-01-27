@@ -36,6 +36,9 @@ const ProgressEvaluation2 = () => {
         fetchHistory();
     }, []);
 
+    // State for Final Thesis Status check
+    const [finalThesisStatus, setFinalThesisStatus] = useState(null);
+
     // Auto-fill student name when ID is entered
     useEffect(() => {
         const lookupStudent = async () => {
@@ -47,10 +50,13 @@ const ProgressEvaluation2 = () => {
                     if (res?.data?.name) {
                         setFormData(prev => ({ ...prev, studentName: res.data.name }));
                         setErrors(prev => ({ ...prev, studentId: '' }));
+                        // Store thesis status
+                        setFinalThesisStatus(res.data.finalThesisStatus);
                     }
                 } catch (error) {
                     // Log error but don't clear name yet (user might be still typing)
                     console.error('Lookup student error:', error);
+                    setFinalThesisStatus(null);
                 } finally {
                     setIsSearching(false);
                 }
@@ -275,7 +281,13 @@ const ProgressEvaluation2 = () => {
                                         >
                                             <option value="">Select type</option>
                                             <option value="Proposal Defense">Proposal Defense</option>
-                                            <option value="Final Thesis">Final Thesis</option>
+                                            <option
+                                                value="Final Thesis"
+                                                disabled={!finalThesisStatus || finalThesisStatus === "Rejected"}
+                                                title={!finalThesisStatus ? "Student has not submitted Final Thesis yet" : ""}
+                                            >
+                                                Final Thesis {!finalThesisStatus ? "(Not Submitted)" : ""}
+                                            </option>
                                         </select>
                                         {errors.defenseType && <p className="mt-1 text-sm text-red-500">⚠ {errors.defenseType}</p>}
                                     </div>

@@ -53,7 +53,7 @@ export default function UserAssignmentOverview() {
         try {
             const [deptRes, progRes] = await Promise.all([
                 api.get("/api/departments"),
-                api.get("/api/programs/assignable")
+                api.get("/api/admin/program/assignable")
             ]);
 
             const deptList = deptRes.data?.departmentInfoAccess || deptRes.data || [];
