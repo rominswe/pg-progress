@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import { documentService } from "@/services/api";
 import { useAuth } from "@/components/auth/AuthContext";
-import { UploadCloud, FileText, CheckCircle, Clock, Circle, FolderOpen, Eye, AlertCircle } from "lucide-react";
+import { UploadCloud, FileText, CheckCircle, Clock, Circle, FolderOpen, Eye, AlertCircle, MessageSquare, User } from "lucide-react";
 import { motion } from "framer-motion";
 
 export default function Uploads() {
@@ -49,6 +49,14 @@ export default function Uploads() {
     },
     {
       id: 5,
+      title: 'Final Thesis Draft',
+      status: 'pending',
+      date: 'Step 5',
+      description: 'Before Final Submission',
+      docType: 'Final Thesis Draft'
+    },
+    {
+      id: 6,
       title: 'Final Thesis',
       status: 'pending',
       date: 'Final Step',
@@ -91,17 +99,28 @@ export default function Uploads() {
 
       return newMilestones.map(m => {
         const myDocs = docsByType[m.docType] || [];
-        const hasApproved = myDocs.some(d => d.status === 'Approved' || d.status === 'Completed');
-        // Treat Pending (or unknown) as submitted/completed for roadmap purposes (waiting for review)
-        const hasPending = myDocs.some(d => d.status === 'Pending' || (d.status !== 'Approved' && d.status !== 'Completed' && d.status !== 'Rejected' && d.status !== 'Resubmit'));
 
-        if (hasApproved) {
+        let isComplete = false;
+        // Special rule for Final Thesis:
+        // 'Approved' means Supervisor passed it, now it's with Examiner. It is NOT complete yet.
+        // Only 'Completed' means fully done.
+        if (m.docType === 'Final Thesis') {
+          isComplete = myDocs.some(d => d.status === 'Completed');
+        } else {
+          isComplete = myDocs.some(d => d.status === 'Approved' || d.status === 'Completed');
+        }
+
+        const hasPending = myDocs.some(d => d.status === 'Pending' || (d.status !== 'Approved' && d.status !== 'Completed' && d.status !== 'Rejected' && d.status !== 'Resubmit'));
+        // NOTE: For Final Thesis, 'Approved' is effectively a "Pending Examiner" state.
+        const isUnderExaminerReview = m.docType === 'Final Thesis' && myDocs.some(d => d.status === 'Approved');
+
+        if (isComplete) {
           return { ...m, status: 'completed', date: 'Completed' };
         }
 
-        if (hasPending) {
-          firstPendingFound = true; // Block next steps until this is approved
-          return { ...m, status: 'completed', date: 'Submitted' };
+        if (hasPending || isUnderExaminerReview) {
+          firstPendingFound = true; // Block next steps
+          return { ...m, status: 'completed', date: isUnderExaminerReview ? 'Under Examiner Review' : 'Submitted' };
         }
 
         // If we are here, it means we have either NO docs, or only REJECTED/RESUBMIT docs.
@@ -143,6 +162,31 @@ export default function Uploads() {
     ...(activeMilestone ? [activeMilestone.docType] : []),
     ...standardTypes
   ];
+
+  // Disable button if Final Thesis is locked
+  const isFinalThesisLocked = activeMilestone?.docType === 'Final Thesis' &&
+    !milestones.find(m => m.docType === 'Final Thesis Draft')?.status.includes('completed');
+
+  // Check Submission Limits (Max 2 for drafts, 1 for Final Thesis)
+  const getSubmissionCount = (type) => {
+    // Count active submissions (not rejected/resubmit/restarted)
+    return uploadedDocs.filter(d =>
+      d.document_type === type &&
+      d.status !== 'Rejected' &&
+      d.status !== 'Resubmit'
+    ).length;
+  };
+
+  const isLimitReached = (type) => {
+    if (!type) return false;
+    const limit = type === 'Final Thesis' ? 1 : 2;
+    const count = getSubmissionCount(type);
+    // Allow if count < limit. If count == limit, block.
+    // BUT! Logic says "After 2 submissions, cannot submit... If rejected, count RESETS"
+    // My getSubmissionCount filters out Rejected, so if they have 2 Pending/Approved/Completed, it enters block.
+    // This matches logic.
+    return count >= limit;
+  };
 
   // Helper: Get color based on status
   const getStatusColor = (status) => {
@@ -210,12 +254,18 @@ export default function Uploads() {
       const res = await documentService.upload(formData);
 
       // res is the response body: { success, message, data: { documents: [...] } }
-      const newDocs = res.data?.documents || [];
+      // Process the response
+      // Process the response
+      const uploadedDocumentsList = res.data?.documents || [];
 
-      alert(`Uploaded successfully: ${newDocs.length} file(s)`);
-      if (newDocs.length > 0) {
-        setUploadedDocs(prev => [...newDocs, ...prev]);
-        updateRoadmap([...newDocs, ...uploadedDocs]);
+      alert(`Uploaded successfully: ${uploadedDocumentsList.length} file(s)`);
+
+      if (uploadedDocumentsList.length > 0) {
+        // Refetch to ensure we get the backend status/counts correctly if needed
+        // Or just optimistically update
+        const updatedDocs = [...uploadedDocumentsList, ...uploadedDocs];
+        setUploadedDocs(updatedDocs);
+        updateRoadmap(updatedDocs);
       }
       setFiles([]);
       // Don't reset documentType here as it should stay as the current goal until refreshed or updated
@@ -357,14 +407,18 @@ export default function Uploads() {
 
               <button
                 onClick={handleUpload}
-                disabled={loading || !user || !files.length || !documentType}
+                disabled={loading || !user || !files.length || !documentType || isFinalThesisLocked || isLimitReached(documentType)}
                 className={`w-full py-4 rounded-xl font-bold text-white shadow-lg transition-all duration-200 flex items-center justify-center gap-2
-                    ${loading || !user || !files.length || !documentType
+                    ${loading || !user || !files.length || !documentType || isFinalThesisLocked || isLimitReached(documentType)
                     ? "bg-slate-300 shadow-none cursor-not-allowed opacity-70"
                     : "bg-blue-600 hover:bg-blue-700 shadow-blue-200 hover:-translate-y-0.5"}
                   `}
               >
-                {loading ? (
+                {isFinalThesisLocked ? (
+                  <>Locked (Complete Draft First)</>
+                ) : isLimitReached(documentType) ? (
+                  <>Submission Limit Reached</>
+                ) : loading ? (
                   <>Processing...</>
                 ) : (
                   <>
@@ -447,19 +501,47 @@ export default function Uploads() {
                             {doc.uploaded_at ? new Date(doc.uploaded_at).toLocaleDateString() : 'Just now'}
                           </span>
                         </div>
+
+                        {/* Feedback Display */}
+                        {doc.documents_reviews && doc.documents_reviews.length > 0 && (
+                          <div className="mt-4 p-4 bg-blue-50/50 rounded-2xl border border-blue-100 shadow-sm">
+                            <div className="flex justify-between items-center mb-2">
+                              <span className="font-bold text-blue-800 flex items-center gap-2 text-sm">
+                                <MessageSquare className="w-4 h-4 text-blue-600" />
+                                Supervisor Feedback
+                              </span>
+                              {doc.documents_reviews[0].score !== null && (
+                                <span className="bg-white px-3 py-1 rounded-full border border-blue-200 text-blue-700 font-bold text-xs">
+                                  Score: {doc.documents_reviews[0].score}/100
+                                </span>
+                              )}
+                            </div>
+                            <div className="bg-white p-3 rounded-xl border border-blue-50 mb-2">
+                              <p className="text-slate-700 font-medium text-sm leading-relaxed">
+                                {doc.documents_reviews[0].comments || "No comments provided."}
+                              </p>
+                            </div>
+                            {doc.documents_reviews[0].reviewed_by_pgstaffinfo && (
+                              <div className="flex justify-end">
+                                <span className="text-[11px] text-slate-400 font-bold flex items-center gap-1.5 bg-white px-2 py-0.5 rounded-lg border border-slate-100">
+                                  <User className="w-3 h-3" />
+                                  Reviewed by {doc.documents_reviews[0].reviewed_by_pgstaffinfo.FirstName} {doc.documents_reviews[0].reviewed_by_pgstaffinfo.LastName}
+                                </span>
+                              </div>
+                            )}
+                          </div>
+                        )}
                       </div>
-                      <div className="flex items-center gap-2">
+                      <div className="flex flex-col items-center gap-3">
                         <a
                           href={`http://localhost:5000/api/documents/${doc.doc_up_id || doc.id}/download`}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="p-2 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
-                          title="View Document"
+                          className="p-3 text-slate-400 hover:text-blue-600 hover:bg-blue-50 rounded-xl transition-all border border-transparent hover:border-blue-100"
+                          title="Download Document"
                         >
                           <Eye className="w-5 h-5" />
                         </a>
-
-
                       </div>
                     </motion.div>
                   ))}

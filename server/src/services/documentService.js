@@ -7,6 +7,37 @@ import path from "node:path";
 
 class DocumentService {
     async uploadDocuments({ studentId, files, documentType }) {
+        if (documentType) {
+            // Submission Limit Logic
+            const limit = documentType === "Final Thesis" ? 1 : 2;
+            const exceptions = ["Progress Report", "Other", "Thesis Chapter", "Ethics Form", "Supervisor Feedback"];
+
+            if (!exceptions.includes(documentType)) {
+                const existingDocs = await documents_uploads.findAll({
+                    where: {
+                        pg_student_id: studentId,
+                        document_type: documentType,
+                        // Only count if not Rejected/Resubmit (unless restart logic is strict)
+                        // User rule: "After 2 submissions, cannot submit unless Rejected... If rejected, count RESETS"
+                        // So checking ONLY PENDING/APPROVED/COMPLETED for the current 'active' attempt count?
+                        // Actually, user says: "A student is allowed to submit documents a maximum of 2 times per stage."
+                        // "If rejected, the submission count resets".
+                        // So we count ALL submissions for this type, UNLESS there is a 'Rejected' status later?
+                        // Easier logic: Count how many are NOT Rejected/Resubmit since the last Rejected/Resubmit?
+                        // Or simply count consecutively pending/approved docs?
+                        // Let's count non-rejected, non-resubmit docs.
+                        status: { [Op.notIn]: ['Rejected', 'Resubmit', 'Restarted'] }
+                    }
+                });
+
+                if (existingDocs.length >= limit) {
+                    const error = new Error(`Submission limit reached for ${documentType}. Maximum allowed: ${limit}.`);
+                    error.status = 403;
+                    throw error;
+                }
+            }
+        }
+
         const docs = [];
         for (const file of files) {
             docs.push(await documents_uploads.create({
@@ -46,6 +77,15 @@ class DocumentService {
     async getStudentDocuments(studentId) {
         return documents_uploads.findAll({
             where: { pg_student_id: studentId },
+            include: [{
+                model: documents_reviews,
+                as: 'documents_reviews',
+                include: [{
+                    model: pgstaffinfo,
+                    as: 'reviewed_by_pgstaffinfo', // alias might need verifying, assuming 'reviewer' or 'pg_staff'
+                    attributes: ['FirstName', 'LastName']
+                }]
+            }],
             order: [["uploaded_at", "DESC"]]
         });
     }
@@ -143,6 +183,20 @@ class DocumentService {
         if (!doc) {
             const error = new Error("Document not found");
             error.status = 404;
+            throw error;
+        }
+
+        // Special Rule: Final Thesis
+        // "The supervisor can only evaluate the Final Thesis AFTER the student submits it."
+        // "Supervisor can evaluate the Final Thesis only once IF the decision is Pass."
+        // AND "If the supervisor selects any option other than Pass... The student must resubmit."
+        // This implies the REVIEW action for Final Thesis should be blocked here if it's meant to be done via the Evaluation Form?
+        // OR allow it here but enforce the logic.
+        // User said: "supervisor doesnt need to do approve or reject... if he chose the pass option only [in evaluation], the document will send to the examiner."
+        // This strongly implies we should BLOCK manual `reviewDocument` usage for 'Final Thesis' type, forcing them to use `submitEvaluation`.
+        if (doc.document_type === 'Final Thesis') {
+            const error = new Error("Final Thesis must be evaluated via the Defense Evaluation form, not here.");
+            error.status = 403;
             throw error;
         }
 

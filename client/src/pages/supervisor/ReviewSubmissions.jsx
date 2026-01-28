@@ -277,6 +277,11 @@ export default function ReviewSubmissions() {
                               </button>
                             </>
                           )}
+                          {submission.documentType === "Final Thesis" && submission.status !== 'approved' && submission.status !== 'completed' && (
+                            <span className="text-xs font-bold text-amber-600 bg-amber-50 px-2 py-1 rounded border border-amber-100">
+                              Evaluate via Defense Form
+                            </span>
+                          )}
                         </div>
                       </td>
                     </motion.tr>

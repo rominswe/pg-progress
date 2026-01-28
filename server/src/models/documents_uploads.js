@@ -23,7 +23,7 @@ export default class documents_uploads extends Model {
         allowNull: false
       },
       document_type: {
-        type: DataTypes.ENUM('Research Proposal', 'Literature Review', 'Methodology', 'Data Analysis', 'Final Thesis', 'Thesis Chapter', 'Progress Report', 'Other'),
+        type: DataTypes.ENUM('Research Proposal', 'Literature Review', 'Methodology', 'Data Analysis', 'Final Thesis Draft', 'Final Thesis', 'Thesis Chapter', 'Progress Report', 'Other'),
         allowNull: false,
         defaultValue: "Other"
       },
