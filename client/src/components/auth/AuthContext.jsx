@@ -1,6 +1,7 @@
 import { createContext, useContext, useEffect, useState } from "react";
 import { authService } from "@/services/api";
 import { socket } from "@/services/socket";
+import { initializeSessionMeta, refreshSessionActivity, getSessionMeta, clearSessionMeta } from "@/lib/sessionTimeout";
 
 const AuthContext = createContext(null);
 
@@ -38,12 +39,18 @@ export const AuthProvider = ({ children }) => {
         if (mounted && res?.success && res.data) {
           setUser(res.data);
           sessionStorage.setItem(getStorageKey(), JSON.stringify(res.data));
+          if (!getSessionMeta()) {
+            initializeSessionMeta();
+          } else {
+            refreshSessionActivity();
+          }
           if (!socket.connected) {
             socket.connect();
           }
         } else {
           setUser(null);
           sessionStorage.removeItem(getStorageKey());
+          clearSessionMeta();
         }
       } catch (err) {
         console.error("[AuthContext] checkAuth exception:", err.message, err.response?.status);
@@ -72,6 +79,7 @@ export const AuthProvider = ({ children }) => {
     if (res?.success && res.data) {
       setUser(res.data);
       sessionStorage.setItem(getStorageKey(), JSON.stringify(res.data));
+      initializeSessionMeta();
       return res.data;
     }
 
@@ -94,6 +102,7 @@ export const AuthProvider = ({ children }) => {
       ports.forEach(port => {
         sessionStorage.removeItem(`user_${port}`);
       });
+      clearSessionMeta();
 
       setUser(null);
       socket.disconnect();

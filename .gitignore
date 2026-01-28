@@ -49,6 +49,7 @@ Thumbs.db
 *.sql
 dump.sql
 /server/uploads/
+/server/src/seeds/
 
 # =========================
 # Docker

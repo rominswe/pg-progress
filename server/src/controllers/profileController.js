@@ -66,6 +66,11 @@ export const me = async (req, res) => {
   }
 };
 
+const normalizeEnumValue = (value) => {
+  if (value === "" || value === undefined) return null;
+  return value;
+};
+
 /* ================= UPDATE PROFILE (updateMe) ================= */
 export const updateProfile = async (req, res) => {
   try {
@@ -105,8 +110,12 @@ export const updateProfile = async (req, res) => {
       if (data.Expertise !== undefined) user.Expertise = data.Expertise;
       if (data.Affiliation !== undefined) user.Affiliation = data.Affiliation;
       if (data.Univ_Domain !== undefined) user.Univ_Domain = data.Univ_Domain;
-      if (data.Honorific_Titles !== undefined) user.Honorific_Titles = data.Honorific_Titles;
-      if (data.Academic_Rank !== undefined) user.Academic_Rank = data.Academic_Rank;
+      if (Object.prototype.hasOwnProperty.call(data, "Honorific_Titles")) {
+        user.Honorific_Titles = normalizeEnumValue(data.Honorific_Titles);
+      }
+      if (Object.prototype.hasOwnProperty.call(data, "Academic_Rank")) {
+        user.Academic_Rank = normalizeEnumValue(data.Academic_Rank);
+      }
     }
 
     // Admin-only fields

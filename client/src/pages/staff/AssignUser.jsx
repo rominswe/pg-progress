@@ -13,6 +13,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { cn } from "@/lib/utils";
 import adminService from "@/services/adminService";
 import UserDetailCard from "@/components/users/UserDetailCard";
+import ConfirmRegisterModal from "@/components/modal/ConfirmRegisterModal";
 
 export default function AssignUser() {
     const { id } = useParams();
@@ -35,6 +36,9 @@ export default function AssignUser() {
     const [assignmentsLoading, setAssignmentsLoading] = useState(false);
 
     const [assignmentTypes, setAssignmentTypes] = useState([]);
+    const [isDeleteDialogOpen, setDeleteDialogOpen] = useState(false);
+    const [assignmentToDelete, setAssignmentToDelete] = useState(null);
+    const [isDeletingAssignment, setIsDeletingAssignment] = useState(false);
 
     useEffect(() => {
         fetchTypes();
@@ -216,17 +220,26 @@ export default function AssignUser() {
         }
     };
 
-    const handleDeleteAssignment = async (assignmentId) => {
-        if (!confirm("Are you sure you want to delete this assignment? This action cannot be undone.")) return;
+    const handleDeleteAssignment = (assignmentId) => {
+        setAssignmentToDelete(assignmentId);
+        setDeleteDialogOpen(true);
+    };
 
+    const confirmDeleteAssignment = async () => {
+        if (!assignmentToDelete) return;
+        setIsDeletingAssignment(true);
         try {
-            const res = await adminService.deleteAssignment(assignmentId);
+            const res = await adminService.deleteAssignment(assignmentToDelete);
             if (res?.success) {
                 toast.success("Assignment deleted successfully.");
                 fetchData(); // Refresh list
             }
         } catch (err) {
             toast.error(err.response?.data?.message || "Failed to delete assignment.");
+        } finally {
+            setIsDeletingAssignment(false);
+            setDeleteDialogOpen(false);
+            setAssignmentToDelete(null);
         }
     };
 
@@ -425,6 +438,20 @@ export default function AssignUser() {
                     </Card>
                 </div>
             </div>
+            <ConfirmRegisterModal
+                open={isDeleteDialogOpen}
+                onOpenChange={(open) => {
+                    setDeleteDialogOpen(open);
+                    if (!open) {
+                        setAssignmentToDelete(null);
+                    }
+                }}
+                title="Delete Assignment"
+                description="Are you sure you want to delete this assignment? This action cannot be undone."
+                confirmText={isDeletingAssignment ? "Deleting..." : "Delete"}
+                cancelText="Cancel"
+                onConfirm={confirmDeleteAssignment}
+            />
         </div>
     );
 }

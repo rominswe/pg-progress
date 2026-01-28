@@ -22,3 +22,13 @@ export const getExaminerStudents = async (req, res) => {
         sendError(res, 'Failed to fetch examiner dashboard', 500);
     }
 };
+
+export const getRecentActivity = async (req, res) => {
+    try {
+        const activities = await DashboardService.getRecentActivities(req.user.Dep_Code, req.user.role_id, req.user.id);
+        sendSuccess(res, "Recent activity fetched successfully", activities);
+    } catch (err) {
+        console.error('Get Recent Activity Error:', err);
+        sendError(res, 'Failed to fetch recent activity', 500);
+    }
+};

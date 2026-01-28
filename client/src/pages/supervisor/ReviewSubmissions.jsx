@@ -5,12 +5,15 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Modal, ModalContent, ModalHeader, ModalTitle } from "@/components/ui/modal";
 import { motion, AnimatePresence } from "framer-motion";
+import { toast } from "sonner";
+import ConfirmRegisterModal from "@/components/modal/ConfirmRegisterModal";
 
 export default function ReviewSubmissions() {
   const [submissions, setSubmissions] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filterStatus, setFilterStatus] = useState("all");
   const [searchTerm, setSearchTerm] = useState("");
+  const [isRejectConfirmOpen, setRejectConfirmOpen] = useState(false);
 
   useEffect(() => {
     fetchSubmissions();
@@ -64,46 +67,57 @@ export default function ReviewSubmissions() {
       setSubmissions(
         submissions.map((sub) => (sub.id === id ? { ...sub, status } : sub))
       );
-      if (status === 'rejected') alert("Document rejected successfully.");
+      toast.success(status === 'rejected' ? "Document rejected successfully." : "Document approved successfully.");
     } catch (err) {
       console.error("Review failed:", err);
-      alert("Failed to submit review: " + (err.response?.data?.error || err.message));
+      toast.error("Failed to submit review: " + (err.response?.data?.error || err.message));
     }
   };
 
   // function deleted
 
-  const handleSubmitEvaluation = async (e) => {
-    e.preventDefault();
-    if (!selectedSubmission) return;
-
-    // VALIDATION LOGIC
-    if (!evaluationForm.score) {
-      alert("Please provide a score (0-100).");
-      return;
-    }
-    if (reviewAction === 'rejected' && !evaluationForm.comments.trim()) {
-      alert("Comments are required for rejection.");
-      return;
-    }
-
-    if (reviewAction === 'rejected') {
-      if (!window.confirm("Confirm rejection of this document?")) return;
-    }
-
+  const processEvaluation = async () => {
     await submitReview(
       selectedSubmission.id,
       reviewAction,
       evaluationForm.score,
       evaluationForm.comments
     );
-
     setIsEvaluationModalOpen(false);
     setSelectedSubmission(null);
   };
 
+  const handleSubmitEvaluation = async (e) => {
+    e.preventDefault();
+    if (!selectedSubmission) return;
+
+    if (!evaluationForm.score) {
+      toast.error("Please provide a score (0-100).");
+      return;
+    }
+    if (reviewAction === 'rejected' && !evaluationForm.comments.trim()) {
+      toast.error("Comments are required for rejection.");
+      return;
+    }
+
+    if (reviewAction === 'rejected') {
+      setRejectConfirmOpen(true);
+      return;
+    }
+
+    await processEvaluation();
+  };
+
+  const handleRejectConfirmed = async () => {
+    setRejectConfirmOpen(false);
+    await processEvaluation();
+  };
+
   const handleViewDocument = (filePath) => {
-    if (!filePath) return alert("File path not available");
+    if (!filePath) {
+      toast.error("File path not available");
+      return;
+    }
     // Normalize backslashes to forward slashes for URL usage
     const normalizedPath = filePath.replace(/\\/g, "/");
     const docUrl = `${API_BASE_URL}/${normalizedPath}`;
@@ -350,6 +364,15 @@ export default function ReviewSubmissions() {
           </div>
         </ModalContent>
       </Modal>
+      <ConfirmRegisterModal
+        open={isRejectConfirmOpen}
+        onOpenChange={(open) => !open && setRejectConfirmOpen(false)}
+        title="Confirm Rejection"
+        description="Are you sure you want to reject this submission?"
+        confirmText="Reject"
+        cancelText="Cancel"
+        onConfirm={handleRejectConfirmed}
+      />
     </motion.div>
   );
 }

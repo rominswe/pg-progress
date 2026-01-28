@@ -23,6 +23,7 @@ import {
 import { motion, AnimatePresence } from "framer-motion";
 import { progressService, notificationService } from '@/services/api';
 import { toast } from "sonner";
+import ConfirmRegisterModal from "@/components/modal/ConfirmRegisterModal";
 
 export default function StudentDetailView() {
     const { id } = useParams();
@@ -40,6 +41,9 @@ export default function StudentDetailView() {
     const [isNotifyModalOpen, setIsNotifyModalOpen] = useState(false);
     const [notifyTemplate, setNotifyTemplate] = useState("Reminder: Deadline Approaching");
     const [customMessage, setCustomMessage] = useState("");
+    const [isManualCompleteDialogOpen, setManualCompleteDialogOpen] = useState(false);
+    const [pendingManualMilestone, setPendingManualMilestone] = useState("");
+    const [isManualCompleting, setIsManualCompleting] = useState(false);
 
     const milestones = [
         { title: 'Research Proposal', docType: 'Research Proposal' },
@@ -128,17 +132,27 @@ export default function StudentDetailView() {
         }
     };
 
-    const handleManualComplete = async (milestoneName) => {
-        if (!confirm(`Are you sure you want to manually mark "${milestoneName}" as completed?`)) return;
+    const handleManualComplete = (milestoneName) => {
+        setPendingManualMilestone(milestoneName);
+        setManualCompleteDialogOpen(true);
+    };
+
+    const confirmManualComplete = async () => {
+        if (!pendingManualMilestone) return;
+        setManualCompleteDialogOpen(false);
+        setIsManualCompleting(true);
         try {
             await progressService.manualComplete({
                 pg_student_id: id,
-                milestone_name: milestoneName
+                milestone_name: pendingManualMilestone
             });
             toast.success("Milestone marked as completed");
             fetchStudentData();
         } catch (err) {
             toast.error("Failed to update milestone");
+        } finally {
+            setIsManualCompleting(false);
+            setPendingManualMilestone("");
         }
     };
 
@@ -556,6 +570,20 @@ export default function StudentDetailView() {
                     </div>
                 )}
             </AnimatePresence>
+            <ConfirmRegisterModal
+                open={isManualCompleteDialogOpen}
+                onOpenChange={(open) => {
+                    setManualCompleteDialogOpen(open);
+                    if (!open) {
+                        setPendingManualMilestone("");
+                    }
+                }}
+                title="Manual Completion"
+                description={`Are you sure you want to manually mark "${pendingManualMilestone}" as completed?`}
+                confirmText={isManualCompleting ? "Marking..." : "Confirm"}
+                cancelText="Cancel"
+                onConfirm={confirmManualComplete}
+            />
         </div>
     );
 }

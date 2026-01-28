@@ -40,11 +40,18 @@ import enLocale from "i18n-iso-countries/langs/en.json";
 import 'react-phone-number-input/style.css';
 import PhoneInput from 'react-phone-number-input';
 import UniversitySearch from "../users/UniversitySearch";
+import { normalizePhoneValue } from "@/lib/phoneUtils";
 
 countries.registerLocale(enLocale);
 
+const supportEmail = import.meta.env.EMAIL_USER;
+
 export default function Profile() {
   const { user, updateUser } = useAuth();
+  const handleContactSupport = () => {
+    const subject = encodeURIComponent("PG Progress Support Request");
+    window.open(`mailto:${supportEmail}?subject=${subject}`, "_blank");
+  };
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [activeTab, setActiveTab] = useState("personal");
   const [openCountry, setOpenCountry] = useState(false);
@@ -90,7 +97,7 @@ export default function Profile() {
         FirstName: user.FirstName || "",
         LastName: user.LastName || "",
         EmailId: user.EmailId || "",
-        Phonenumber: normalizePhone(user.Phonenumber),
+        Phonenumber: normalizePhoneValue(user.Phonenumber),
         Gender: user.Gender || "",
         Dob: user.Dob || "",
         Address: user.Address || "",
@@ -267,7 +274,12 @@ export default function Profile() {
               <div className="absolute top-0 right-0 -m-8 h-32 w-32 rounded-full bg-white/10 blur-2xl group-hover:scale-125 transition-transform duration-500"></div>
               <h4 className="font-bold mb-2">Need Help?</h4>
               <p className="text-xs text-blue-100 mb-4 leading-relaxed">If you cannot change some of your locked information, please contact the Centre for Graduate Studies (CGS) administration.</p>
-              <Button variant="secondary" size="sm" className="w-full rounded-xl font-bold bg-white text-blue-600 hover:bg-blue-50">
+              <Button
+                variant="secondary"
+                size="sm"
+                className="w-full rounded-xl font-bold bg-white text-blue-600 hover:bg-blue-50"
+                onClick={handleContactSupport}
+              >
                 Contact Support
               </Button>
             </div>
@@ -334,7 +346,7 @@ export default function Profile() {
                       <PhoneInput
                         international
                         defaultCountry="MY"
-                        value={formData.Phonenumber}
+                        value={formData.Phonenumber ?? undefined}
                         onChange={(val) => setFormData({ ...formData, Phonenumber: val })}
                         className={cn("flex h-11 w-full rounded-xl border bg-slate-50/50 px-3 py-2 text-sm transition-all focus-within:ring-2 focus-within:ring-blue-500/20",
                           "border-slate-100")}
@@ -347,7 +359,7 @@ export default function Profile() {
                         <PopoverTrigger asChild>
                           <Button
                             variant="outline"
-                            className={cn("w-full justify-between font-normal rounded-xl border-slate-100 bg-slate-50/50 h-11 h-11 text-slate-700", !formData.Country && "text-slate-400")}
+                          className={cn("w-full justify-between font-normal rounded-xl border-slate-100 bg-slate-50/50 h-11 text-slate-700", !formData.Country && "text-slate-400")}
                           >
                             <div className="flex items-center gap-2">
                               <Globe className="h-4 w-4 text-slate-400" />

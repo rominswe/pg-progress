@@ -102,7 +102,8 @@ class DocumentService {
             id: doc.doc_up_id,
             action: `Uploaded ${doc.document_type}`,
             date: doc.uploaded_at,
-            details: doc.document_name
+            details: doc.document_name,
+            link: '/student/uploads'
         }));
 
         return { stats, analytics: { docStats }, recentActivity };

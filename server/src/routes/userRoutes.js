@@ -7,6 +7,7 @@ import { protect, allowAdminOrDirector } from "../middleware/authMiddleware.js";
 import { searchUserForAssignment } from "../controllers/roleAssignmentController.js";
 import { requireRole } from "../middleware/rbacMiddleware.js";
 import { getAssignableProgramInfo } from "../controllers/programInfoController.js";
+import { getRecentActivity } from "../controllers/dashboardController.js";
 import { getQualifications, getExpertise, getStaffCredentialsMetadata } from "../controllers/metadataController.js";
 import { getUniversities } from "../controllers/universityController.js";
 
@@ -42,6 +43,8 @@ router.delete("/assignments/:id", protect, requireRole("CGSADM", "CGSS"), delete
 
 // ================= PROGRAM INFORMATION =================
 router.get("/program/assignable", protect, requireRole("CGSADM", "CGSS"), getAssignableProgramInfo);
+
+router.get("/dashboard/recent-activity", protect, requireRole("CGSADM", "CGSS", "SUV", "EXA"), getRecentActivity);
 
 // ================= ACADEMIC CREDENTIALS METADATA =================
 router.get("/academic-credentials/qualifications", protect, requireRole("CGSADM", "CGSS"), getQualifications);

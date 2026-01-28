@@ -6,9 +6,8 @@ services:
     env_file:
       - ./.env
     environment:
-     - DB_HOST=mysql
-     - DB_PORT=3306
-     - REDIS_HOST=redis
+      DB_HOST: mysql
+      DB_PORT: 3306
     depends_on:
       - mysql
       - redis
@@ -59,9 +58,8 @@ services:
   mysql:
     image: mysql:8.0
     restart: always
-    environment:
-      MYSQL_ROOT_PASSWORD: ${DB_PASSWORD}
-      MYSQL_DATABASE: ${DB_NAME}
+    env_file:
+      - ./.env
     ports:
       - "3307:3306"
     volumes:
@@ -82,11 +80,10 @@ services:
     restart: always
     ports:
       - "8080:80"
+    env_file:
+      - ./.env
     environment:
       PMA_HOST: mysql
-      PMA_PORT: 3306
-      PMA_USER: ${DB_USER}
-      PMA_PASSWORD: ${DB_PASSWORD}
     depends_on:
       - mysql
     networks:

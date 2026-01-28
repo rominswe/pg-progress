@@ -161,6 +161,48 @@ class DashboardService {
             };
         }).filter(Boolean);
     }
+
+    async getRecentActivities(depCode, roleId, userId) {
+        const whereClause = {};
+        const isSupervisor = ['SUV', 'EXA'].includes(roleId);
+
+        if (isSupervisor) {
+            const assignedIds = await roleAssignmentService.getAssignedStudentIds(userId);
+            if (!assignedIds.length) return [];
+            whereClause.pg_student_id = { [Op.in]: assignedIds };
+        }
+
+        const studentInclude = {
+            model: pgstudinfo,
+            as: 'pg_student',
+            attributes: ['pgstud_id', 'FirstName', 'LastName', 'Dep_Code']
+        };
+
+        if (!isSupervisor && depCode) {
+            studentInclude.where = { Dep_Code: depCode };
+        }
+
+        const documents = await documents_uploads.findAll({
+            where: whereClause,
+            include: [studentInclude],
+            order: [['uploaded_at', 'DESC']],
+            limit: 6
+        });
+
+        return documents.map(doc => {
+            const student = doc.pg_student;
+            const studentName = student ? `${student.FirstName} ${student.LastName}` : 'Unknown Student';
+
+            return {
+                id: doc.doc_up_id,
+                studentName,
+                documentType: doc.document_type || 'Document',
+                status: doc.status,
+                details: doc.document_name,
+                date: doc.uploaded_at
+            };
+        });
+    }
 }
 
 export default new DashboardService();

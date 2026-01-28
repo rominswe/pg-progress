@@ -40,6 +40,15 @@ export const adminService = {
             throw err;
         }
     },
+    async getRecentActivity() {
+        try {
+            const res = await api.get('/api/admin/dashboard/recent-activity');
+            return res.data;
+        } catch (err) {
+            console.error("Error in getRecentActivity:", err);
+            throw err;
+        }
+    },
 
     async getUserDetails(id) {
         try {

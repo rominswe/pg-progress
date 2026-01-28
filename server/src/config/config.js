@@ -45,7 +45,6 @@ export const {
   studinfo,
   tbldepartments,
   notifications,
-  // Functionate features
   progress_updates,
   service_requests,
   defense_evaluations,

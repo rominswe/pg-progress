@@ -92,8 +92,15 @@ const Dashboard = () => {
     action: act.action,
     time: new Date(act.date).toLocaleDateString(),
     status: "info",
-    details: act.details
+    details: act.details,
+    link: act.link || "/student/uploads"
   }));
+
+  const handleActivityClick = (activity) => {
+    if (activity.link) {
+      navigate(activity.link);
+    }
+  };
 
   return (
     <motion.div
@@ -254,7 +261,18 @@ const Dashboard = () => {
           ) : (
             <div className="space-y-6">
               {formattedActivities.map((activity, index) => (
-                <div key={index} className="flex items-start gap-5 relative">
+                <div
+                  key={index}
+                  className="flex items-start gap-5 relative cursor-pointer group"
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => handleActivityClick(activity)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" || event.key === " ") {
+                      handleActivityClick(activity);
+                    }
+                  }}
+                >
                   {/* Timeline Line */}
                   {index !== formattedActivities.length - 1 && (
                     <div className="absolute left-[22px] top-12 bottom-[-24px] w-0.5 bg-slate-100"></div>

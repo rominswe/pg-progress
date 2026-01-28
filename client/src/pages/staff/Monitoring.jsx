@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from '../../components/ui/card';
 import { Progress } from '../../components/ui/progress';
 import { Badge } from '../../components/ui/badge';
@@ -67,6 +67,58 @@ export default function CGSMonitoring() {
     }
   };
 
+  const createCsvRow = (row) => {
+    return row
+      .map(value => {
+        const cell = String(value ?? "");
+        return `"${cell.replace(/"/g, '""')}"`;
+      })
+      .join(",");
+  };
+
+  const handleDownloadReport = () => {
+    const headers = [
+      "Student Name",
+      "Email",
+      "Supervisor",
+      "Program",
+      "Research Title",
+      "Progress (%)",
+      "Status",
+      "Last Submission Date"
+    ];
+    const rows = students.map((student) => {
+      const progress = student.progress ?? 0;
+      const status = getDerivedStatus(progress);
+      const formattedDate = student.lastSubmissionDate
+        ? new Date(student.lastSubmissionDate).toLocaleString()
+        : "N/A";
+
+      return [
+        student.name || "Unknown",
+        student.email || "",
+        student.supervisor || "",
+        student.program || "",
+        student.researchTitle || "",
+        progress,
+        status,
+        formattedDate
+      ];
+    });
+
+    const csvContent = [headers, ...rows].map(createCsvRow).join("\n");
+    const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+
+    const link = document.createElement("a");
+    link.href = url;
+    link.setAttribute("download", `progress-monitoring-report-${new Date().toISOString().slice(0, 10)}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    URL.revokeObjectURL(url);
+  };
+
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: { opacity: 1, transition: { staggerChildren: 0.1 } }
@@ -103,7 +155,10 @@ export default function CGSMonitoring() {
             </p>
           </div>
           <div className="flex items-center gap-3">
-            <button className="px-6 py-3 bg-white/10 backdrop-blur-md rounded-2xl border border-white/20 hover:bg-white/20 transition-all font-bold text-sm">
+            <button
+              onClick={handleDownloadReport}
+              className="px-6 py-3 bg-white/10 backdrop-blur-md rounded-2xl border border-white/20 hover:bg-white/20 transition-all font-bold text-sm"
+            >
               Download Report
             </button>
           </div>
@@ -234,11 +289,6 @@ export default function CGSMonitoring() {
               </div>
             )}
           </CardContent>
-          <div className="p-4 border-t border-slate-50 bg-slate-50/20 text-center">
-            <button className="text-sm font-bold text-blue-600 hover:text-blue-700 hover:underline">
-              View Full Departmental Analytics
-            </button>
-          </div>
         </Card>
       </motion.div>
     </motion.div>

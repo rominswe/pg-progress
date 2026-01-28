@@ -2,8 +2,7 @@ import axios from "axios";
 import { socket } from "./socket";
 
 const isDev = import.meta.env.DEV;
-export const API_BASE_URL =
-  import.meta.env.VITE_API_URL || "http://localhost:5000";
+export const API_BASE_URL = import.meta.env.API_BASE_URL;
 
 const getCsrfCookieName = (port) =>
   port === "5174" ? "ADMIN-XSRF-TOKEN" : "USER-XSRF-TOKEN";
@@ -37,10 +36,7 @@ api.interceptors.request.use((config) => {
   if (csrfToken && method !== "get") {
     config.headers["X-CSRF-Token"] = csrfToken;
   }
-
-  // Robust Source Identification
-  // We send the current port to help the backend identify which portal is calling
-  // This is critical because GET requests (like page refresh) often lack the 'Origin' header
+  
   config.headers["X-Source-Port"] = port;
 
   return config;

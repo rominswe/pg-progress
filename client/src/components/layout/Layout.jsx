@@ -1,5 +1,5 @@
 // src/components/shared/Layout.jsx
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { createPortal } from 'react-dom';
 import { NavLink, Outlet, useNavigate } from 'react-router-dom';
 import { LogOut, Bell, Menu, X, ChevronDown, User } from 'lucide-react';
@@ -14,6 +14,10 @@ import { cn } from '../../lib/utils';
 import { useAuth } from '../../components/auth/AuthContext';
 import { useNotifications } from '../../components/notifications/NotificationProvider';
 import { API_BASE_URL } from '../../services/api';
+import { extendSessionMeta, getSessionMeta, refreshSessionActivity, clearSessionMeta } from '../../lib/sessionTimeout';
+
+const SESSION_REMINDER_OFFSET = 15 * 60 * 1000;
+const INACTIVITY_LIMIT = 15 * 60 * 1000;
 
 /**
  * Props:
@@ -75,11 +79,80 @@ export default function Layout({
   const { user, logout, loading } = useAuth();
   const { notifications, unreadCount, markAsRead, markAllAsRead, dismiss, dismissAll } = useNotifications();
   const navigate = useNavigate();
+  const [metaUpdateKey, setMetaUpdateKey] = useState(0);
+  const [isSessionReminderVisible, setSessionReminderVisible] = useState(false);
 
-  const handleNotificationClick = (n) => {
-    markAsRead(n.id);
-    if (n.link) navigate(n.link);
+  useEffect(() => {
+    if (user) {
+      setMetaUpdateKey((prev) => prev + 1);
+    } else {
+      setSessionReminderVisible(false);
+    }
+  }, [user]);
+
+  const sessionMeta = useMemo(() => getSessionMeta(), [metaUpdateKey]);
+  const canExtendSession = sessionMeta ? sessionMeta.expiresAt < sessionMeta.maxExpiresAt : false;
+  const minutesRemaining = sessionMeta ? Math.ceil(Math.max(sessionMeta.expiresAt - Date.now(), 0) / 60000) : 0;
+
+  const handleExtendSession = () => {
+    extendSessionMeta();
+    setMetaUpdateKey((prev) => prev + 1);
+    setSessionReminderVisible(false);
   };
+
+  const handleForcedLogout = () => {
+    setSessionReminderVisible(false);
+    clearSessionMeta();
+    logout();
+  };
+
+  const handleNotificationClick = async (n) => {
+    try {
+      await markAsRead(n.id);
+    } catch (err) {
+      console.error("Failed to mark notification as read:", err);
+    }
+    if (n.link) {
+      navigate(n.link);
+    }
+  };
+
+  useEffect(() => {
+    if (!user) return;
+    const meta = getSessionMeta();
+    if (!meta) return;
+
+    const now = Date.now();
+    const reminderDelay = Math.max(meta.expiresAt - now - SESSION_REMINDER_OFFSET, 0);
+    const logoutDelay = Math.max(meta.expiresAt - now, 0);
+
+    const reminderTimer = setTimeout(() => setSessionReminderVisible(true), reminderDelay);
+    const logoutTimer = setTimeout(() => handleForcedLogout(), logoutDelay);
+
+    return () => {
+      clearTimeout(reminderTimer);
+      clearTimeout(logoutTimer);
+    };
+  }, [user, metaUpdateKey, logout]);
+
+  useEffect(() => {
+    if (!user) return;
+    let inactivityTimer;
+    const resetInactivity = () => {
+      refreshSessionActivity();
+      clearTimeout(inactivityTimer);
+      inactivityTimer = setTimeout(() => handleForcedLogout(), INACTIVITY_LIMIT);
+    };
+
+    const activityEvents = ["mousemove", "mousedown", "keydown", "touchstart", "scroll"];
+    activityEvents.forEach((event) => window.addEventListener(event, resetInactivity));
+    resetInactivity();
+
+    return () => {
+      activityEvents.forEach((event) => window.removeEventListener(event, resetInactivity));
+      clearTimeout(inactivityTimer);
+    };
+  }, [user, logout]);
 
   const handleLogoutConfirm = async () => {
     try {
@@ -248,6 +321,8 @@ export default function Layout({
                           <div className="flex items-center gap-2">
                             {!n.is_read && <span className="h-2 w-2 rounded-full bg-blue-600" />}
                             <button
+                              type="button"
+                              aria-label="Dismiss notification"
                               onClick={(e) => {
                                 e.stopPropagation();
                                 dismiss(n.id);
@@ -321,6 +396,41 @@ export default function Layout({
           <Outlet />
         </main>
       </div>
+      {isSessionReminderVisible && sessionMeta && (
+        <div className="fixed inset-0 z-[120] flex items-center justify-center bg-black/40 px-4 py-8">
+          <div className="w-full max-w-md rounded-3xl bg-white p-6 shadow-2xl ring-2 ring-blue-500/20 space-y-4 text-center">
+            <h3 className="text-xl font-bold text-slate-900">Session expiring soon</h3>
+            <p className="text-sm text-slate-600">
+              Your session is going to expire in <span className="font-bold">{minutesRemaining} minute{minutesRemaining === 1 ? "" : "s"}</span> and you will be automatically logged out if no action is performed.
+            </p>
+            <p className="text-xs uppercase tracking-wider text-slate-400">
+              You can extend the session up to 12 hours in total.
+            </p>
+            <div className="flex flex-col gap-3 sm:flex-row justify-center">
+              <button
+                type="button"
+                onClick={handleExtendSession}
+                disabled={!canExtendSession}
+                className="flex-1 rounded-xl border border-blue-600 bg-white px-4 py-2 text-sm font-bold text-blue-600 transition-colors disabled:cursor-not-allowed disabled:opacity-50 hover:border-blue-700 hover:text-blue-700"
+              >
+                Keep Session Active
+              </button>
+              <button
+                type="button"
+                onClick={handleForcedLogout}
+                className="flex-1 rounded-xl bg-blue-600 px-4 py-2 text-sm font-bold text-white shadow-lg shadow-blue-200 transition-colors hover:bg-blue-700"
+              >
+                Ok
+              </button>
+            </div>
+            {!canExtendSession && (
+              <p className="text-[11px] text-red-500">
+                You have already reached the 12-hour extension limit; you will be logged out when the timer ends.
+              </p>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 }

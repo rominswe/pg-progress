@@ -79,12 +79,15 @@ export const NotificationProvider = ({ children }) => {
     const dismiss = async (id) => {
         try {
             await notificationService.dismiss(id);
-            setNotifications(prev => prev.filter(n => n.id !== id));
-            // Recalculate unread if necessary (or decrement if the dismissed one was unread)
-            setUnreadCount(prev => {
-                const dismissed = notifications.find(n => n.id === id);
-                return (dismissed && !dismissed.is_read) ? Math.max(0, prev - 1) : prev;
+            let wasUnread = false;
+            setNotifications((prev) => {
+                const dismissed = prev.find((n) => n.id === id);
+                wasUnread = dismissed && !dismissed.is_read;
+                return prev.filter((n) => n.id !== id);
             });
+            if (wasUnread) {
+                setUnreadCount((prev) => Math.max(0, prev - 1));
+            }
         } catch (err) {
             console.error("Failed to dismiss notification:", err);
         }
