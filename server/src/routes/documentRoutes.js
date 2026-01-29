@@ -3,8 +3,15 @@ import { uploadDocument, getMyDocuments, reviewDocument, getSupervisorDocuments,
 import { protect } from "../middleware/authMiddleware.js";
 import { requireRole } from "../middleware/rbacMiddleware.js";
 import upload from "../middleware/upload.js"; // 1. Import the upload middleware
+import rateLimit from "express-rate-limit";
 
 const router = express.Router();
+
+// Rate limiter for viewing documents to mitigate DoS via repeated file system access
+const viewDocumentLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 100, // limit each IP to 100 view requests per windowMs
+});
 
 // Supervisors / Examiners review documents - MOVED TO TOP to avoid overlap with /:id
 router.post("/review", protect, requireRole("SUV", "EXA", "CGSS", "CGSADM"), reviewDocument);
@@ -25,7 +32,7 @@ router.get("/:id/download", protect, (req, res, next) => {
     if (req.user.role_id === 'EXA') return res.status(403).json({ error: "Download restricted for Examiners" });
     next();
 }, downloadDocument);
-router.get("/:id/view", protect, viewDocument);
+router.get("/:id/view", protect, viewDocumentLimiter, viewDocument);
 router.delete("/:id", protect, requireRole("STU"), deleteDocument);
 
 // Supervisors / Examiners review documents - MOVED TO TOP to avoid overlap with /:id
