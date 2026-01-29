@@ -11,6 +11,11 @@ const updateProfileLimiter = rateLimit({
   max: 100, // limit each IP to 100 update requests per window
 });
 
+const deleteProfileLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: 100, // limit each IP to 100 delete requests per window
+});
+
 // Get current user profile
 router.get("/me", protect, me);
 
@@ -21,6 +26,6 @@ router.put("/update", protect, updateProfileLimiter, updateProfile);
 router.post("/upload-image", protect, profileUpload.single("profileImage"), uploadProfileImage);
 
 // Delete profile image
-router.delete("/delete-image", protect, deleteProfileImage);
+router.delete("/delete-image", protect, deleteProfileLimiter, deleteProfileImage);
 
 export default router;
