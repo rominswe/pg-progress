@@ -8,7 +8,7 @@ export const getUniversities = async (req, res) => {
     try {
         const { q } = req.query;
 
-        if (!q || q.length < 2) {
+        if (typeof q !== "string" || q.length < 2) {
             return sendSuccess(res, "Universities fetched.", []);
         }
 
