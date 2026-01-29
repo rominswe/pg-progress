@@ -1,5 +1,6 @@
 import dotenv from "dotenv";
 import path from "node:path";
+import crypto from "node:crypto";
 import { sequelize, studinfo } from "../config/config.js";
 
 dotenv.config({ path: path.resolve(process.cwd(), "../.env") });
@@ -154,7 +155,7 @@ async function seedStudInfo() {
           program.code.startsWith("M") ? "2027" : "2026",
         Address: `${program.dep} Hostel`,
         Av_leave: "30",
-        Phonenumber: `01${Math.floor(100000000 + Math.random() * 900000000)}`,
+        Phonenumber: `01${crypto.randomInt(100000000, 1000000000)}`,
         Status: 1,
         RegDate: new Date(),
         role: "STU",

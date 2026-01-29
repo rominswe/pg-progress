@@ -7,6 +7,19 @@ import path from "node:path";
 
 class DocumentService {
     async uploadDocuments({ studentId, files, documentType }) {
+        // Normalize files to a proper array to avoid type confusion from req.files
+        let fileList;
+        if (Array.isArray(files)) {
+            fileList = files;
+        } else if (files && typeof files === "object") {
+            // Single file object – wrap it into an array
+            fileList = [files];
+        } else {
+            const error = new Error("Invalid files payload");
+            error.status = 400;
+            throw error;
+        }
+
         if (documentType) {
             // Submission Limit Logic
             const limit = documentType === "Final Thesis" ? 1 : 2;
@@ -39,7 +52,7 @@ class DocumentService {
         }
 
         const docs = [];
-        for (const file of files) {
+        for (const file of fileList) {
             docs.push(await documents_uploads.create({
                 pg_student_id: studentId,
                 document_name: file.originalname,
@@ -65,7 +78,7 @@ class DocumentService {
                 userId: assignment.pg_staff_id,
                 roleId: 'SUV',
                 title: 'New Document Uploaded',
-                message: `${studentName} has uploaded ${files.length} new document(s) for review.`,
+                message: `${studentName} has uploaded ${fileList.length} new document(s) for review.`,
                 type: 'DOCUMENT_UPLOAD',
                 link: `/supervisor/documents`
             });
