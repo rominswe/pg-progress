@@ -9,7 +9,7 @@ import {
   AlertDialogFooter,
   AlertDialogHeader,
   AlertDialogTitle,
-} from '@/components/ui/alert-dialog'; // adjust path if needed
+} from '@/components/ui/alert-dialog';
 export default function ConfirmRegisterModal({
   open,
   onOpenChange,
@@ -21,7 +21,7 @@ export default function ConfirmRegisterModal({
 }) {
   return (
     <AlertDialog open={open} onOpenChange={onOpenChange}>
-      <AlertDialogContent className="bg-card">
+      <AlertDialogContent className="bg-white">
         <AlertDialogHeader>
           <AlertDialogTitle>{title}</AlertDialogTitle>
           <AlertDialogDescription className="space-y-2">

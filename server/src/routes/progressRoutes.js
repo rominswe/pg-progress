@@ -1,0 +1,57 @@
+import express from "express";
+import {
+    createUpdate,
+    getUpdates,
+    getPendingEvaluations,
+    reviewUpdate,
+    getMyStudents,
+    getStudentDetailView,
+    updateMilestoneDeadline,
+    manualCompleteMilestone
+} from "../controllers/progressController.js";
+import { protect } from "../middleware/authMiddleware.js";
+import { requireRole } from "../middleware/rbacMiddleware.js";
+import multer from "multer";
+import path from "path";
+
+const router = express.Router();
+
+// Configure multer for file uploads (1GB limit)
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => {
+        cb(null, 'uploads/progress-reports');
+    },
+    filename: (req, file, cb) => {
+        const uniqueSuffix = Date.now() + '-' + Math.round(Math.random() * 1E9);
+        cb(null, 'progress-' + uniqueSuffix + path.extname(file.originalname));
+    }
+});
+
+const upload = multer({
+    storage: storage,
+    limits: { fileSize: 1024 * 1024 * 1024 }, // 1GB limit
+    fileFilter: (req, file, cb) => {
+        const allowedTypes = /pdf|doc|docx|txt|zip/;
+        const extname = allowedTypes.test(path.extname(file.originalname).toLowerCase());
+        const mimetype = allowedTypes.test(file.mimetype);
+
+        if (extname && mimetype) {
+            return cb(null, true);
+        } else {
+            cb(new Error('Only PDF, DOC, DOCX, TXT, and ZIP files are allowed'));
+        }
+    }
+});
+
+router.post("/", protect, requireRole("STU"), upload.single('document'), createUpdate);
+router.get("/", protect, requireRole("STU", "SUV", "EXA", "CGSADM", "CGSS"), getUpdates);
+router.get("/pending-evaluations", protect, requireRole("SUV", "CGSADM", "CGSS"), getPendingEvaluations);
+router.get("/my-students", protect, requireRole("SUV", "CGSADM", "CGSS"), getMyStudents);
+router.post("/review", protect, requireRole("SUV", "CGSADM", "CGSS"), reviewUpdate);
+
+
+router.get("/student-details/:id", protect, requireRole("CGSADM", "CGSS"), getStudentDetailView);
+router.post("/update-deadline", protect, requireRole("CGSADM", "CGSS"), updateMilestoneDeadline);
+router.post("/manual-complete", protect, requireRole("CGSADM", "CGSS"), manualCompleteMilestone);
+
+export default router;

@@ -1,36 +1,97 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { useAuth } from "@/components/auth/AuthContext";
-import api from "@/services/api";
-import { toast } from "sonner"; // Assuming you use Sonner for notifications
-import { 
-  User, Mail, Phone, Shield, Save, 
-  Lock, Building2, Award, Camera 
-} from "lucide-react";
+import api, { API_BASE_URL } from "@/services/api";
+import { toast } from "sonner";
+import { User, Mail, Phone, Shield, Save, Lock, Building2, Camera, Trash2, MapPin, Globe, Briefcase, Calendar, UserCircle, Fingerprint, ChevronRight, Check, ChevronsUpDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { cn } from "@/lib/utils";
+import { normalizePhoneValue } from "@/lib/phoneUtils";
+import countries from "i18n-iso-countries";
+import enLocale from "i18n-iso-countries/langs/en.json";
+import PhoneInput from 'react-phone-number-input';
+import 'react-phone-number-input/style.css';
+import StudentAcademicInfo from "@/components/profile/StudentAcademicInfo";
+import StaffProfessionalInfo from "@/components/profile/StaffProfessionalInfo";
+import ProfileField from "@/components/profile/ProfileField";
+
+countries.registerLocale(enLocale);
+
+const supportEmail = import.meta.env.EMAIL_USER;
 
 export default function Profile() {
-  const { user, setUser } = useAuth();
+  const { user, updateUser } = useAuth();
+  const handleContactSupport = () => {
+    const subject = encodeURIComponent("PG Progress Support Request");
+    window.open(`mailto:${supportEmail}?subject=${subject}`, "_blank");
+  };
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [activeTab, setActiveTab] = useState("personal");
+  const [openCountry, setOpenCountry] = useState(false);
+
+  const countryList = useMemo(() => {
+    return Object.values(countries.getNames("en", { select: "official" })).sort((a, b) =>
+      a.localeCompare(b)
+    );
+  }, []);
+
   const [formData, setFormData] = useState({
+    FirstName: "",
+    LastName: "",
+    EmailId: "",
     Phonenumber: "",
-    Password: "",
-    ConfirmPassword: "",
+    Gender: "",
+    Dob: "",
+    Address: "",
+    Country: "",
+    Passport: "",
     Affiliation: "",
-    Expertise: ""
+    univ_domain: "",
+    Expertise: "",
+    Honorific_Titles: "",
+    Academic_Rank: "",
+    qualification_codes: [],
+    expertise_codes: [],
+    Password: "",
+    ConfirmPassword: ""
   });
+
+  // Helper to normalize phone numbers to E.164 for the library (e.g. 017 -> +6017)
+  const normalizePhone = (num) => {
+    if (!num) return "";
+    if (String(num).startsWith("+")) return num;
+    if (String(num).startsWith("0")) return `+60${String(num).slice(1)}`;
+    return num;
+  };
 
   // Sync state when user context is loaded
   useEffect(() => {
     if (user) {
       setFormData((prev) => ({
         ...prev,
-        Phonenumber: user.Phonenumber || "",
+        FirstName: user.FirstName || "",
+        LastName: user.LastName || "",
+        EmailId: user.EmailId || "",
+        Phonenumber: normalizePhoneValue(user.Phonenumber),
+        Gender: user.Gender || "",
+        Dob: user.Dob || "",
+        Address: user.Address || "",
+        Country: user.Country || "",
+        Passport: user.Passport || "",
         Affiliation: user.Affiliation || "",
-        Expertise: user.Expertise || ""
+        univ_domain: user.Univ_Domain || "",
+        Expertise: user.Expertise || "",
+        Honorific_Titles: user.Honorific_Titles || "",
+        Academic_Rank: user.Academic_Rank || "",
+        qualification_codes: user.qualifications ? user.qualifications.map(q => q.code) : [],
+        expertise_codes: user.expertises ? user.expertises.map(e => e.code) : []
       }));
     }
   }, [user]);
@@ -44,17 +105,16 @@ export default function Profile() {
     setIsSubmitting(true);
     try {
       const res = await api.put("/api/profile/update", {
-        Phonenumber: formData.Phonenumber,
+        ...formData,
+        Univ_Domain: formData.univ_domain, // Backend expects Univ_Domain
         Password: formData.Password || undefined,
-        Affiliation: formData.Affiliation,
-        Expertise: formData.Expertise
       });
 
       if (res.data.success) {
-        toast.success("Profile updated successfully");
-        // Update local user context with new data
-        setUser({ ...user, ...res.data.data }); 
+        // The backend returns the updated user object
+        updateUser(res.data.data);
         setFormData(prev => ({ ...prev, Password: "", ConfirmPassword: "" }));
+        toast.success("Profile updated successfully");
       }
     } catch (err) {
       toast.error(err.response?.data?.message || "Failed to update profile");
@@ -63,139 +123,405 @@ export default function Profile() {
     }
   };
 
-  if (!user) return <div className="p-8 text-center">Loading profile...</div>;
+  const handleImageUpload = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    const formData = new FormData();
+    formData.append("profileImage", file);
+
+    try {
+      const res = await api.post("/api/profile/upload-image", formData, {
+        headers: { "Content-Type": "multipart/form-data" }
+      });
+      if (res.data.success) {
+        updateUser({ Profile_Image: res.data.data.Profile_Image });
+        toast.success("Profile picture updated");
+      }
+    } catch (err) {
+      toast.error("Failed to upload image");
+    }
+  };
+
+  const handleDeleteImage = async () => {
+    if (!window.confirm("Are you sure you want to delete your profile picture?")) return;
+
+    try {
+      const res = await api.delete("/api/profile/delete-image");
+      if (res.data.success) {
+        updateUser({ Profile_Image: null });
+        toast.success("Profile picture deleted");
+      }
+    } catch (err) {
+      toast.error("Failed to delete image");
+    }
+  };
+
+  if (!user) return (
+    <div className="flex items-center justify-center min-h-[400px]">
+      <div className="animate-pulse text-muted-foreground font-medium">Loading profile...</div>
+    </div>
+  );
+
+  const isStudent = user.role_id === "STU";
+  const isStaff = !isStudent;
 
   return (
-    <div className="max-w-4xl mx-auto space-y-6 animate-in fade-in duration-500">
-      <div className="flex flex-col gap-2">
-        <h2 className="text-3xl font-bold tracking-tight">Account Settings</h2>
-        <p className="text-muted-foreground">Manage your personal information and security.</p>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        {/* Left: Summary Card */}
-        <Card className="md:col-span-1 border-none shadow-md">
-          <CardContent className="pt-6 text-center">
-            <div className="relative inline-block mb-4">
-              <div className="h-24 w-24 rounded-full bg-primary/10 flex items-center justify-center border-4 border-background shadow-sm">
-                <User className="h-12 w-12 text-primary" />
-              </div>
-              <Button size="icon" variant="secondary" className="absolute bottom-0 right-0 h-8 w-8 rounded-full shadow-sm">
-                <Camera className="h-4 w-4" />
-              </Button>
-            </div>
-            <h3 className="font-bold text-lg">{user.FirstName} {user.LastName}</h3>
-            <p className="text-xs font-medium text-muted-foreground uppercase tracking-widest mt-1">
-              Role: {user.role_id}
-            </p>
-            <div className="mt-4 flex items-center justify-center gap-2 text-sm text-muted-foreground">
-              <Mail className="h-4 w-4" />
-              {user.EmailId}
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Right: Detailed Form */}
-        <Card className="md:col-span-2 shadow-sm">
-          <CardHeader>
-            <CardTitle>Personal Information</CardTitle>
-            <CardDescription>Update your contact details and professional info.</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleUpdate} className="space-y-4">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="phone">Phone Number</Label>
-                  <div className="relative">
-                    <Phone className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-                    <Input 
-                      id="phone" 
-                      className="pl-9" 
-                      value={formData.Phonenumber}
-                      onChange={(e) => setFormData({...formData, Phonenumber: e.target.value})}
-                    />
+    <div className="max-w-6xl mx-auto py-8 px-4 sm:px-6 lg:px-8 space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+      {/* --- HEADER BANNER --- */}
+      <div className="relative group overflow-hidden rounded-3xl bg-gradient-to-r from-blue-600 to-indigo-700 p-8 text-white shadow-2xl shadow-blue-200/50">
+        <div className="absolute top-0 right-0 -m-10 h-64 w-64 rounded-full bg-white/10 blur-3xl group-hover:bg-white/20 transition-all duration-700"></div>
+        <div className="relative flex flex-col md:flex-row items-center gap-8">
+          <div className="relative">
+            <div className="h-32 w-32 rounded-3xl bg-white/20 backdrop-blur-md flex items-center justify-center border-4 border-white/30 shadow-xl overflow-hidden group/avatar">
+              {user.Profile_Image ? (
+                <img
+                  src={`${API_BASE_URL}${user.Profile_Image}`}
+                  alt={user.name}
+                  className="h-full w-full object-cover transition-transform duration-500 group-hover/avatar:scale-110"
+                />
+              ) : (
+                <User className="h-16 w-16 text-white" />
+              )}
+              <label className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover/avatar:opacity-100 transition-opacity cursor-pointer text-white text-xs font-bold uppercase tracking-tighter">
+                <div className="flex flex-col items-center gap-2">
+                  <div className="flex items-center gap-4">
+                    <Camera className="h-6 w-6" />
+                    {user.Profile_Image && (
+                      <div
+                        onClick={(e) => {
+                          e.preventDefault();
+                          handleDeleteImage();
+                        }}
+                        className="p-1 hover:text-red-400 transition-colors"
+                      >
+                        <Trash2 className="h-6 w-6" />
+                      </div>
+                    )}
                   </div>
+                  <span>Change Photo</span>
                 </div>
+                <input type="file" className="hidden" onChange={handleImageUpload} accept="image/*" />
+              </label>
+            </div>
+          </div>
+          <div className="text-center md:text-left space-y-2">
+            <div className="flex flex-wrap items-center justify-center md:justify-start gap-3">
+              <h1 className="text-3xl font-extrabold tracking-tight">
+                {user.Honorific_Titles && `${user.Honorific_Titles} `}{user.FirstName} {user.LastName}
+              </h1>
+              <span className="px-3 py-1 rounded-full bg-white/20 backdrop-blur-md text-[10px] font-black uppercase tracking-widest border border-white/30">
+                {user.role_name}
+              </span>
+            </div>
+            <div className="flex flex-wrap items-center justify-center md:justify-start gap-4 text-blue-100 font-medium text-sm">
+              <div className="flex items-center gap-2">
+                <Mail className="h-4 w-4 text-blue-200" />
+                {user.EmailId}
               </div>
-
-              {/* Conditional Fields for EXA (Examiner) */}
-              {user.role_id === "EXA" && (
+              {user.department_name && (
                 <>
-                  <Separator className="my-4" />
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                    <div className="space-y-2">
-                      <Label htmlFor="affiliation">Affiliation</Label>
-                      <div className="relative">
-                        <Building2 className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-                        <Input 
-                          id="affiliation" 
-                          className="pl-9" 
-                          value={formData.Affiliation}
-                          onChange={(e) => setFormData({...formData, Affiliation: e.target.value})}
-                        />
-                      </div>
-                    </div>
-                    <div className="space-y-2">
-                      <Label htmlFor="expertise">Expertise</Label>
-                      <div className="relative">
-                        <Award className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-                        <Input 
-                          id="expertise" 
-                          className="pl-9" 
-                          value={formData.Expertise}
-                          onChange={(e) => setFormData({...formData, Expertise: e.target.value})}
-                        />
-                      </div>
-                    </div>
+                  <span className="hidden md:block h-1 w-1 rounded-full bg-blue-300/50"></span>
+                  <div className="flex items-center gap-2">
+                    <Building2 className="h-4 w-4 text-blue-200" />
+                    {user.department_name}
                   </div>
                 </>
               )}
-
-              <Separator className="my-4" />
-              <CardTitle className="text-md mb-2 flex items-center gap-2">
-                <Shield className="h-4 w-4" /> Security
-              </CardTitle>
-              
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="password">New Password</Label>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-                    <Input 
-                      id="password" 
-                      type="password" 
-                      className="pl-9" 
-                      placeholder="••••••••"
-                      value={formData.Password}
-                      onChange={(e) => setFormData({...formData, Password: e.target.value})}
-                    />
-                  </div>
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="confirm">Confirm Password</Label>
-                  <div className="relative">
-                    <Lock className="absolute left-3 top-2.5 h-4 w-4 text-muted-foreground" />
-                    <Input 
-                      id="confirm" 
-                      type="password" 
-                      className="pl-9" 
-                      placeholder="••••••••"
-                      value={formData.ConfirmPassword}
-                      onChange={(e) => setFormData({...formData, ConfirmPassword: e.target.value})}
-                    />
-                  </div>
-                </div>
-              </div>
-
-              <div className="pt-4 flex justify-end">
-                <Button type="submit" disabled={isSubmitting} className="flex items-center gap-2">
-                  {isSubmitting ? "Saving..." : <><Save className="h-4 w-4" /> Save Changes</>}
-                </Button>
-              </div>
-            </form>
-          </CardContent>
-        </Card>
+            </div>
+          </div>
+        </div>
       </div>
+
+      {/* --- MAIN CONTENT TABS --- */}
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 mb-6">
+          <TabsList className="bg-white/50 backdrop-blur-sm border border-slate-100 p-1 rounded-2xl shadow-sm">
+            <TabsTrigger value="personal" className="rounded-xl px-6 py-2.5 data-[state=active]:bg-white data-[state=active]:shadow-md data-[state=active]:text-blue-600 transition-all font-bold text-sm">
+              Personal Information
+            </TabsTrigger>
+            <TabsTrigger value="professional" className="rounded-xl px-6 py-2.5 data-[state=active]:bg-white data-[state=active]:shadow-md data-[state=active]:text-blue-600 transition-all font-bold text-sm">
+              {isStudent ? "Academic Info" : "Professional Profile"}
+            </TabsTrigger>
+            <TabsTrigger value="security" className="rounded-xl px-6 py-2.5 data-[state=active]:bg-white data-[state=active]:shadow-md data-[state=active]:text-blue-600 transition-all font-bold text-sm">
+              Account Security
+            </TabsTrigger>
+          </TabsList>
+
+          <Button
+            onClick={handleUpdate}
+            disabled={isSubmitting}
+            className="w-full sm:w-auto rounded-xl shadow-lg shadow-blue-200 bg-blue-600 hover:bg-blue-700 font-bold px-8"
+          >
+            {isSubmitting ? "Saving..." : <><Save className="h-4 w-4 mr-2" /> Save Changes</>}
+          </Button>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* --- LEFT: HELP CARD --- */}
+          <div className="lg:col-span-1 space-y-6">
+            <Card className="rounded-3xl border-none shadow-xl shadow-slate-200/50 bg-white group cursor-default overflow-hidden">
+              <CardHeader className="bg-slate-50/50 p-6 border-b border-slate-100">
+                <CardTitle className="text-lg font-bold text-slate-800">Profile Status</CardTitle>
+                <CardDescription>Your account is currently {user.Status?.toLowerCase() || 'active'}</CardDescription>
+              </CardHeader>
+              <CardContent className="p-6 space-y-4">
+                <div className="flex items-center gap-4 p-4 rounded-2xl bg-slate-50 border border-slate-100 group-hover:bg-blue-50/50 group-hover:border-blue-100 transition-colors">
+                  <div className="h-10 w-10 rounded-xl bg-white shadow-sm flex items-center justify-center">
+                    <Fingerprint className="h-5 w-5 text-blue-600" />
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Unique Identifier</p>
+                    <p className="text-sm font-bold text-slate-700">{user.stu_id || user.emp_id || user.id}</p>
+                  </div>
+                </div>
+                <div className="flex items-center gap-4 p-4 rounded-2xl bg-slate-50 border border-slate-100 group-hover:bg-blue-50/50 group-hover:border-blue-100 transition-colors">
+                  <div className="h-10 w-10 rounded-xl bg-white shadow-sm flex items-center justify-center">
+                    <Calendar className="h-5 w-5 text-blue-600" />
+                  </div>
+                  <div>
+                    <p className="text-[10px] font-black uppercase tracking-widest text-slate-400">Account Type</p>
+                    <p className="text-sm font-bold text-slate-700">{isStudent ? 'Postgraduate Researcher' : 'Academic Staff'}</p>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+
+            <div className="p-6 rounded-3xl bg-blue-600 text-white shadow-xl shadow-blue-200 relative overflow-hidden group">
+              <div className="absolute top-0 right-0 -m-8 h-32 w-32 rounded-full bg-white/10 blur-2xl group-hover:scale-125 transition-transform duration-500"></div>
+              <h4 className="font-bold mb-2">Need Help?</h4>
+              <p className="text-xs text-blue-100 mb-4 leading-relaxed">If you cannot change some of your locked information, please contact the Centre for Graduate Studies (CGS) administration.</p>
+              <Button
+                variant="secondary"
+                size="sm"
+                className="w-full rounded-xl font-bold bg-white text-blue-600 hover:bg-blue-50"
+                onClick={handleContactSupport}
+              >
+                Contact Support
+              </Button>
+            </div>
+          </div>
+
+          {/* --- RIGHT: FORM CONTENT --- */}
+          <div className="lg:col-span-2">
+            {/* PERSONAL TAB */}
+            <TabsContent value="personal" className="m-0 focus-visible:outline-none">
+              <Card className="rounded-2xl border-none shadow-xl shadow-slate-200/50 bg-white">
+                <CardHeader className="p-8 pb-4">
+                  <CardTitle className="text-2xl font-black tracking-tight text-slate-800">Basic Background</CardTitle>
+                  <CardDescription>Update your essential personal information for university records.</CardDescription>
+                </CardHeader>
+                <CardContent className="p-8 pt-4 space-y-8">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-6">
+                    <div className="space-y-1.5">
+                      <Label className="text-[13px] font-semibold text-slate-500 ml-1">First Name</Label>
+                      <ProfileField
+                        value={formData.FirstName}
+                        icon={UserCircle}
+                        readOnly={user.role_id !== "CGSADM"}
+                      >
+                        {user.role_id === "CGSADM" && (
+                          <input
+                            className="bg-transparent border-none p-0 w-full focus:ring-0 focus:outline-none font-bold text-slate-700"
+                            value={formData.FirstName}
+                            placeholder="First Name"
+                            onChange={(e) => setFormData({ ...formData, FirstName: e.target.value })}
+                          />
+                        )}
+                      </ProfileField>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <Label className="text-[13px] font-semibold text-slate-500 ml-1">Last Name</Label>
+                      <ProfileField
+                        value={formData.LastName}
+                        icon={UserCircle}
+                        readOnly={user.role_id !== "CGSADM"}
+                      >
+                        {user.role_id === "CGSADM" && (
+                          <input
+                            className="bg-transparent border-none p-0 w-full focus:ring-0 focus:outline-none font-bold text-slate-700"
+                            value={formData.LastName}
+                            placeholder="Last Name"
+                            onChange={(e) => setFormData({ ...formData, LastName: e.target.value })}
+                          />
+                        )}
+                      </ProfileField>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <Label className="text-[13px] font-semibold text-slate-500 ml-1">
+                        Gender
+                      </Label>
+
+                      <Select
+                        value={formData.Gender || ""}
+                        onValueChange={(val) => setFormData({ ...formData, Gender: val })}
+                      >
+                        <SelectTrigger
+                          className="h-[44px] rounded-xl border border-slate-100 bg-slate-50/50
+                                     font-bold hover:bg-slate-100/50 transition-colors shadow-none
+                                     focus-visible:ring-0 focus-visible:ring-offset-0"
+                        >
+                          <div className="flex items-center gap-3">
+                            <UserCircle className="h-4 w-4 text-slate-400" />
+                            <span className={formData.Gender ? "" : "text-slate-400"}>
+                              {formData.Gender || "Select gender"}
+                            </span>
+                          </div>
+                        </SelectTrigger>
+
+                        <SelectContent className="rounded-xl border-slate-100 shadow-xl bg-white">
+                          <SelectItem value="Male">Male</SelectItem>
+                          <SelectItem value="Female">Female</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <Label className="text-[13px] font-semibold text-slate-500 ml-1">Date of Birth</Label>
+                      <ProfileField value={formData.Dob} icon={Calendar}>
+                        <input
+                          type="date"
+                          className="bg-transparent border-0 p-0 w-full focus:ring-0 focus:outline-none font-bold text-slate-700 cursor-pointer [&::-webkit-calendar-picker-indicator]:hidden"
+                          value={formData.Dob}
+                          onChange={(e) => setFormData({ ...formData, Dob: e.target.value })}
+                        />
+                      </ProfileField>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <Label className="text-[13px] font-semibold text-slate-500 ml-1">Phone Number</Label>
+                      <ProfileField value={formData.Phonenumber}>
+                        <PhoneInput
+                          international
+                          defaultCountry="MY"
+                          value={formData.Phonenumber ?? undefined}
+                          onChange={(val) => setFormData({ ...formData, Phonenumber: val })}
+                          className="w-full flex"
+                          numberInputProps={{ className: "border-none focus:ring-0 focus:outline-none bg-transparent w-full text-[14px] font-bold text-slate-700" }}
+                        />
+                      </ProfileField>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <Label className="text-[13px] font-semibold text-slate-500 ml-1">Country</Label>
+                      <Popover open={openCountry} onOpenChange={setOpenCountry}>
+                        <PopoverTrigger asChild>
+                          <div className="cursor-pointer">
+                            <ProfileField value={formData.Country} icon={Globe} />
+                          </div>
+                        </PopoverTrigger>
+                        <PopoverContent className="p-0 w-[var(--radix-popover-trigger-width)] bg-white shadow-xl border rounded-2xl" align="start" sideOffset={8}>
+                          <Command>
+                            <CommandInput placeholder="Search country..." />
+                            <CommandList className="max-h-[300px]">
+                              <CommandEmpty>No country found.</CommandEmpty>
+                              <CommandGroup title="Countries">
+                                {countryList.map((country) => (
+                                  <CommandItem
+                                    key={country}
+                                    onSelect={() => {
+                                      setFormData({ ...formData, Country: country });
+                                      setOpenCountry(false);
+                                    }}
+                                    className="py-3 px-4 cursor-pointer"
+                                  >
+                                    <Check className={cn("mr-2 h-4 w-4 text-primary", formData.Country === country ? "opacity-100" : "opacity-0")} />
+                                    {country}
+                                  </CommandItem>
+                                ))}
+                              </CommandGroup>
+                            </CommandList>
+                          </Command>
+                        </PopoverContent>
+                      </Popover>
+                    </div>
+
+                    <div className="space-y-1.5 md:col-span-2">
+                      <Label className="text-[13px] font-semibold text-slate-500 ml-1">Passport / National ID</Label>
+                      <ProfileField value={formData.Passport} icon={Fingerprint}>
+                        <input
+                          className="bg-transparent border-none p-0 w-full focus:ring-0 focus:outline-none font-bold text-slate-700 placeholder:text-slate-300"
+                          value={formData.Passport}
+                          placeholder="Not Provided"
+                          onChange={(e) => setFormData({ ...formData, Passport: e.target.value })}
+                        />
+                      </ProfileField>
+                    </div>
+
+                    <div className="space-y-1.5 md:col-span-2">
+                      <Label className="text-[13px] font-semibold text-slate-500 ml-1">Mailing Address</Label>
+                      <ProfileField value={formData.Address} icon={MapPin}>
+                        <input
+                          className="bg-transparent border-none p-0 w-full focus:ring-0 focus:outline-none font-bold text-slate-700 placeholder:text-slate-300"
+                          value={formData.Address}
+                          placeholder="Street name, City, Postcode"
+                          onChange={(e) => setFormData({ ...formData, Address: e.target.value })}
+                        />
+                      </ProfileField>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            {/* PROFESSIONAL TAB */}
+            <TabsContent value="professional" className="m-0 focus-visible:outline-none">
+              {isStudent ? (
+                <StudentAcademicInfo user={user} />
+              ) : (
+                <StaffProfessionalInfo formData={formData} setFormData={setFormData} />
+              )}
+            </TabsContent>
+
+            {/* SECURITY TAB */}
+            <TabsContent value="security" className="m-0 focus-visible:outline-none">
+              <Card className="rounded-3xl border-none shadow-xl shadow-slate-200/50 bg-white">
+                <CardHeader className="p-8 pb-4">
+                  <div className="flex items-center gap-3 mb-2">
+                    <div className="h-8 w-8 rounded-lg bg-red-50 flex items-center justify-center">
+                      <Lock className="h-4 w-4 text-red-600" />
+                    </div>
+                    <CardTitle className="text-2xl font-black tracking-tight text-slate-800">Credential Control</CardTitle>
+                  </div>
+                  <CardDescription>Oversee and update your login credentials and security preferences.</CardDescription>
+                </CardHeader>
+                <CardContent className="p-8 pt-4 space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="space-y-2">
+                      <Label className="text-xs font-bold text-slate-500 ml-1">New Password</Label>
+                      <div className="relative">
+                        <Lock className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-400" />
+                        <Input
+                          type="password"
+                          className="pl-11 rounded-xl border-slate-100 bg-slate-50/50 h-11"
+                          placeholder="Leave blank to keep current"
+                          value={formData.Password}
+                          onChange={(e) => setFormData({ ...formData, Password: e.target.value })}
+                        />
+                      </div>
+                    </div>
+                    <div className="space-y-2">
+                      <Label className="text-xs font-bold text-slate-500 ml-1">Confirm New Password</Label>
+                      <div className="relative">
+                        <Lock className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-400" />
+                        <Input
+                          type="password"
+                          className="pl-11 rounded-xl border-slate-100 bg-slate-50/50 h-11"
+                          placeholder="Re-type new password"
+                          value={formData.ConfirmPassword}
+                          onChange={(e) => setFormData({ ...formData, ConfirmPassword: e.target.value })}
+                        />
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </TabsContent>
+          </div>
+        </div>
+      </Tabs>
     </div>
   );
 }

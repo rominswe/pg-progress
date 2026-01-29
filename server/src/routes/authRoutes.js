@@ -1,8 +1,6 @@
 import express from "express";
 import rateLimit from "express-rate-limit";
-import { login, verifyAccount, logout } from "../controllers/authController.js";
-import { resendVerificationToken, checkTokenStatus } from "../controllers/verificationTokenController.js";
-import { protect } from "../middleware/authmiddleware.js";
+import { login, logout } from "../controllers/authController.js";
 
 const router = express.Router();
 
@@ -11,15 +9,7 @@ const loginLimiter = rateLimit({
   max: 100, // limit each IP to 100 login requests per window
 });
 
-const verifyLimiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // limit each IP to 100 verify requests per window
-});
-
 router.post("/login", loginLimiter, login);
-router.get("/verify", verifyLimiter, verifyAccount); 
-router.post("/resend-verification", resendVerificationToken);
-router.get("/check-token/:token", checkTokenStatus);// expects query params: ?code=<vcode>&type=email
-router.post("/logout", protect, logout);
+router.post("/logout", logout);
 
 export default router;

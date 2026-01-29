@@ -1,5 +1,5 @@
 {
-  "name": "aiu-pg-progress-server",
+  "name": "server",
   "version": "1.0.0",
   "main": "src/server.js",
   "type": "module",
@@ -28,6 +28,7 @@
     "redis": "^5.10.0",
     "sequelize": "^6.37.7",
     "sequelize-cli": "^6.6.3",
+    "cookie-signature": "^1.2.2",
     "socket.io": "^4.8.3"
   },
   "devDependencies": {

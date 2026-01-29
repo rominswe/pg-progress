@@ -1,149 +1,96 @@
-import bcrypt from "bcryptjs";
-import {
-  cgs,
-  supervisor,
-  master_stu,
-  examiner,
-  visiting_staff,
-  role
-} from "../config/config.js";
-import { verifyToken } from "../utils/verification.js";
-import { logAuthEvent, handleLockout, recordLoginAttempt } from "../utils/authSecurity.js";
+import AuthService from "../services/authService.js";
 import { sendSuccess, sendError } from "../utils/responseHandler.js";
-/* ================= ROLE MODEL MAPPING ================= */
-const ROLE_MODEL_MAP = {
-  CGSADM: cgs,
-  SUV: supervisor,
-  STU: master_stu,
-  CGSS: cgs,
-  EXA: examiner
-};
-
-/* ================= ACCOUNT STATUS ENFORCEMENT ================= */
-const enforceAccountRules = (user) => {
-  if (user.Status === "Inactive") throw new Error("Account inactive");
-  if (user.Status === "Pending") throw new Error("Account not verified");
-  if (user.EndDate && new Date(user.EndDate) < new Date())
-    throw new Error("Account expired");
-};
+import { sign } from "cookie-signature";
 
 /* ================= LOGIN HANDLER ================= */
 export const login = async (req, res) => {
-  const { email, password, role_id } = req.body;
+  const { email, password, role_id: requestedRole } = req.body;
 
-  if (!email || !password || !role_id)
-    return res.status(400).json({ error: "Missing fields" });
+  if (!email || !password || !requestedRole)
+    return sendError(res, "Missing fields", 400);
 
   try {
-    await handleLockout(email);
+    let user = await AuthService.authenticate(email, password, requestedRole);
 
-    let user = null;
-    let modelUsed = null;
+    // Auto-activate pending users on first login
+    user = await AuthService.activatePendingUser(user);
 
-    if (role_id === "EXA") {
-      // Internal EXA
-      user = await examiner.findOne({ where: { EmailId: email }, include: [{ model: role }] });
-      modelUsed = "examiner";
-      // External EXA
-      if (!user) {
-        user = await visiting_staff.findOne({ where: { EmailId: email }, include: [{ model: role }] });
-        modelUsed = "visiting_staff";
-      }
-    } else {
-      const Model = ROLE_MODEL_MAP[role_id];
-      if (!Model) throw new Error("Invalid role");
-      user = await Model.findOne({ where: { EmailId: email }, include: [{ model: role }] });
-      modelUsed = Model.tableName;
-    }
+    AuthService.enforceAccountState(user);
 
-    if (!user) {
-      await recordLoginAttempt(email);
-      await logAuthEvent(email, role_id, "LOGIN_FAIL", req, { table: modelUsed });
-      throw new Error("Invalid Email");
-    }
+    const auth = await AuthService.authorize(user, requestedRole);
 
-    if (!user.role || user.role.role_id !== role_id)
-      throw new Error("Role mismatch");
+    const Model = AuthService.getRoleModel(requestedRole);
 
-    enforceAccountRules(user);
-
-    const valid = await bcrypt.compare(password, user.Password);
-    if (!valid) {
-      await recordLoginAttempt(email);
-      await logAuthEvent(email, role_id, "LOGIN_FAIL", req, { table: modelUsed });
-      throw new Error("Invalid Password");
-    }
-
-    // Save user info in session
-    req.session.user = {
-      id: user[user.constructor.primaryKeyAttribute],
+    const sessionUser = {
       email: user.EmailId,
-      role_id: user.role.role_id,
-      table: modelUsed,
+      name: `${user.FirstName} ${user.LastName}`,
+      role_id: requestedRole,
+      role_level: auth.role_level,
+      employment_type: auth.employment_type || null,
+      table: Model.tableName,
       Status: user.Status,
-      MustChangePassword: user.MustChangePassword,
+      Dep_Code: user.Dep_Code,
     };
 
-    await logAuthEvent(email, role_id, "LOGIN_SUCCESS", req, { table: modelUsed });
-    
-    // Temporary password check
-    if (user.MustChangePassword) {
-      return sendSuccess(res, "Please update your temporary password", {
-        mustChangePassword: true,
-        redirectUrl: "/api/profile/me" // Updated to a frontend-friendly route
-      });
+    // Add role-specific IDs
+    if (requestedRole === "STU") {
+      sessionUser.id = user.pgstud_id;
+      sessionUser.stu_id = user.stu_id;
+    } else {
+      sessionUser.id = user.pgstaff_id;
+      sessionUser.emp_id = user.emp_id;
     }
-    
-    return sendSuccess(res, "Login successful", req.session.user);
+
+    req.session.user = sessionUser;
+
+    // Sign the session ID for concurrent session support via X-Auth-Token header
+    const signedSessionId = `s:${sign(req.sessionID, process.env.SESSION_SECRET)}`;
+
+    return sendSuccess(res, "Login successful", { ...sessionUser, sessionId: signedSessionId });
   } catch (err) {
-    return sendError(res, err.message, 403);
-  }
-};
+    console.error("[LOGIN_ERROR]", err);
 
-/* ================= VERIFY ACCOUNT ================= */
-export const verifyAccount = async (req, res) => {
-  try {
-    const { token } = req.query;
-    if (!token) return res.status(400).json({ error: "Invalid verification token" });
+    // Default to 500
+    let status = 500;
 
-    const record = await verifyToken(token);
-    if (!record) return res.status(400).json({ error: "Invalid or expired token" });
+    // Map specific auth errors to correct status codes
+    const message = err.message.toLowerCase();
+    if (
+      message.includes("invalid email") ||
+      message.includes("invalid password") ||
+      message.includes("not verified")
+    ) {
+      status = 401;
+    } else if (
+      message.includes("not authorized") ||
+      message.includes("deactivated") ||
+      message.includes("expired")
+    ) {
+      status = 403;
+    }
 
-    let Model;
-    if (record.user_table === "examiner") Model = examiner;
-    else if (record.user_table === "visiting_staff") Model = visiting_staff;
-    else Model = ROLE_MODEL_MAP[record.role_id];
-
-    const user = await Model.findByPk(record.user_id);
-    if (!user) return res.status(404).json({ error: "User not found" });
-
-    // Activate user
-    user.IsVerified = 1;
-    user.Status = "Active";
-    await user.save();
-
-    await record.destroy();
-    await logAuthEvent(
-      user.EmailId,
-      user.role_id,
-      "VERIFY",
-      req,
-      { table: Model.tableName }
-    );
-
-    res.json({
-      message: "Account verified successfully. You can now log in using your credentials.",
-    });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ error: err.message });
+    return sendError(res, err.message, status);
   }
 };
 
 /* ================= LOGOUT ================= */
 export const logout = async (req, res) => {
-  req.session.destroy((err) => {
-    if (err) return res.status(500).json({ error: "Logout failed" });
-    res.clearCookie("sid").json({ message: "Logout successful" });
-  });
+  try {
+    if (req.session) {
+      req.session.destroy((err) => {
+        if (err) console.error("[LOGOUT_SESSION_DESTROY_ERROR]", err);
+      });
+    }
+    // Clear both possible cookie names to ensure complete logout
+    res.clearCookie("user_session");
+    res.clearCookie("admin_session");
+    res.clearCookie("sid"); // Legacy fallback
+    return sendSuccess(res, "Logout successful");
+  } catch (err) {
+    console.error("[LOGOUT_ERROR]", err);
+    res.clearCookie("user_session");
+    res.clearCookie("admin_session");
+    res.clearCookie("sid");
+    return sendSuccess(res, "Logout successful"); // Return success anyway to clear client state
+  }
 };

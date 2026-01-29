@@ -1,79 +1,325 @@
 import axios from "axios";
 import { socket } from "./socket";
 
-export const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "http://localhost:5000";
+const isDev = import.meta.env.DEV;
+export const API_BASE_URL = import.meta.env.API_BASE_URL;
 
-// Axios instance
+const getCsrfCookieName = (port) =>
+  port === "5174" ? "ADMIN-XSRF-TOKEN" : "USER-XSRF-TOKEN";
+
+// Port-specific user data key to prevent data conflicts
+const getStorageKey = () => {
+  const port = window.location.port || '80';
+  return `user_${port}`;
+};
+
 const api = axios.create({
   baseURL: API_BASE_URL,
-  withCredentials: true,  // 🔑 send session cookie
-  headers: { "Content-Type": "application/json" },
+  withCredentials: true, // 🔑 cookie-based session
+  headers: {
+    "Content-Type": "application/json",
+  },
 });
 
-// Queuing for multiple simultaneous 401 requests
-let failedQueue = [];
-let isLoggingOut = false;
 
-const processQueue = (error = null) => {
-  failedQueue.forEach((p) => (error ? p.reject(error) : p.resolve()));
-  failedQueue = [];
-};
+/* ===================== CSRF ===================== */
+api.interceptors.request.use((config) => {
+  const port = window.location.port || "80";
+  const csrfCookieName = getCsrfCookieName(port);
 
-export const setIsLoggingOut = (value) => {
-  isLoggingOut = value;
-};
+  const csrfToken = document.cookie
+    .split("; ")
+    .find((row) => row.startsWith(`${csrfCookieName}=`))
+    ?.split("=")[1];
 
-// Auth service
+  const method = config.method?.toLowerCase() || "get";
+  if (csrfToken && method !== "get") {
+    config.headers["X-CSRF-Token"] = csrfToken;
+  }
+
+  config.headers["X-Source-Port"] = port;
+
+  return config;
+});
+
+
+/* ===================== ERROR INTERCEPTOR ===================== */
+api.interceptors.response.use(
+  (response) => response,
+  async (error) => {
+    const { response } = error;
+    if (response) {
+      // 401: Unauthorized -> Auto Logout
+      if (response.status === 401) {
+        if (!window.location.pathname.includes('/login')) {
+          console.warn("Unauthorized! Redirecting to login...");
+          // Disconnect socket if connected
+          if (socket.connected) socket.disconnect();
+
+          await authService.logout().catch(() => { }); // Attempt cleaner logout
+          window.location.href = '/login';
+        }
+      }
+
+      // 403: Forbidden -> Optional: Show a toast? 
+      // Usually handled by key components, but we could emit an event.
+    }
+    return Promise.reject(error);
+  }
+);
+
+/* ===================== AUTH SERVICE ===================== */
 export const authService = {
-  login: async (role, credentials) => {
-    const response = await api.post("/api/auth/login", {
+  async initCsrf() {
+    await api.get("/api/csrf-token");
+  },
+
+  async login(role, credentials) {
+    const res = await api.post("/api/auth/login", {
       ...credentials,
       role_id: role,
     });
 
-    const result = response.data;
-
-    // connect WebSocket after successful login
-    if (result.success && result.data) {
-      socket.connect();
+    if (res.data?.success) {
+      socket.connect(); // 🔌 connect only after login
     }
 
-    // fallback user object
-    if (result.success && !result.data.email && credentials.email) {
-      result.data = {
-        ...result.data,
-        email: credentials.email,
-        role_id: role,
-        mustChangePassword: result.data.mustChangePassword || false,
-      };
-    }
-
-    return result;
-  },catch (err) {
-    // If the server sent a specific error message, throw that
-    const serverMessage = err.response?.data?.message || err.response?.data?.error;
-    if (serverMessage) throw new Error(serverMessage);
-    
-    // Otherwise throw the original error
-    throw err;
+    return res.data;
   },
 
-  // Get currently logged-in user
-  me: async () => {
+  async me() {
     const res = await api.get("/api/profile/me");
     return res.data;
   },
 
-  logout: async () => {
-    setIsLoggingOut(true);
+  async logout() {
     try {
-      socket.disconnect(); // 🔌 disconnect WebSocket
-      await api.post("/api/auth/logout"); // backend clears cookie
+      socket.disconnect();
+      await api.post("/api/auth/logout");
     } catch (err) {
       console.error("Logout failed:", err);
     } finally {
-      setIsLoggingOut(false);
+      // Clear ALL port-specific user data
+      const ports = ['5173', '5174', '80'];
+      ports.forEach(port => {
+        sessionStorage.removeItem(`user_${port}`);
+      });
     }
+  },
+};
+
+/* ===================== DOCUMENT SERVICE ===================== */
+export const documentService = {
+  upload: async (formData) => {
+    const res = await api.post("/api/documents/upload", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+    return res.data;
+  },
+  getMyDocuments: async () => {
+    const res = await api.get("/api/documents/my-documents");
+    return res.data;
+  },
+  getSupervisorDocuments: async () => {
+    const res = await api.get("/api/documents/supervisor/list");
+    return res.data;
+  },
+  review: async (data) => {
+    const res = await api.post("/api/documents/review", data);
+    return res.data;
+  },
+  getDashboardStats: async () => {
+    const res = await api.get("/api/documents/student/stats");
+    return res.data;
+  },
+  delete: async (id) => {
+    const res = await api.delete(`/api/documents/${id}`);
+    return res.data;
+  }
+};
+
+/* ===================== PROGRESS SERVICE ===================== */
+export const progressService = {
+  // Fetch logs
+  getUpdates: async (studentId = null) => {
+    // Optional studentId for supervisors
+    const url = studentId ? `/api/progress?student_id=${studentId}` : '/api/progress';
+    const res = await api.get(url);
+    return res.data;
+  },
+
+  // Create new log (with optional file upload)
+  createUpdate: async (data) => {
+    const formData = new FormData();
+    formData.append('title', data.title);
+    formData.append('description', data.description || '');
+    formData.append('achievements', data.achievements);
+    formData.append('challenges', data.challenges || '');
+    formData.append('nextSteps', data.nextSteps);
+
+    // Add document if present
+    if (data.document) {
+      formData.append('document', data.document);
+    }
+
+    const res = await api.post("/api/progress", formData, {
+      headers: { "Content-Type": "multipart/form-data" },
+    });
+    return res.data;
+  },
+
+  // Fetch pending evaluations (for supervisors)
+  getPendingEvaluations: async () => {
+    const res = await api.get("/api/progress/pending-evaluations");
+    return res.data;
+  },
+
+  // Review a progress update (for supervisors)
+  reviewProgressUpdate: async (data) => {
+    const res = await api.post("/api/progress/review", data);
+    return res.data;
+  },
+
+  // Fetch all students assigned to supervisor
+  getMyStudents: async () => {
+    const res = await api.get("/api/progress/my-students");
+    return res.data;
+  },
+  getStudentDetails: async (id) => {
+    const res = await api.get(`/api/progress/student-details/${id}`);
+    return res.data;
+  },
+  updateDeadline: async (data) => {
+    const res = await api.post("/api/progress/update-deadline", data);
+    return res.data;
+  },
+  manualComplete: async (data) => {
+    const res = await api.post("/api/progress/manual-complete", data);
+    return res.data;
+  },
+  getStudentMilestones: async (studentId = null) => {
+    const params = studentId ? { student_id: studentId } : undefined;
+    const res = await api.get("/api/milestones/student", { params });
+    return res.data;
+  }
+};
+
+/* ===================== SERVICE REQUEST SERVICE ===================== */
+export const serviceRequestService = {
+  create: async (data) => {
+    const res = await api.post("/api/service-requests", data);
+    return res.data;
+  },
+  getAll: async (status) => {
+    const url = status ? `/api/service-requests?status=${status}` : '/api/service-requests';
+    const res = await api.get(url);
+    return res.data;
+  },
+  getById: async (id) => {
+    const res = await api.get(`/api/service-requests/${id}`);
+    return res.data;
+  },
+  updateStatus: async (id, status, comments) => {
+    const res = await api.put(`/api/service-requests/${id}`, { status, comments });
+    return res.data;
+  }
+};
+
+/* ===================== EVALUATION SERVICE ===================== */
+export const evaluationService = {
+  // Submit a new defense evaluation
+  submitEvaluation: async (data) => {
+    const res = await api.post("/api/evaluations", data);
+    return res.data;
+  },
+
+  // Get evaluations for a specific student (for feedback page)
+  getStudentEvaluations: async (studentId) => {
+    const res = await api.get(`/api/evaluations/student/${studentId}`);
+    return res.data;
+  },
+
+  // Get all evaluations (for supervisors/admin)
+  getAllEvaluations: async () => {
+    const res = await api.get("/api/evaluations");
+    return res.data;
+  },
+  // Find student by ID
+  getStudentById: async (id) => {
+    const res = await api.get(`/api/evaluations/find-student/${id}`);
+    return res.data;
+  }
+};
+
+/* ===================== DEFENSE EVALUATION SERVICE ===================== */
+export const defenseEvaluationService = {
+  submitEvaluation: async (data) => {
+    const res = await api.post("/api/defense-evaluations", data);
+    return res.data;
+  },
+  getEvaluations: async (studentId) => {
+    const res = await api.get(`/api/defense-evaluations/student/${studentId}`);
+    return res.data;
+  }
+};
+
+/* ===================== DASHBOARD SERVICE ===================== */
+export const dashboardService = {
+  getSupervisorStats: async () => {
+    const res = await api.get("/api/dashboard/supervisor/stats");
+    return res.data;
+  },
+  getExaminerStudents: async () => {
+    const res = await api.get("/api/dashboard/examiner/students");
+    return res.data;
+  }
+};
+
+/* ===================== NOTIFICATION SERVICE ===================== */
+export const notificationService = {
+  getNotifications: async () => {
+    const res = await api.get("/api/notifications");
+    return res.data;
+  },
+  markAsRead: async (id) => {
+    const res = await api.put(`/api/notifications/${id}/read`);
+    return res.data;
+  },
+  sendNotification: async (data) => {
+    const res = await api.post("/api/notifications/send", data);
+    return res.data;
+  },
+  dismiss: async (id) => {
+    const res = await api.delete(`/api/notifications/${id}`);
+    return res.data;
+  },
+  dismissAll: async () => {
+    const res = await api.delete("/api/notifications/all");
+    return res.data;
+  }
+};
+
+/* ===================== MILESTONE TEMPLATES SERVICE ===================== */
+export const milestoneService = {
+  getTemplates: async () => {
+    const res = await api.get("/api/milestones");
+    return res.data;
+  },
+  getOverrides: async (params) => {
+    const res = await api.get("/api/milestones/overrides", { params });
+    return res.data;
+  },
+  create: async (payload) => {
+    const res = await api.post("/api/milestones", payload);
+    return res.data;
+  },
+  update: async (id, payload) => {
+    const res = await api.put(`/api/milestones/${id}`, payload);
+    return res.data;
+  },
+  delete: async (id) => {
+    const res = await api.delete(`/api/milestones/${id}`);
+    return res.data;
   },
 };
 

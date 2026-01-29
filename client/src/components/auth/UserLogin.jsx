@@ -1,23 +1,24 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Users, CheckCircle } from "lucide-react";
+import { Users, CheckCircle, Eye, EyeOff } from "lucide-react";
 import { useAuth } from "@/components/auth/AuthContext";
 
 export default function UserLogin() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [role, setRole] = useState("STU"); // STU | SUV | EXA
+  const [role, setRole] = useState("EXA"); // Default to Examiner to help debug
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [showPassword, setShowPassword] = useState(false);
 
   const navigate = useNavigate();
   const { login } = useAuth();
 
   const roleLabel =
-    role === "STU" ? "Student" : 
-    role === "SUV" ? "Supervisor" : 
-    "Examiner";
+    role === "STU" ? "Student" :
+      role === "SUV" ? "Supervisor" :
+        "Examiner";
 
   async function handleSubmit(e) {
     e.preventDefault();
@@ -27,19 +28,10 @@ export default function UserLogin() {
     try {
       const data = await login(role, { email, password });
 
-      // 🔐 Temporary password enforcement
+      // App.jsx will detect the 'user' change and redirect automatically.
       if (data?.mustChangePassword) {
         navigate(data.redirectUrl, { replace: true });
-        return;
       }
-
-      // 🚦 Redirect by role
-      const dashboardMap = {
-        STU: "/student/dashboard",
-        SUV: "/supervisor/dashboard",
-        EXA: "/examiner/dashboard",
-      };
-      navigate(dashboardMap[role] || "/login", { replace: true });
     } catch (err) {
       const errorMessage = err.response?.data?.error || err.message || "Login failed";
       setError(errorMessage);
@@ -51,19 +43,19 @@ export default function UserLogin() {
   const featureList =
     role === "STU"
       ? [
-          "Thesis Status Tracking",
-          "Supervisor Communication",
-          "Document Submission",
-          "Milestone Monitoring",
-        ]
+        "Thesis Status Tracking",
+        "Supervisor Communication",
+        "Document Submission",
+        "Milestone Monitoring",
+      ]
       : role === "SUV"
-      ? [
+        ? [
           "Student Progress Oversight",
           "Document Approval Workflow",
           "Feedback & Guidance Tools",
           "Reporting & Metrics",
         ]
-      : [
+        : [
           "Thesis Examination",
           "Evaluation Reports",
           "Academic Feedback",
@@ -72,10 +64,11 @@ export default function UserLogin() {
 
   const itemVariants = {
     hidden: { opacity: 0, x: 20 },
-    visible: { 
-      opacity: 1, 
-      x: 0, 
-      transition: { type: "spring", stiffness: 100 } },
+    visible: {
+      opacity: 1,
+      x: 0,
+      transition: { type: "spring", stiffness: 100 }
+    },
   };
 
   return (
@@ -117,11 +110,10 @@ export default function UserLogin() {
                 type="button"
                 onClick={() => setRole(r.id)}
                 disabled={loading}
-                className={`px-6 py-2 rounded-lg font-semibold border-2 transition-all duration-300 shadow-sm ${
-                  role === r.id
-                    ? "bg-blue-600 text-white border-blue-600"
-                    : "bg-white text-blue-600 border-blue-600 hover:bg-blue-50"
-                }`}
+                className={`px-6 py-2 rounded-lg font-semibold border-2 transition-all duration-300 shadow-sm ${role === r.id
+                  ? "bg-blue-600 text-white border-blue-600"
+                  : "bg-white text-blue-600 border-blue-600 hover:bg-blue-50"
+                  }`}
               >
                 {r.label}
               </button>
@@ -150,27 +142,40 @@ export default function UserLogin() {
               <label className="block mb-2 text-sm font-medium text-gray-700">
                 Password
               </label>
-              <motion.input
-                type="password"
-                value={password}
-                disabled={loading}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                whileFocus={{ scale: 1.01 }}
-                placeholder="Enter your password"
-                className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-blue-500 focus:border-blue-500 outline-none transition duration-150"
-              />
+              <div className="relative">
+                <motion.input
+                  type={showPassword ? "text" : "password"}
+                  value={password}
+                  disabled={loading}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  whileFocus={{ scale: 1.01 }}
+                  placeholder="Enter your password"
+                  className="w-full border border-gray-300 rounded-lg px-4 py-3 pr-10 focus:ring-blue-500 focus:border-blue-500 outline-none transition duration-150"
+                />
+
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-3 top-1/2 transform -translate-y-1/2 text-gray-500 hover:text-blue-600 focus:outline-none"
+                >
+                  {showPassword ? (
+                    <EyeOff className="w-5 h-5" />
+                  ) : (
+                    <Eye className="w-5 h-5" />
+                  )}
+                </button>
+              </div>
             </div>
 
             <motion.button
               type="submit"
               disabled={loading}
               whileHover={{ scale: loading ? 1 : 1.02 }}
-              className={`w-full py-3 px-4 bg-blue-600 text-white rounded-lg font-semibold transition duration-200 shadow-md ${
-                loading
-                  ? "opacity-60 cursor-not-allowed"
-                  : "hover:bg-blue-700 shadow-blue-300/50"
-              }`}
+              className={`w-full py-3 px-4 bg-blue-600 text-white rounded-lg font-semibold transition duration-200 shadow-md ${loading
+                ? "opacity-60 cursor-not-allowed"
+                : "hover:bg-blue-700 shadow-blue-300/50"
+                }`}
             >
               {loading ? "Signing in..." : `Sign In as ${roleLabel}`}
             </motion.button>

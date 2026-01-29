@@ -1,4 +1,4 @@
-import { defineConfig } from "vite";
+import { defineConfig, loadEnv } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
 import { componentTagger } from "lovable-tagger";
@@ -6,6 +6,8 @@ import { componentTagger } from "lovable-tagger";
 export default defineConfig(({ command, mode }) => {
   const isDev = command === "serve";
   const isAdmin = mode === "admin";
+  const env = loadEnv(mode, path.resolve(process.cwd(), ".."), "");
+  const API_BASE_URL = env.API_BASE_URL;
 
   return {
     plugins: [
@@ -16,15 +18,20 @@ export default defineConfig(({ command, mode }) => {
         name: 'html-fallback',
         configureServer(server) {
           server.middlewares.use((req, res, next) => {
-            if (req.method === 'GET' && !req.url.includes('.') && !req.url.startsWith('/@')) {
-        // Force the URL to the specific HTML entry point
-        req.url = isAdmin ? '/admin.html' : '/user.html';
-      }
-      next();
-    });
-  },
-},
+            if (req.method === 'GET' && !req.url.includes('.') && !req.url.startsWith('/@') && !req.url.startsWith('/api')) {
+              // Force the URL to the specific HTML entry point
+              req.url = isAdmin ? '/admin.html' : '/user.html';
+            }
+            next();
+          });
+        },
+      },
+
     ].filter(Boolean),
+
+    define: {
+      "import.meta.env.API_BASE_URL": JSON.stringify(API_BASE_URL),
+    },
 
     resolve: {
       alias: {
@@ -34,11 +41,21 @@ export default defineConfig(({ command, mode }) => {
 
     server: isDev
       ? {
-          host: "0.0.0.0",
-          port: isAdmin ? 5174 : 5173,
-          open: isAdmin ? "/admin.html" : "/user.html",
-          strictPort: true,
-        }
+        host: "0.0.0.0",
+        port: isAdmin ? 5174 : 5173,
+        open: !process.env.DOCKER && (isAdmin ? "/admin.html" : "/user.html"),
+        strictPort: true,
+        proxy: {
+          "/api": {
+            target: API_BASE_URL,
+            changeOrigin: true,
+          },
+          "/socket.io": {
+            target: API_BASE_URL,
+            ws: true,
+          },
+        },
+      }
       : undefined,
 
     build: {

@@ -1,36 +1,44 @@
-import { role } from "../config/config.js"; // Class-based model from config.js
-
-const ensureRoleInfomationAccess = (req) => {
-  if (req.user.role_id !== "CGSADM") {
-    const err = new Error("Forbidden: Admin access only");
-    err.status = 403;
-    throw err;
-  }
-};
+import { roles } from "../config/config.js";
+import { sendSuccess, sendError } from "../utils/responseHandler.js";
 
 const allowedAttributes = [
   "role_id",
   "role_name",
-  "Dep_Code"
+  "Dep_Code",
+  "Creation_Date"
 ];
 
 // Get all roles - Admin only
 export const getAllRolesInfo = async (req, res) => {
   try {
-    ensureRoleInfomationAccess(req);
-
-    const rolesInfoAccess = await role.findAll({
-      where: {Dep_Code: "CGS"},
+    const rolesInfoAccess = await roles.findAll({
       attributes: allowedAttributes,
       order: [["Creation_Date", "DESC"]],
     });
-    
-    res.status(200).json({
-      total: rolesInfoAccess.length,
-      rolesInfoAccess
-    });
+
+    return sendSuccess(res, "Roles fetched successfully from database.", rolesInfoAccess);
   } catch (error) {
-    res.status(error.status || 500).json({ 
-      message: error.message || "Failed to fetch roles information" });
-  } 
+    console.error("[GET_ROLES_ERROR]", error);
+    return sendError(res, "Failed to fetch roles information", 500);
+  }
+};
+
+export const getAssignableRoles = async (req, res) => {
+  try {
+    const rolesFromDB = await roles.findAll({
+      where: { Dep_Code: "CGS" },
+      attributes: ["role_id", "role_name"],
+      order: [["role_name", "ASC"]]
+    });
+
+    const formattedRoles = rolesFromDB.map(r => ({
+      id: r.role_id,
+      label: r.role_name
+    }));
+
+    return sendSuccess(res, "Roles fetched successfully from database.", formattedRoles);
+  } catch (error) {
+    console.error("[GET_ROLES_ERROR]", error);
+    return sendError(res, "Failed to fetch assignable roles from system records.", 500);
+  }
 };

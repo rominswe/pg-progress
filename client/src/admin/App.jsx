@@ -12,46 +12,46 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 // Auth
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import { useAuth, AuthProvider } from "@/components/auth/AuthContext";
+import { NotificationProvider } from "@/components/notifications/NotificationProvider";
 import AdminLogin from "@/components/auth/AdminLogin";
 
 // Pages
 import CGSLayout from "@/components/layout/StaffLayout";
 import Profile from "@/components/layout/Profile";
-import CGSDashboard from "@/pages/staff/CGSDashboard";
-import CGSRegisterUsers from "@/pages/staff/CGSRegisterUsers";
-import CGSMonitoring from "@/pages/staff/CGSMonitoring";
-import CGSVerifyDocuments from "@/pages/staff/CGSVerifyDocuments";
-import FormBuilder from "@/pages/staff/FormBuilder";
+import Dashboard from "@/pages/staff/Dashboard";
+import UsersList from "@/pages/staff/UsersList";
+import UserRegistration from "@/pages/staff/UserRegistration";
+import Monitoring from "@/pages/staff/Monitoring";
+import VerifyUserDetail from "@/pages/staff/VerifyUserDetail";
+import AssignUser from "@/pages/staff/AssignUser";
+import UserAssignmentApproval from "@/pages/staff/UserAssignmentApproval";
+import UserAssignmentOverview from "@/pages/staff/UserAssignmentOverview";
+import StudentDetailView from "@/pages/staff/StudentDetailView";
+import MilestonesManagement from "@/pages/staff/MilestonesManagement";
+import ServiceRequestOverview from "@/pages/staff/ServiceRequestOverview";
+import ServiceRequestDetailView from "@/pages/staff/ServiceRequestDetailView";
 
 // Query client
 const queryClient = new QueryClient();
 
 function AppWrapper() {
-  const { user, loading, logout } = useAuth();
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center h-screen text-lg font-semibold">
-        Authenticating AIU PG Progress Portal...
-      </div>
-    );
-  }
+  const { user, loading, isAuthenticated, logout } = useAuth();
 
   return (
     <Routes>
       {/* ===== LOGIN ===== */}
-      <Route 
-      path="/login" 
-      element={(user && ["CGSADM", "CGSS"].includes(user.role_id)) 
-      ? <Navigate to="/cgs/dashboard" replace /> 
-      : <AdminLogin />}/>
+      <Route
+        path="/login"
+        element={(user && ["CGSADM", "CGSS"].includes(user.role_id))
+          ? <Navigate to="/cgs/dashboard" replace />
+          : <AdminLogin />} />
 
       {/* ===== CGS ===== */}
       <Route
         path="/cgs/*"
         element={
           <ProtectedRoute
-            isAuthenticated={!!user}
+            isAuthenticated={isAuthenticated}
             loading={loading}
             userRole={user?.role_id}
             allowedRole={["CGSADM", "CGSS"]}
@@ -62,11 +62,18 @@ function AppWrapper() {
       >
         {/* Sub-routes */}
         <Route index element={<Navigate to="dashboard" replace />} />
-        <Route path="dashboard" element={<CGSDashboard />} />
-        <Route path="register" element={<CGSRegisterUsers />} />
-        <Route path="monitoring" element={<CGSMonitoring />} />
-        <Route path="documents" element={<CGSVerifyDocuments />} />
-        <Route path="forms" element={<FormBuilder />} />
+        <Route path="dashboard" element={<Dashboard />} />
+        <Route path="users" element={<UsersList />} />
+        <Route path="users/:id/verify" element={<VerifyUserDetail />} />
+        <Route path="users/:id/assign" element={<AssignUser />} />
+        <Route path="approvals" element={<UserAssignmentApproval />} />
+        <Route path="register" element={<UserRegistration />} />
+        <Route path="monitoring" element={<Monitoring />} />
+        <Route path="monitoring/student/:id" element={<StudentDetailView />} />
+        <Route path="monitoring/milestones" element={<MilestonesManagement />} />
+        <Route path="service-requests" element={<ServiceRequestOverview />} />
+        <Route path="service-requests/:id" element={<ServiceRequestDetailView />} />
+        <Route path="assignment-overview" element={<UserAssignmentOverview />} />
         <Route path="profile" element={<Profile />} />
       </Route>
 
@@ -80,13 +87,15 @@ export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <Router>
-        <TooltipProvider>
-          <AppWrapper />
-          <Toaster />
-          <Sonner />
-        </TooltipProvider>
-      </Router>
+        <NotificationProvider>
+          <Router>
+            <TooltipProvider>
+              <AppWrapper />
+              <Toaster />
+              <Sonner />
+            </TooltipProvider>
+          </Router>
+        </NotificationProvider>
       </AuthProvider>
     </QueryClientProvider>
   );

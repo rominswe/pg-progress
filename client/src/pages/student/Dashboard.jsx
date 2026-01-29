@@ -1,136 +1,308 @@
-import { useState, useEffect } from "react";
-import api, { authService } from "../../services/api";
-import { FileText, Clock, CheckCircle, TrendingUp, AlertCircle } from "lucide-react";
+import { useNavigate } from "react-router-dom";
+import { FileText, Clock, CheckCircle, TrendingUp, AlertCircle, GraduationCap } from "lucide-react";
+import { motion } from "framer-motion";
+import { useDashboardStats } from "../../hooks/useDashboardStats";
+import { useCalendar } from "../../hooks/useCalendar";
+import CalendarComponent from "../../components/common/CalendarComponent";
 
 const Dashboard = () => {
-  const [stats, setStats] = useState([]);
-  const [recentActivities, setRecentActivities] = useState([]);
-  const [upcomingDeadlines, setUpcomingDeadlines] = useState([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const navigate = useNavigate();
+  const { data, isLoading: statsLoading } = useDashboardStats();
+  const { data: calendarData, isLoading: calendarLoading } = useCalendar('student');
 
-  const fetchDashboardData = async () => {
-    try {
-      setIsLoading(true);
-      const [statsRes, activitiesRes, deadlinesRes] = await Promise.all([
-        api.get("/student/stats"),
-        api.get("/student/activities"),
-        api.get("/student/deadlines"),
-      ]);
+  const userProfile = data?.profile;
+  const statsData = data?.stats?.stats || {};
+  const recentActivity = data?.stats?.recentActivity || [];
+  const calendarEvents = calendarData?.data || [];
 
-      setStats(statsRes.data || []);
-      setRecentActivities(activitiesRes.data || []);
-      setUpcomingDeadlines(deadlinesRes.data || []);
-    } catch (error) {
-      console.error("Error fetching dashboard data:", error);
-    } finally {
-      setIsLoading(false);
+  // Derived Stats Cards
+  const stats = [
+    {
+      title: "Total Documents",
+      value: statsData.totalDocuments?.toString() || "0",
+      icon: FileText,
+      change: "Current semester",
+      color: "blue",
+      link: "/student/uploads"
+    },
+    {
+      title: "Overall Progress",
+      value: `${statsData.progress || 0}%`,
+      icon: TrendingUp,
+      change: statsData.progress === 100 ? "Completed" : "In Progress",
+      color: "blue",
+      link: "/student/uploads"
+    },
+    {
+      title: "Pending Reviews",
+      value: statsData.pendingReviews?.toString() || "0",
+      icon: Clock,
+      change: "Awaiting Feedback",
+      color: "blue",
+      link: "/student/uploads"
+    },
+    {
+      title: "Verified assets",
+      value: statsData.approved?.toString() || "0",
+      icon: CheckCircle,
+      change: "Successfully verified",
+      color: "blue",
+      link: "/student/feedback"
+    },
+  ];
+
+  // Overview Data
+  const overviewData = {
+    progress: statsData.progress || 0,
+    onTrack: Math.floor((statsData.progress || 0) / 20),
+    needAttention: statsData.rejected || 0
+  };
+
+  const containerVariants = {
+    hidden: { opacity: 0 },
+    visible: {
+      opacity: 1,
+      transition: {
+        staggerChildren: 0.1
+      }
     }
   };
 
-  useEffect(() => {
-    fetchDashboardData();
-  }, []);
+  const itemVariants = {
+    hidden: { y: 20, opacity: 0 },
+    visible: {
+      y: 0,
+      opacity: 1
+    }
+  };
 
-  if (isLoading) {
+  if (statsLoading || calendarLoading) {
     return (
-      <div className="flex justify-center items-center h-64 text-gray-500">
-        Loading your dashboard...
+      <div className="flex justify-center items-center h-[80vh] text-slate-400">
+        <div className="flex flex-col items-center gap-4">
+          <div className="w-12 h-12 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
+          <p className="font-medium animate-pulse">Loading dashboard...</p>
+        </div>
       </div>
     );
   }
 
+  // Format Activities
+  const formattedActivities = recentActivity.map(act => ({
+    action: act.action,
+    time: new Date(act.date).toLocaleDateString(),
+    status: "info",
+    details: act.details,
+    link: act.link || "/student/uploads"
+  }));
+
+  const handleActivityClick = (activity) => {
+    if (activity.link) {
+      navigate(activity.link);
+    }
+  };
+
   return (
-    <div className="space-y-6">
+    <motion.div
+      className="space-y-6 max-w-full px-6 mx-auto"
+      variants={containerVariants}
+      initial="hidden"
+      animate="visible"
+    >
       {/* Header */}
-      <div>
-        <h2 className="text-2xl font-bold text-gray-800">Welcome back!</h2>
-        <p className="text-gray-500 mt-1">Here's your research progress overview</p>
+      <div className="bg-gradient-to-r from-blue-700 to-blue-600 rounded-3xl p-6 text-white shadow-xl relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none"></div>
+        <div className="relative z-10">
+          <h2 className="text-2xl font-extrabold tracking-tight mb-1">
+            Welcome back, {userProfile ? userProfile.FirstName : 'Student'}! 👋
+          </h2>
+          <p className="text-blue-100 font-medium text-base">Here's your research progress overview for this semester.</p>
+        </div>
       </div>
 
-      {/* Stats */}
+      {/* Stats Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {stats.map((stat, index) => {
           const Icon = stat.icon || FileText;
+          const colorMap = {
+            blue: "text-blue-600 bg-blue-50",
+            orange: "text-orange-600 bg-orange-50",
+            green: "text-green-600 bg-green-50",
+            purple: "text-purple-600 bg-purple-50"
+          };
+          const colorClass = colorMap[stat.color] || colorMap.blue;
+
           return (
-            <div key={index} className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-sm text-gray-500 font-medium">{stat.title}</p>
-                  <p className="text-2xl font-bold mt-2 text-blue-600">{stat.value}</p>
+            <motion.div
+              key={index}
+              variants={itemVariants}
+              onClick={() => navigate(stat.link)}
+              className="bg-white rounded-2xl p-6 shadow-xl shadow-slate-200/50 border border-slate-100 hover:shadow-2xl hover:shadow-slate-200/80 transition-all duration-300 transform hover:-translate-y-1 cursor-pointer"
+            >
+              <div className="flex items-start justify-between mb-4">
+                <div className={`p-3 rounded-xl ${colorClass}`}>
+                  <Icon className="w-6 h-6" />
                 </div>
-                <div className="w-12 h-12 rounded-lg bg-blue-50 flex items-center justify-center">
-                  <Icon className="w-6 h-6 text-blue-600" />
-                </div>
+                <span className="text-xs font-bold px-2 py-1 rounded-full bg-slate-100 text-slate-500">
+                  {stat.change || 'Stable'}
+                </span>
               </div>
-            </div>
+              <div>
+                <p className="text-sm font-semibold text-slate-500 uppercase tracking-wide">{stat.title}</p>
+                <p className="text-3xl font-extrabold text-slate-900 mt-1">{stat.value}</p>
+              </div>
+            </motion.div>
           );
         })}
       </div>
 
-      {/* Research Progress */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-          <h3 className="text-lg font-semibold text-gray-800 mb-4">Research Progress</h3>
-          {[{ label: "Thesis Writing", value: 70 }, { label: "Data Collection", value: 85 }].map(
-            (progress, i) => (
-              <div key={i} className="mb-4">
-                <div className="flex justify-between text-sm mb-2">
-                  <span className="font-medium text-gray-700">{progress.label}</span>
-                  <span className="text-gray-500">{progress.value}%</span>
-                </div>
-                <div className="w-full bg-gray-200 rounded-full h-2">
-                  <div className="bg-blue-600 h-2 rounded-full" style={{ width: `${progress.value}%` }} />
-                </div>
-              </div>
-            )
-          )}
-        </div>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+        {/* Student Progress Overview */}
+        <motion.div
+          variants={itemVariants}
+          className="bg-white rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 overflow-hidden flex flex-col"
+        >
+          <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+            <h3 className="text-xl font-bold text-slate-800 flex items-center gap-2">
+              <GraduationCap className="w-6 h-6 text-blue-600" />
+              Student Progress Overview
+            </h3>
+            <button
+              onClick={() => navigate('/student/uploads')}
+              className="text-sm font-bold text-blue-600 hover:text-blue-700"
+            >
+              View All
+            </button>
+          </div>
 
-        {/* Deadlines */}
-        <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-          <h3 className="text-lg font-semibold text-gray-800 mb-4">Upcoming Deadlines</h3>
-          {upcomingDeadlines.map((deadline, index) => (
-            <div key={index} className="flex items-start gap-3 pb-4 border-b border-gray-100 last:border-0">
-              <div className={`w-2 h-2 rounded-full mt-2 ${
-                deadline.priority === "high" ? "bg-red-500" :
-                deadline.priority === "medium" ? "bg-orange-500" :
-                "bg-green-500"
-              }`} />
-              <div>
-                <p className="text-sm font-medium text-gray-800">{deadline.task}</p>
-                <p className="text-xs text-gray-500">{deadline.date}</p>
-              </div>
+          <div className="p-8 flex-1">
+            <div className="flex justify-between items-end mb-4">
+              <span className="text-lg font-bold text-slate-800">
+                {userProfile ? `${userProfile.FirstName} ${userProfile.LastName}` : 'Student'}
+              </span>
+              <span className="text-lg font-bold text-slate-900">{overviewData.progress}%</span>
             </div>
-          ))}
-        </div>
-      </div>
 
-      {/* Recent Activities */}
-      <div className="bg-white rounded-xl p-6 shadow-sm border border-gray-100">
-        <h3 className="text-lg font-semibold text-gray-800 mb-4">Recent Activities</h3>
-        {recentActivities.map((activity, index) => (
-          <div key={index} className="flex items-start gap-4 pb-4 border-b border-gray-100 last:border-0">
-            <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
-              activity.status === "success" ? "bg-green-50" :
-              activity.status === "warning" ? "bg-orange-50" :
-              "bg-blue-50"
-            }`}>
-              {activity.status === "success" ? (
-                <CheckCircle className="w-5 h-5 text-green-600" />
-              ) : activity.status === "warning" ? (
-                <AlertCircle className="w-5 h-5 text-orange-600" />
-              ) : (
-                <TrendingUp className="w-5 h-5 text-blue-600" />
-              )}
+            <div className="w-full bg-slate-100 rounded-full h-4 overflow-hidden shadow-inner mb-8">
+              <motion.div
+                initial={{ width: 0 }}
+                animate={{ width: `${overviewData.progress}%` }}
+                transition={{ duration: 1, ease: "easeOut" }}
+                className="bg-blue-600 h-full rounded-full shadow-sm"
+              />
             </div>
-            <div>
-              <p className="text-sm font-medium text-gray-800">{activity.action}</p>
-              <p className="text-xs text-gray-500">{activity.time}</p>
+
+            <div className="grid grid-cols-3 border-t border-slate-100 pt-8 mt-auto">
+              <div className="text-center border-r border-slate-100">
+                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Thesis Progress</p>
+                <p className="text-2xl font-black text-slate-800">{overviewData.progress}%</p>
+              </div>
+              <div className="text-center border-r border-slate-100">
+                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Milestones</p>
+                <p className="text-2xl font-black text-blue-600">{overviewData.onTrack}</p>
+              </div>
+              <div className="text-center">
+                <p className="text-[10px] font-bold text-slate-500 uppercase tracking-widest mb-1">Rejected</p>
+                <p className="text-2xl font-black text-blue-400">{overviewData.needAttention}</p>
+              </div>
             </div>
           </div>
-        ))}
+        </motion.div>
+
+        {/* Quick Recent Activity Sidebar */}
+        <motion.div
+          variants={itemVariants}
+          className="bg-white rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 overflow-hidden"
+        >
+          <div className="p-6 border-b border-slate-100 bg-slate-50/50">
+            <h3 className="text-xl font-bold text-slate-800 flex items-center gap-2">
+              <Clock className="w-5 h-5 text-blue-600" />
+              Latest activity
+            </h3>
+          </div>
+          <div className="p-6">
+            <div className="space-y-4">
+              {formattedActivities.slice(0, 3).map((activity, index) => (
+                <div key={index} className="flex items-start gap-4 p-3 rounded-2xl hover:bg-slate-50 transition-colors">
+                  <div className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center text-blue-600">
+                    <TrendingUp className="w-4 h-4" />
+                  </div>
+                  <div>
+                    <p className="text-sm font-bold text-slate-800">{activity.action}</p>
+                    <p className="text-[10px] font-medium text-slate-400 uppercase tracking-wider">{activity.time}</p>
+                  </div>
+                </div>
+              ))}
+              {formattedActivities.length === 0 && (
+                <p className="text-sm text-slate-400 text-center py-4">No recent activity</p>
+              )}
+            </div>
+          </div>
+        </motion.div>
       </div>
-    </div>
+
+      {/* Full Width Academic Calendar Section */}
+      <motion.div variants={itemVariants} className="w-full">
+        <CalendarComponent events={calendarEvents} type="student" />
+      </motion.div>
+
+
+      {/* Recent Activities - Full Width */}
+      <motion.div
+        variants={itemVariants}
+        className="bg-white rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 overflow-hidden"
+      >
+        <div className="p-8 border-b border-slate-100 bg-slate-50/50">
+          <h3 className="text-xl font-bold text-slate-800">Recent Activity Log</h3>
+        </div>
+        <div className="p-8">
+          {formattedActivities.length === 0 ? (
+            <p className="text-slate-500 text-center">No recent activities found.</p>
+          ) : (
+            <div className="space-y-6">
+              {formattedActivities.map((activity, index) => (
+                <div
+                  key={index}
+                  className="flex items-start gap-5 relative cursor-pointer group"
+                  role="button"
+                  tabIndex={0}
+                  onClick={() => handleActivityClick(activity)}
+                  onKeyDown={(event) => {
+                    if (event.key === "Enter" || event.key === " ") {
+                      handleActivityClick(activity);
+                    }
+                  }}
+                >
+                  {/* Timeline Line */}
+                  {index !== formattedActivities.length - 1 && (
+                    <div className="absolute left-[22px] top-12 bottom-[-24px] w-0.5 bg-slate-100"></div>
+                  )}
+
+                  <div className={`shrink-0 w-12 h-12 rounded-2xl flex items-center justify-center shadow-md ${activity.status === "success" ? "bg-blue-600 text-white shadow-blue-200" :
+                    activity.status === "warning" ? "bg-blue-400 text-white shadow-blue-100" :
+                      "bg-blue-50 text-blue-600 shadow-blue-100"
+                    }`}>
+                    {activity.status === "success" ? (
+                      <CheckCircle className="w-6 h-6" />
+                    ) : activity.status === "warning" ? (
+                      <AlertCircle className="w-6 h-6" />
+                    ) : (
+                      <TrendingUp className="w-6 h-6" />
+                    )}
+                  </div>
+                  <div className="pt-1">
+                    <p className="text-sm font-bold text-slate-900">{activity.action}</p>
+                    <p className="text-xs font-medium text-slate-500 mt-1 flex items-center gap-1">
+                      <Clock className="w-3 h-3" /> {activity.time}
+                    </p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </motion.div>
+    </motion.div>
   );
 };
 

@@ -5,12 +5,10 @@ import { LayoutDashboard, Upload, FileText, TrendingUp, MessageSquare, BarChart3
 
 const studentNav = [
   { name: 'Dashboard', href: '/student/dashboard', icon: LayoutDashboard },
-  { name: 'Service Request', href: '/student/service-request', icon: FilePlus },
-  { name: 'Uploads', href: '/student/uploads', icon: Upload },
-  { name: 'Thesis Submission', href: '/student/thesis-submission', icon: FileText },
+  { name: 'PG-Forms', href: '/student/service-request', icon: FilePlus },
+  { name: 'Thesis and Document Submission', href: '/student/uploads', icon: Upload },
   { name: 'Progress Updates', href: '/student/progress-updates', icon: TrendingUp },
   { name: 'Feedback', href: '/student/feedback', icon: MessageSquare },
-  { name: 'Analytics', href: '/student/analytics', icon: BarChart3 },
 ];
 
 const studentNotifications = [

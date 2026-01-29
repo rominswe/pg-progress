@@ -1,287 +1,387 @@
-import { useState } from "react";
-import { FileText, CheckCircle, XCircle, Eye, Clock } from "lucide-react";
+import { useState, useEffect } from "react";
+import { documentService, API_BASE_URL } from "../../services/api";
+import { FileText, CheckCircle, XCircle, Eye, Clock, Download, Filter, Search, MoreHorizontal } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import Modal from "@/components/ui/modal";
+import { Modal, ModalContent, ModalHeader, ModalTitle } from "@/components/ui/modal";
+import { motion, AnimatePresence } from "framer-motion";
+import { toast } from "sonner";
+import ConfirmRegisterModal from "@/components/modal/ConfirmRegisterModal";
 
 export default function ReviewSubmissions() {
-  // ✅ Hardcoded dummy submissions
-  const [submissions, setSubmissions] = useState([
-    {
-      id: "1",
-      studentName: "Michael Chen",
-      documentType: "Chapter 3 - Methodology",
-      submittedDate: "2024-11-08",
-      status: "pending",
-    },
-    {
-      id: "2",
-      studentName: "Ahmed Hassan",
-      documentType: "Literature Review",
-      submittedDate: "2024-11-09",
-      status: "pending",
-    },
-    {
-      id: "3",
-      studentName: "David Kim",
-      documentType: "Complete Draft Thesis",
-      submittedDate: "2024-11-10",
-      status: "pending",
-    },
-    {
-      id: "4",
-      studentName: "Sarah Williams",
-      documentType: "Research Proposal",
-      submittedDate: "2024-11-05",
-      status: "approved",
-    },
-    {
-      id: "5",
-      studentName: "Jennifer Taylor",
-      documentType: "Chapter 2 - Literature Review",
-      submittedDate: "2024-11-03",
-      status: "rejected",
-    },
-    {
-      id: "6",
-      studentName: "Emily Rodriguez",
-      documentType: "Progress Report",
-      submittedDate: "2024-11-01",
-      status: "approved",
-    },
-  ]);
-
-  const [selectedSubmission, setSelectedSubmission] = useState(null);
-  const [isEvaluationModalOpen, setIsEvaluationModalOpen] = useState(false);
+  const [submissions, setSubmissions] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [filterStatus, setFilterStatus] = useState("all");
+  const [searchTerm, setSearchTerm] = useState("");
+  const [isRejectConfirmOpen, setRejectConfirmOpen] = useState(false);
 
-  const [evaluationForm, setEvaluationForm] = useState({
-    comments: "",
-    score: "",
-  });
+  useEffect(() => {
+    fetchSubmissions();
+  }, []);
 
-  const handleStatusUpdate = (id, status) => {
-    setSubmissions(
-      submissions.map((sub) => (sub.id === id ? { ...sub, status } : sub))
-    );
-  };
-
-  const openEvaluationModal = (submission) => {
-    setSelectedSubmission(submission);
-    setIsEvaluationModalOpen(true);
-    setEvaluationForm({ comments: "", score: "" });
-  };
-
-  const handleSubmitEvaluation = (e) => {
-    e.preventDefault();
-    if (selectedSubmission) {
-      handleStatusUpdate(selectedSubmission.id, "approved");
-      setIsEvaluationModalOpen(false);
-      setSelectedSubmission(null);
+  const fetchSubmissions = async () => {
+    try {
+      const res = await documentService.getSupervisorDocuments();
+      const docs = res.data?.documents || [];
+      const formatted = docs.map(doc => ({
+        id: doc.doc_up_id,
+        studentName: doc.pg_student ? `${doc.pg_student.FirstName} ${doc.pg_student.LastName}` : "Unknown Student",
+        studentId: doc.pg_student?.stu_id || "N/A",
+        documentType: doc.document_type,
+        submittedDate: doc.uploaded_at,
+        status: doc.status.toLowerCase(),
+        file_name: doc.document_name,
+        file_path: doc.file_path,
+      }));
+      setSubmissions(formatted);
+    } catch (err) {
+      console.error("Failed to fetch documents:", err);
+    } finally {
+      setLoading(false);
     }
   };
 
-  const filteredSubmissions =
-    filterStatus === "all"
-      ? submissions
-      : submissions.filter((sub) => sub.status === filterStatus);
+  const [selectedSubmission, setSelectedSubmission] = useState(null);
+  const [isEvaluationModalOpen, setIsEvaluationModalOpen] = useState(false);
+  const [evaluationForm, setEvaluationForm] = useState({ comments: "", score: "" });
+
+  const [reviewAction, setReviewAction] = useState("approved"); // 'approved' or 'rejected'
+  // NEW: State to track which action triggered the modal
+
+  const openEvaluationModal = (submission, action = "approved") => {
+    setSelectedSubmission(submission);
+    setReviewAction(action);
+    setEvaluationForm({ comments: "", score: "" });
+    setIsEvaluationModalOpen(true);
+  };
+
+  // --- API CALLS FOR REVIEW ---
+  const submitReview = async (id, status, score = 0, comments = "") => {
+    try {
+      await documentService.review({
+        doc_up_id: id,
+        status: status === 'rejected' ? 'Rejected' : 'Approved', // Match DB Enum Case
+        score: parseInt(score),
+        comments
+      });
+      // Update local state ONLY on success
+      setSubmissions(
+        submissions.map((sub) => (sub.id === id ? { ...sub, status } : sub))
+      );
+      toast.success(status === 'rejected' ? "Document rejected successfully." : "Document approved successfully.");
+    } catch (err) {
+      console.error("Review failed:", err);
+      toast.error("Failed to submit review: " + (err.response?.data?.error || err.message));
+    }
+  };
+
+  // function deleted
+
+  const processEvaluation = async () => {
+    await submitReview(
+      selectedSubmission.id,
+      reviewAction,
+      evaluationForm.score,
+      evaluationForm.comments
+    );
+    setIsEvaluationModalOpen(false);
+    setSelectedSubmission(null);
+  };
+
+  const handleSubmitEvaluation = async (e) => {
+    e.preventDefault();
+    if (!selectedSubmission) return;
+
+    if (!evaluationForm.score) {
+      toast.error("Please provide a score (0-100).");
+      return;
+    }
+    if (reviewAction === 'rejected' && !evaluationForm.comments.trim()) {
+      toast.error("Comments are required for rejection.");
+      return;
+    }
+
+    if (reviewAction === 'rejected') {
+      setRejectConfirmOpen(true);
+      return;
+    }
+
+    await processEvaluation();
+  };
+
+  const handleRejectConfirmed = async () => {
+    setRejectConfirmOpen(false);
+    await processEvaluation();
+  };
+
+  const handleViewDocument = (filePath) => {
+    if (!filePath) {
+      toast.error("File path not available");
+      return;
+    }
+    // Normalize backslashes to forward slashes for URL usage
+    const normalizedPath = filePath.replace(/\\/g, "/");
+    const docUrl = `${API_BASE_URL}/${normalizedPath}`;
+    window.open(docUrl, "_blank");
+  };
+
+  const filteredSubmissions = submissions.filter((sub) => {
+    const matchesStatus = filterStatus === "all" ? true : sub.status === filterStatus;
+    const matchesSearch = sub.studentName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      sub.documentType.toLowerCase().includes(searchTerm.toLowerCase());
+    return matchesStatus && matchesSearch;
+  });
 
   const getStatusBadge = (status) => {
     const styles = {
-      pending: "bg-yellow-100 text-yellow-700 border-yellow-200",
-      approved: "bg-green-100 text-green-700 border-green-200",
-      rejected: "bg-red-100 text-red-700 border-red-200",
+      pending: "bg-blue-50 text-blue-500 border-blue-100 shadow-sm",
+      approved: "bg-blue-600 text-white border-blue-600 shadow-md shadow-blue-100",
+      rejected: "bg-slate-100 text-slate-500 border-slate-200",
     };
-    return styles[status] || "";
+    return styles[status] || "bg-gray-50 text-gray-700 border-gray-200";
   };
 
   const getStatusIcon = (status) => {
     switch (status) {
-      case "pending":
-        return <Clock size={16} />;
-      case "approved":
-        return <CheckCircle size={16} />;
-      case "rejected":
-        return <XCircle size={16} />;
-      default:
-        return null;
+      case "pending": return <Clock size={14} />;
+      case "approved": return <CheckCircle size={14} />;
+      case "rejected": return <XCircle size={14} />;
+      default: return null;
     }
   };
 
   return (
-    <div className="space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-800">Review Submissions</h1>
-          <p className="text-gray-600 mt-1">Manage and evaluate student submissions</p>
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      className="space-y-6 max-w-full px-6 mx-auto"
+    >
+      {/* Header */}
+      <div className="bg-gradient-to-r from-blue-700 to-blue-600 rounded-3xl p-6 text-white shadow-xl relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-white/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 pointer-events-none"></div>
+        <div className="relative z-10">
+          <h1 className="text-2xl font-extrabold tracking-tight mb-1 flex items-center gap-2">
+            <FileText className="w-7 h-7 text-white" />
+            Review Submissions
+          </h1>
+          <p className="text-blue-100 font-medium text-base">Evaluate and provide feedback on student academic work.</p>
         </div>
       </div>
 
-      <div className="flex gap-3">
-        {["all", "pending", "approved", "rejected"].map((status) => (
-          <button
-            key={status}
-            onClick={() => setFilterStatus(status)}
-            className={`px-4 py-2 rounded-lg font-medium transition-all ${
-              filterStatus === status
-                ? "bg-blue-600 text-white shadow-md"
-                : "bg-white text-gray-700 hover:bg-gray-50 border border-gray-200"
-            }`}
-          >
-            {status.charAt(0).toUpperCase() + status.slice(1)}
-            {status !== "all" && (
-              <span className="ml-2 px-2 py-0.5 text-xs rounded-full bg-white bg-opacity-20">
-                {submissions.filter((s) => s.status === status).length}
-              </span>
-            )}
-          </button>
-        ))}
+      {/* Toolbar */}
+      <div className="flex flex-col md:flex-row gap-4 items-center bg-white p-4 rounded-2xl shadow-lg shadow-slate-200/50 border border-slate-100 sticky top-4 z-10 backdrop-blur-md bg-white/90">
+        <div className="relative flex-1 w-full">
+          <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-slate-400" size={20} />
+          <input
+            type="text"
+            placeholder="Search submissions..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="w-full pl-12 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all font-medium text-slate-700"
+          />
+        </div>
+        <div className="flex gap-2 w-full md:w-auto overflow-x-auto hide-scrollbar">
+          {["all", "pending", "approved", "rejected"].map((status) => (
+            <button
+              key={status}
+              onClick={() => setFilterStatus(status)}
+              className={`px-4 py-2.5 rounded-xl text-sm font-bold transition-all whitespace-nowrap border capitalize flex items-center gap-2 ${filterStatus === status
+                ? "bg-slate-800 text-white border-slate-800 shadow-md"
+                : "bg-white text-slate-600 border-slate-200 hover:bg-slate-50"
+                }`}
+            >
+              {status}
+              {status !== "all" && (
+                <span className={`px-1.5 py-0.5 rounded-md text-[10px] ${filterStatus === status ? 'bg-white/20' : 'bg-slate-100 text-slate-500'}`}>
+                  {submissions.filter((s) => s.status === status).length}
+                </span>
+              )}
+            </button>
+          ))}
+        </div>
       </div>
 
-      <Card>
+      {/* Table Card */}
+      <div className="bg-white rounded-3xl shadow-xl shadow-slate-200/50 border border-slate-100 overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full">
             <thead>
-              <tr className="border-b border-gray-200">
-                <th className="text-left py-3 px-4 font-semibold text-gray-700">Student Name</th>
-                <th className="text-left py-3 px-4 font-semibold text-gray-700">Document Type</th>
-                <th className="text-left py-3 px-4 font-semibold text-gray-700">Submitted Date</th>
-                <th className="text-left py-3 px-4 font-semibold text-gray-700">Status</th>
-                <th className="text-left py-3 px-4 font-semibold text-gray-700">Actions</th>
+              <tr className="bg-slate-50/50 border-b border-slate-100">
+                <th className="text-left py-5 px-6 font-bold text-slate-500 uppercase tracking-wider text-xs">Student</th>
+                <th className="text-left py-5 px-6 font-bold text-slate-500 uppercase tracking-wider text-xs">Document</th>
+                <th className="text-left py-5 px-6 font-bold text-slate-500 uppercase tracking-wider text-xs">Submitted</th>
+                <th className="text-left py-5 px-6 font-bold text-slate-500 uppercase tracking-wider text-xs">Status</th>
+                <th className="text-right py-5 px-6 font-bold text-slate-500 uppercase tracking-wider text-xs">Actions</th>
               </tr>
             </thead>
-            <tbody>
-              {filteredSubmissions.map((submission) => (
-                <tr
-                  key={submission.id}
-                  className="border-b border-gray-100 hover:bg-gray-50 transition-colors"
-                >
-                  <td className="py-4 px-4">{submission.studentName}</td>
-                  <td className="py-4 px-4 flex items-center gap-2">
-                    <FileText size={18} className="text-gray-400" />
-                    {submission.documentType}
-                  </td>
-                  <td className="py-4 px-4 text-gray-600">
-                    {new Date(submission.submittedDate).toLocaleDateString()}
-                  </td>
-                  <td className="py-4 px-4">
-                    <span
-                      className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium border ${getStatusBadge(
-                        submission.status
-                      )}`}
+            <tbody className="divide-y divide-slate-100">
+              <AnimatePresence>
+                {filteredSubmissions.length > 0 ? (
+                  filteredSubmissions.map((submission) => (
+                    <motion.tr
+                      initial={{ opacity: 0 }}
+                      animate={{ opacity: 1 }}
+                      exit={{ opacity: 0 }}
+                      key={submission.id}
+                      className="hover:bg-slate-50/80 transition-colors group"
                     >
-                      {getStatusIcon(submission.status)}
-                      {submission.status.charAt(0).toUpperCase() + submission.status.slice(1)}
-                    </span>
-                  </td>
-                  <td className="py-4 px-4 flex gap-2">
-                    <Button
-                      size="sm"
-                      variant="outline"
-                      onClick={() => alert("View document")}
-                      className="flex items-center gap-1"
-                    >
-                      <Eye size={16} /> View
-                    </Button>
-                    {submission.status === "pending" && (
-                      <>
-                        <Button
-                          size="sm"
-                          variant="success"
-                          onClick={() => openEvaluationModal(submission)}
-                        >
-                          Approve
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="danger"
-                          onClick={() => handleStatusUpdate(submission.id, "rejected")}
-                        >
-                          Reject
-                        </Button>
-                      </>
-                    )}
-                  </td>
-                </tr>
-              ))}
+                      <td className="py-4 px-6">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 bg-slate-100 rounded-full flex items-center justify-center text-slate-500 font-bold text-sm">
+                            {submission.studentName.charAt(0)}
+                          </div>
+                          <div className="flex flex-col">
+                            <span className="font-bold text-slate-800">{submission.studentName}</span>
+                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{submission.studentId}</span>
+                          </div>
+                        </div>
+                      </td>
+                      <td className="py-4 px-6">
+                        <div className="flex flex-col">
+                          <span className="font-semibold text-slate-700">{submission.documentType}</span>
+                          <span className="text-xs text-slate-400 max-w-[200px] truncate">{submission.file_name}</span>
+                        </div>
+                      </td>
+                      <td className="py-4 px-6">
+                        <span className="text-sm font-medium text-slate-500 bg-slate-50 px-3 py-1 rounded-full border border-slate-100">
+                          {new Date(submission.submittedDate).toLocaleDateString()}
+                        </span>
+                      </td>
+                      <td className="py-4 px-6">
+                        <span className={`inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-xs font-bold border capitalize shadow-sm ${getStatusBadge(submission.status)}`}>
+                          {getStatusIcon(submission.status)}
+                          {submission.status}
+                        </span>
+                      </td>
+                      <td className="py-4 px-6">
+                        <div className="flex justify-end gap-2 text-slate-500 relative z-10 pointer-events-auto">
+                          <button
+                            onClick={() => handleViewDocument(submission.file_path)}
+                            className="p-2 text-slate-500 hover:text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
+                            title="View Document"
+                          >
+                            <Eye size={18} />
+                          </button>
+
+                          {submission.status === "pending" && submission.documentType !== "Final Thesis" && (
+                            <>
+                              <button
+                                onClick={() => openEvaluationModal(submission, 'approved')}
+                                className="p-2 text-slate-500 hover:text-green-600 hover:bg-green-50 rounded-lg transition-all"
+                                title="Approve"
+                              >
+                                <CheckCircle size={18} />
+                              </button>
+                              <button
+                                onClick={() => openEvaluationModal(submission, 'rejected')}
+                                className="p-2 text-slate-500 hover:text-red-900 hover:bg-red-50 rounded-lg transition-all"
+                                title="Reject"
+                              >
+                                <XCircle size={18} />
+                              </button>
+                            </>
+                          )}
+                          {submission.documentType === "Final Thesis" && submission.status !== 'approved' && submission.status !== 'completed' && (
+                            <span className="text-xs font-bold text-amber-600 bg-amber-50 px-2 py-1 rounded border border-amber-100">
+                              Evaluate via Defense Form
+                            </span>
+                          )}
+                        </div>
+                      </td>
+                    </motion.tr>
+                  ))
+                ) : (
+                  <tr>
+                    <td colSpan="5" className="py-12 text-center text-slate-400 font-medium">
+                      No submissions found matching your filters.
+                    </td>
+                  </tr>
+                )}
+              </AnimatePresence>
             </tbody>
           </table>
         </div>
-      </Card>
+      </div>
 
       <Modal
-        isOpen={isEvaluationModalOpen}
-        onClose={() => setIsEvaluationModalOpen(false)}
-        title="Submit Evaluation Form"
-        size="md"
+        open={isEvaluationModalOpen}
+        onOpenChange={setIsEvaluationModalOpen}
       >
-        <form onSubmit={handleSubmitEvaluation} className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Student Name</label>
-            <input
-              type="text"
-              value={selectedSubmission?.studentName || ""}
-              disabled
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-600"
-            />
-          </div>
+        <ModalContent className="max-w-md w-full">
+          <ModalHeader>
+            <ModalTitle>Submission Evaluation ({reviewAction.toUpperCase()})</ModalTitle>
+          </ModalHeader>
+          <div className="p-6 pt-0">
+            <form onSubmit={handleSubmitEvaluation} className="space-y-6">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">Student</label>
+                  <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 font-semibold text-slate-700 text-sm">
+                    {selectedSubmission?.studentName}
+                  </div>
+                </div>
+                <div className="space-y-1">
+                  <label className="text-xs font-bold text-slate-500 uppercase tracking-wide">Document</label>
+                  <div className="p-3 bg-slate-50 rounded-xl border border-slate-100 font-semibold text-slate-700 text-sm">
+                    {selectedSubmission?.documentType}
+                  </div>
+                </div>
+              </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Document Type</label>
-            <input
-              type="text"
-              value={selectedSubmission?.documentType || ""}
-              disabled
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg bg-gray-50 text-gray-600"
-            />
-          </div>
+              <div>
+                <label className="block text-sm font-bold text-slate-700 mb-2">Score (0–100)</label>
+                <input
+                  type="number"
+                  min="0"
+                  max="100"
+                  value={evaluationForm.score}
+                  onChange={(e) => setEvaluationForm({ ...evaluationForm, score: e.target.value })}
+                  className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all font-bold text-lg"
+                  placeholder="0"
+                  required
+                />
+              </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">Score (0–100)</label>
-            <input
-              type="number"
-              min="0"
-              max="100"
-              value={evaluationForm.score}
-              onChange={(e) =>
-                setEvaluationForm({ ...evaluationForm, score: e.target.value })
-              }
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              placeholder="Enter score"
-              required
-            />
-          </div>
+              <div>
+                <label className="block text-sm font-bold text-slate-700 mb-2">Feedback & Comments</label>
+                <textarea
+                  value={evaluationForm.comments}
+                  onChange={(e) => setEvaluationForm({ ...evaluationForm, comments: e.target.value })}
+                  className="w-full px-4 py-3 bg-white border border-slate-200 rounded-xl focus:ring-4 focus:ring-blue-500/10 focus:border-blue-500 outline-none transition-all resize-none font-medium"
+                  rows={5}
+                  placeholder="Provide constructive feedback..."
+                  required
+                />
+              </div>
 
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Comments and Feedback
-            </label>
-            <textarea
-              value={evaluationForm.comments}
-              onChange={(e) =>
-                setEvaluationForm({ ...evaluationForm, comments: e.target.value })
-              }
-              className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
-              rows={6}
-              placeholder="Provide detailed feedback..."
-              required
-            />
+              <div className="flex gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setIsEvaluationModalOpen(false)}
+                  className="flex-1 py-3 border border-slate-200 text-slate-600 rounded-xl font-bold hover:bg-slate-50 transition-colors"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="flex-1 py-3 bg-blue-600 text-white rounded-xl font-bold hover:bg-blue-700 hover:shadow-lg transition-all"
+                >
+                  Submit Evaluation
+                </button>
+              </div>
+            </form>
           </div>
-
-          <div className="flex justify-end gap-3 pt-4">
-            <Button
-              type="button"
-              variant="outline"
-              onClick={() => setIsEvaluationModalOpen(false)}
-            >
-              Cancel
-            </Button>
-            <Button type="submit" variant="success">
-              Submit Evaluation
-            </Button>
-          </div>
-        </form>
+        </ModalContent>
       </Modal>
-    </div>
+      <ConfirmRegisterModal
+        open={isRejectConfirmOpen}
+        onOpenChange={(open) => !open && setRejectConfirmOpen(false)}
+        title="Confirm Rejection"
+        description="Are you sure you want to reject this submission?"
+        confirmText="Reject"
+        cancelText="Cancel"
+        onConfirm={handleRejectConfirmed}
+      />
+    </motion.div>
   );
 }
