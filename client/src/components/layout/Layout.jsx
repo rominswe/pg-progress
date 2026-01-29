@@ -15,6 +15,7 @@ import { useAuth } from '../../components/auth/AuthContext';
 import { useNotifications } from '../../components/notifications/NotificationProvider';
 import { API_BASE_URL } from '../../services/api';
 import { extendSessionMeta, getSessionMeta, refreshSessionActivity, clearSessionMeta } from '../../lib/sessionTimeout';
+import { toast } from 'sonner';
 
 const SESSION_REMINDER_OFFSET = 15 * 60 * 1000;
 const INACTIVITY_LIMIT = 15 * 60 * 1000;
@@ -114,6 +115,17 @@ export default function Layout({
     }
     if (n.link) {
       navigate(n.link);
+    }
+  };
+
+  const handleDismissAll = async () => {
+    if (!notifications.length) return;
+    try {
+      await dismissAll();
+      toast.success("All notifications dismissed.");
+    } catch (err) {
+      console.error("Failed to dismiss all notifications:", err);
+      toast.error("Failed to dismiss notifications.");
     }
   };
 
@@ -295,12 +307,15 @@ export default function Layout({
                 <div className="bg-slate-50/50 p-4 border-b border-slate-100 flex items-center justify-between">
                   <h4 className="text-sm font-bold text-slate-800">Notifications</h4>
                   {notifications.length > 0 && (
-                    <button
-                      onClick={dismissAll}
-                      className="text-[10px] font-bold text-blue-600 hover:text-blue-700 hover:underline px-2 py-1"
-                    >
-                      Dismiss All
-                    </button>
+                    <DropdownMenuItem className="px-0 py-0">
+                      <button
+                        type="button"
+                        onClick={handleDismissAll}
+                        className="w-full text-left px-4 py-1 text-[10px] font-bold text-blue-600 hover:text-blue-700 hover:underline"
+                      >
+                        Dismiss All
+                      </button>
+                    </DropdownMenuItem>
                   )}
                 </div>
                 <div className="max-h-96 overflow-y-auto">

@@ -42,7 +42,11 @@ function SupervisorReviewForm({ studentData, onDecision, onBack }) {
 
     const handleInputChange = (e) => {
         const { name, value } = e.target;
-        setReviewData(prev => ({ ...prev, [name]: value }));
+        let newValue = value;
+        if (name === 'signature') {
+            newValue = value.toUpperCase();
+        }
+        setReviewData(prev => ({ ...prev, [name]: newValue }));
         if (errors[name]) setErrors(prev => ({ ...prev, [name]: '' }));
     };
 
@@ -82,7 +86,7 @@ function SupervisorReviewForm({ studentData, onDecision, onBack }) {
             <div className="bg-gradient-to-r from-blue-700 to-blue-600 rounded-3xl p-6 text-white shadow-xl relative overflow-hidden">
                 <button
                     onClick={onBack}
-                    className="absolute top-6 right-6 flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-xl transition-all font-medium text-sm backdrop-blur-sm"
+                    className="absolute top-6 right-6 z-20 flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-xl transition-all font-medium text-sm backdrop-blur-sm"
                 >
                     <ChevronLeft size={16} /> Back to List
                 </button>

@@ -5,6 +5,7 @@ import { Progress } from '../../components/ui/progress';
 import { Badge } from '../../components/ui/badge';
 import { Activity, Users, Search, Filter, ArrowUpRight, Clock, ShieldCheck, Loader2 } from 'lucide-react';
 import { motion } from "framer-motion";
+import { Button } from "../../components/ui/button";
 import {
   Table,
   TableBody,
@@ -37,8 +38,8 @@ export default function CGSMonitoring() {
 
   // Generic status helper based on progress
   const getDerivedStatus = (progress) => {
-    if (progress >= 80) return 'On Track';
-    if (progress >= 50) return 'Delayed'; // Logic: 50-79 is acceptable but maybe delayed? Or "In Progress"
+    if (progress >= 60) return 'On Track';
+    if (progress >= 30) return 'Delayed';
     return 'At Risk';
   };
 
@@ -161,6 +162,9 @@ export default function CGSMonitoring() {
             >
               Download Report
             </button>
+            <Button variant="secondary" asChild className="px-6 py-3 font-bold">
+              <Link to="/cgs/monitoring/milestones">Manage Milestones</Link>
+            </Button>
           </div>
         </div>
       </div>

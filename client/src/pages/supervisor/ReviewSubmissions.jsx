@@ -26,6 +26,7 @@ export default function ReviewSubmissions() {
       const formatted = docs.map(doc => ({
         id: doc.doc_up_id,
         studentName: doc.pg_student ? `${doc.pg_student.FirstName} ${doc.pg_student.LastName}` : "Unknown Student",
+        studentId: doc.pg_student?.stu_id || "N/A",
         documentType: doc.document_type,
         submittedDate: doc.uploaded_at,
         status: doc.status.toLowerCase(),
@@ -229,7 +230,10 @@ export default function ReviewSubmissions() {
                           <div className="w-10 h-10 bg-slate-100 rounded-full flex items-center justify-center text-slate-500 font-bold text-sm">
                             {submission.studentName.charAt(0)}
                           </div>
-                          <span className="font-bold text-slate-800">{submission.studentName}</span>
+                          <div className="flex flex-col">
+                            <span className="font-bold text-slate-800">{submission.studentName}</span>
+                            <span className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">{submission.studentId}</span>
+                          </div>
                         </div>
                       </td>
                       <td className="py-4 px-6">

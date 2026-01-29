@@ -235,7 +235,7 @@ export default function UserDetailCard({ user, onRegister, onReactivate, loading
                     <PopoverContent className="p-0 w-[200px] bg-white shadow-xl border" align="start">
                       <Command>
                         <CommandInput placeholder="Search country..." />
-                        <CommandList className="max-h-[200px]">
+                        <CommandList className="max-h-[300px]">
                           <CommandEmpty>No country found.</CommandEmpty>
                           <CommandGroup>
                             {countryList.map((country) => (

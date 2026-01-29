@@ -13,7 +13,7 @@ export const getStudentById = async (req, res) => {
                     { stu_id: id }
                 ]
             },
-            attributes: ['pgstud_id', 'FirstName', 'LastName', 'stu_id']
+            attributes: ['pgstud_id', 'FirstName', 'LastName', 'stu_id', 'Semester']
         });
 
         if (!student) return sendError(res, 'Student not found', 404);
@@ -32,6 +32,7 @@ export const getStudentById = async (req, res) => {
             name: `${student.FirstName} ${student.LastName}`,
             pgstud_id: student.pgstud_id,
             stu_id: student.stu_id,
+            semester: student.Semester,
             finalThesisStatus: finalThesis ? finalThesis.status : null
         });
     } catch (err) {

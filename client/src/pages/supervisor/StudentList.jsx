@@ -20,28 +20,32 @@ export default function StudentList() {
 
       let matchesProgress = true;
       if (progressFilter === 'low') matchesProgress = student.progress < 30;
-      if (progressFilter === 'medium') matchesProgress = student.progress >= 30 && student.progress <= 70;
-      if (progressFilter === 'high') matchesProgress = student.progress > 70;
+      if (progressFilter === 'delayed') matchesProgress = student.progress >= 30 && student.progress < 60;
+      if (progressFilter === 'medium') matchesProgress = student.progress >= 60 && student.progress < 80;
+      if (progressFilter === 'high') matchesProgress = student.progress >= 80;
 
       return matchesSearch && matchesProgress;
     });
   }, [students, searchTerm, progressFilter]);
 
   const getProgressColor = (progress) => {
-    if (progress > 70) return 'text-green-700 bg-green-50 border-green-200';
-    if (progress >= 30) return 'text-blue-600 bg-blue-50 border-blue-200';
+    if (progress >= 80) return 'text-green-700 bg-green-50 border-green-200';
+    if (progress >= 60) return 'text-blue-600 bg-blue-50 border-blue-200';
+    if (progress >= 30) return 'text-orange-600 bg-orange-50 border-orange-200';
     return 'text-red-500 bg-red-50 border-red-200';
   };
 
   const getProgressBg = (progress) => {
-    if (progress > 70) return 'bg-green-600 shadow-green-200';
-    if (progress >= 30) return 'bg-blue-600 shadow-blue-200';
+    if (progress >= 80) return 'bg-green-600 shadow-green-200';
+    if (progress >= 60) return 'bg-blue-600 shadow-blue-200';
+    if (progress >= 30) return 'bg-orange-500 shadow-orange-200';
     return 'bg-red-500 shadow-red-200';
   };
 
   const getStatusLabel = (progress) => {
-    if (progress > 70) return 'High Progress';
-    if (progress >= 30) return 'On Track';
+    if (progress >= 80) return 'High Progress';
+    if (progress >= 60) return 'On Track';
+    if (progress >= 30) return 'Delayed';
     return 'At Risk';
   };
 
@@ -78,6 +82,7 @@ export default function StudentList() {
             { id: 'all', label: 'All Students' },
             { id: 'high', label: 'High Progress' },
             { id: 'medium', label: 'On Track' },
+            { id: 'delayed', label: 'Delayed' },
             { id: 'low', label: 'At Risk' }
           ].map((filter) => (
             <button
@@ -115,7 +120,7 @@ export default function StudentList() {
                 <div className="flex flex-col lg:flex-row lg:items-center gap-6">
                   {/* Avatar */}
                   <div className="flex-shrink-0">
-                    <div className={`w-20 h-20 rounded-2xl flex items-center justify-center text-white font-bold text-2xl shadow-lg transition-transform group-hover:scale-105 ${student.progress > 70 ? 'bg-gradient-to-br from-green-500 to-green-600 shadow-green-200' : student.progress >= 30 ? 'bg-gradient-to-br from-blue-500 to-blue-600 shadow-blue-200' : 'bg-gradient-to-br from-red-500 to-red-600 shadow-red-200'}`}>
+                    <div className={`w-20 h-20 rounded-2xl flex items-center justify-center text-white font-bold text-2xl shadow-lg transition-transform group-hover:scale-105 ${student.progress >= 80 ? 'bg-gradient-to-br from-green-500 to-green-600 shadow-green-200' : student.progress >= 60 ? 'bg-gradient-to-br from-blue-500 to-blue-600 shadow-blue-200' : student.progress >= 30 ? 'bg-gradient-to-br from-orange-400 to-orange-500 shadow-orange-100' : 'bg-gradient-to-br from-red-500 to-red-600 shadow-red-200'}`}>
                       {student.name.split(' ').map((n) => n[0]).join('').substring(0, 2)}
                     </div>
                   </div>
@@ -126,6 +131,7 @@ export default function StudentList() {
                       <div className="flex items-center gap-2 mb-1">
                         <span className="bg-slate-100 text-slate-500 text-xs font-bold px-2 py-0.5 rounded border border-slate-200">{student.id}</span>
                         {student.program && <span className="bg-slate-100 text-slate-500 text-xs font-bold px-2 py-0.5 rounded border border-slate-200">{student.program}</span>}
+                        {student.semester && <span className="bg-slate-100 text-slate-500 text-xs font-bold px-2 py-0.5 rounded border border-slate-200">Sem {student.semester}</span>}
                       </div>
                       <h3 className="text-xl font-bold text-slate-900 group-hover:text-blue-600 transition-colors">{student.name}</h3>
                       <p className="text-sm font-medium text-slate-500 flex items-center gap-2">
@@ -161,10 +167,10 @@ export default function StudentList() {
                     </div>
 
                     <div className="flex items-end gap-2 mb-2">
-                      <span className={`text-4xl font-extrabold ${student.progress > 70 ? 'text-green-600' : student.progress >= 30 ? 'text-blue-600' : 'text-red-500'}`}>
+                      <span className={`text-4xl font-extrabold ${student.progress >= 80 ? 'text-green-600' : student.progress >= 60 ? 'text-blue-600' : student.progress >= 30 ? 'text-orange-500' : 'text-red-500'}`}>
                         {student.progress}%
                       </span>
-                      <TrendingUp size={20} className={`mb-1.5 ${student.progress > 70 ? 'text-green-500' : student.progress >= 30 ? 'text-blue-500' : 'text-red-400'}`} />
+                      <TrendingUp size={20} className={`mb-1.5 ${student.progress >= 80 ? 'text-green-500' : student.progress >= 60 ? 'text-blue-500' : student.progress >= 30 ? 'text-orange-400' : 'text-red-400'}`} />
                     </div>
 
                     <div className="w-full bg-slate-200 rounded-full h-2.5 overflow-hidden">

@@ -3,7 +3,6 @@ import { documentService } from "@/services/api";
 import { useAuth } from "@/components/auth/AuthContext";
 import { UploadCloud, FileText, CheckCircle, Clock, Circle, FolderOpen, Eye, AlertCircle, MessageSquare, User } from "lucide-react";
 import { motion } from "framer-motion";
-
 export default function Uploads() {
   const { user } = useAuth();
   const [files, setFiles] = useState([]);

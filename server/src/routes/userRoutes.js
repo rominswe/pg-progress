@@ -47,9 +47,9 @@ router.get("/program/assignable", protect, requireRole("CGSADM", "CGSS"), getAss
 router.get("/dashboard/recent-activity", protect, requireRole("CGSADM", "CGSS", "SUV", "EXA"), getRecentActivity);
 
 // ================= ACADEMIC CREDENTIALS METADATA =================
-router.get("/academic-credentials/qualifications", protect, requireRole("CGSADM", "CGSS"), getQualifications);
-router.get("/academic-credentials/expertise", protect, requireRole("CGSADM", "CGSS"), getExpertise);
-router.get("/academic-credentials/staff-metadata", protect, requireRole("CGSADM", "CGSS"), getStaffCredentialsMetadata);
+router.get("/academic-credentials/qualifications", protect, requireRole("CGSADM", "CGSS", "SUV", "EXA", "EMP"), getQualifications);
+router.get("/academic-credentials/expertise", protect, requireRole("CGSADM", "CGSS", "SUV", "EXA", "EMP"), getExpertise);
+router.get("/academic-credentials/staff-metadata", protect, requireRole("CGSADM", "CGSS", "SUV", "EXA", "EMP"), getStaffCredentialsMetadata);
 
 // ================= UNIVERSITY METADATA =================
 router.get("/universities/search", protect, getUniversities);

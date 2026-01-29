@@ -36,7 +36,7 @@ export const registerStudent = async (data, transaction) => {
     const {
         Prog_Code, EmailId, staffType, identifier,
         FirstName, LastName, Gender, Dob, Address, Phonenumber, Country, Passport,
-        Acad_Year, Exp_GraduatedYear
+        Acad_Year, Exp_GraduatedYear, Semester
     } = data;
 
     // Verify Program
@@ -79,6 +79,7 @@ export const registerStudent = async (data, transaction) => {
         role_id: 'STU',
         role_level,
         Status: 'Pending',
+        Semester: Semester || 1,
         Password: tempPassword,
         RegDate: new Date(),
         EndDate: EndDate,

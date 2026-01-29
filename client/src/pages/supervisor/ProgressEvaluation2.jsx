@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { ClipboardCheck, User, BookOpen, Send, X, Clock, History, Calendar, Star, ChevronRight } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { toast } from 'sonner';
 import { evaluationService } from '../../services/api';
 
 const ProgressEvaluation2 = () => {
@@ -39,7 +40,7 @@ const ProgressEvaluation2 = () => {
     // State for Final Thesis Status check
     const [finalThesisStatus, setFinalThesisStatus] = useState(null);
 
-    // Auto-fill student name when ID is entered
+    // Auto-fill student name and semester when ID is entered
     useEffect(() => {
         const lookupStudent = async () => {
             // Trigger lookup if ID is at least 3 characters long
@@ -47,19 +48,30 @@ const ProgressEvaluation2 = () => {
                 try {
                     setIsSearching(true);
                     const res = await evaluationService.getStudentById(formData.studentId);
-                    if (res?.data?.name) {
-                        setFormData(prev => ({ ...prev, studentName: res.data.name }));
+                    if (res?.data) {
+                        setFormData(prev => ({
+                            ...prev,
+                            studentName: res.data.name || '',
+                            semester: res.data.semester || '',
+                            // Normalize studentId to the display ID version (stu_id)
+                            studentId: res.data.stu_id || prev.studentId
+                        }));
                         setErrors(prev => ({ ...prev, studentId: '' }));
                         // Store thesis status
                         setFinalThesisStatus(res.data.finalThesisStatus);
                     }
                 } catch (error) {
-                    // Log error but don't clear name yet (user might be still typing)
-                    console.error('Lookup student error:', error);
+                    // Clear secondary fields on error/not found but keep ID so they can correct it
+                    setFormData(prev => ({ ...prev, studentName: '', semester: '' }));
                     setFinalThesisStatus(null);
+                    console.error('Lookup student error:', error);
                 } finally {
                     setIsSearching(false);
                 }
+            } else if (!formData.studentId || formData.studentId.length === 0) {
+                // Fully clear if ID is wiped
+                setFormData(prev => ({ ...prev, studentName: '', semester: '' }));
+                setFinalThesisStatus(null);
             }
         };
 
@@ -80,7 +92,19 @@ const ProgressEvaluation2 = () => {
     };
 
     const handleChange = (e) => {
-        const { name, value } = e.target;
+        let { name, value } = e.target;
+
+        // Strictly prevent manual edits to Student Name and Semester if a Student ID is present
+        // This ensures the data stays synchronized with the database lookup
+        // Strictly prevent manual edits to Student Name and Semester
+        if (name === 'studentName' || name === 'semester') {
+            return;
+        }
+        // Capitalize Supervisor Name for normalization
+        if (name === 'supervisorName') {
+            value = value.toUpperCase();
+        }
+
         setFormData(prev => ({ ...prev, [name]: value }));
         if (errors[name]) {
             setErrors(prev => ({ ...prev, [name]: '' }));
@@ -149,33 +173,26 @@ const ProgressEvaluation2 = () => {
         } catch (error) {
             console.error('Error submitting evaluation:', error);
 
-            // Handle specific error cases
             const errorData = error.response?.data;
 
             if (errorData?.error === 'Final Thesis Not Submitted') {
-                // Student hasn't submitted thesis draft
-                alert(
-                    `❌ Evaluation Not Allowed\n\n` +
-                    `${errorData.message}\n\n` +
-                    `Please ask the student to submit their Final Thesis before proceeding with the evaluation.`
+                toast.error(
+                    'Evaluation not allowed: ' +
+                    errorData.message +
+                    '. Please ask the student to submit their Final Thesis before proceeding.'
                 );
             } else if (errorData?.error === 'Student Not Found') {
-                // Student doesn't exist
-                alert(
-                    `❌ Student Not Found\n\n` +
-                    `${errorData.message}\n\n` +
-                    `Please check the Student ID and try again.`
+                toast.error(
+                    'Student not found: ' +
+                    errorData.message +
+                    '. Please verify the Student ID and try again.'
                 );
             } else if (errorData?.error === 'Final Thesis Not Approved') {
-                // Thesis draft not approved yet
-                alert(
-                    `⏳ Final Thesis Pending Approval\n\n` +
-                    `${errorData.message}`
-                );
+                toast.error('Final Thesis pending approval: ' + errorData.message);
             } else {
-                // Generic error
-                const errorMessage = errorData?.error || errorData?.message || error.message || 'Failed to submit evaluation. Please try again.';
-                alert(`❌ Error\n\n${errorMessage}`);
+                const errorMessage =
+                    errorData?.error || errorData?.message || error.message || 'Failed to submit evaluation. Please try again.';
+                toast.error('Error: ' + errorMessage);
             }
         } finally {
             setIsSubmitting(false);
@@ -235,12 +252,12 @@ const ProgressEvaluation2 = () => {
                                             name="studentName"
                                             value={formData.studentName}
                                             onChange={handleChange}
-                                            readOnly={!!formData.studentName && formData.studentId.length >= 3}
-                                            className={`w-full px-4 py-3 rounded-xl border-2 ${errors.studentName ? 'border-red-400 bg-red-50' : formData.studentName && formData.studentId.length >= 3 ? 'border-blue-100 bg-blue-50/20' : 'border-gray-200 bg-gray-50'} focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all`}
-                                            placeholder={isSearching ? "Finding student..." : "Enter student's full name"}
+                                            readOnly={true}
+                                            className={`w-full px-4 py-3 rounded-xl border-2 ${errors.studentName ? 'border-red-400 bg-red-50' : 'border-gray-200 bg-gray-100 text-gray-500 cursor-not-allowed'} focus:border-gray-200 focus:ring-0 outline-none transition-all`}
+                                            placeholder="Auto-filled from Student ID"
                                         />
                                         {errors.studentName && <p className="mt-1 text-sm text-red-500">⚠ {errors.studentName}</p>}
-                                        {formData.studentName && formData.studentId.length >= 3 && (
+                                        {formData.studentName && formData.studentId && (
                                             <p className="mt-1 text-[10px] font-bold text-blue-600 uppercase tracking-widest flex items-center gap-1">
                                                 <ClipboardCheck className="w-3 h-3" /> User Found
                                             </p>
@@ -258,7 +275,7 @@ const ProgressEvaluation2 = () => {
                                                 value={formData.studentId}
                                                 onChange={handleChange}
                                                 className={`w-full px-4 py-3 rounded-xl border-2 ${errors.studentId ? 'border-red-400 bg-red-50' : 'border-gray-200 bg-gray-50'} focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all`}
-                                                placeholder="e.g., PG2023001"
+                                                placeholder="e.g., AIU000100"
                                             />
                                             {isSearching && (
                                                 <div className="absolute right-4 top-1/2 -translate-y-1/2">
@@ -301,8 +318,9 @@ const ProgressEvaluation2 = () => {
                                             name="semester"
                                             value={formData.semester}
                                             onChange={handleChange}
-                                            className={`w-full px-4 py-3 rounded-xl border-2 ${errors.semester ? 'border-red-400 bg-red-50' : 'border-gray-200 bg-gray-50'} focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10 outline-none transition-all`}
-                                            placeholder="e.g., Oct 2025/2026"
+                                            readOnly={true}
+                                            className={`w-full px-4 py-3 rounded-xl border-2 ${errors.semester ? 'border-red-400 bg-red-50' : 'border-gray-200 bg-gray-100 text-gray-500 cursor-not-allowed'} focus:border-gray-200 focus:ring-0 outline-none transition-all`}
+                                            placeholder="Auto-filled from Student ID"
                                         />
                                         {errors.semester && <p className="mt-1 text-sm text-red-500">⚠ {errors.semester}</p>}
                                     </div>
@@ -497,8 +515,12 @@ const ProgressEvaluation2 = () => {
                                     >
                                         <div className="flex items-start justify-between mb-2">
                                             <div>
-                                                <p className="font-bold text-gray-900 group-hover:text-blue-700 transition-colors">{record.student_name}</p>
-                                                <p className="text-xs text-gray-500 font-medium">ID: {record.student_id}</p>
+                                                <p className="font-bold text-gray-900 group-hover:text-blue-700 transition-colors">
+                                                    {record.pg_student ? `${record.pg_student.FirstName} ${record.pg_student.LastName}` : (record.student_name || 'Unknown Student')}
+                                                </p>
+                                                <p className="text-xs text-gray-500 font-medium">
+                                                    ID: {record.pg_student?.stu_id || record.stu_id || record.student_id}
+                                                </p>
                                             </div>
                                             <div className="flex items-center gap-1 bg-blue-50 text-blue-700 px-2 py-0.5 rounded-lg border border-blue-100">
                                                 <Star className="w-3 h-3 fill-current" />

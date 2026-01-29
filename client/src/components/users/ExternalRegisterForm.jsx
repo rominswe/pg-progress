@@ -69,41 +69,18 @@ export default function ExternalRegisterForm({ onRegister, isSubmitting }) {
         fetchInitialData();
     }, []);
 
-    // Reset expertise selection if department changes to an incompatible one
-    useEffect(() => {
-        if (!form.Dep_Code) {
-            if (form.expertise_codes.length > 0) {
-                setForm(p => ({ ...p, expertise_codes: [] }));
-            }
-            return;
-        }
-
-        const validCodes = form.expertise_codes.filter(code => {
-            const exp = metadata.expertise.find(e => e.expertise_code === code);
-            return !exp || exp.Dep_Code === form.Dep_Code;
-        });
-
-        if (validCodes.length !== form.expertise_codes.length) {
-            setForm(p => ({ ...p, expertise_codes: validCodes }));
-            toast.error("Some selected expertise areas were removed as they are not valid for the new department.");
-        }
-    }, [form.Dep_Code]);
 
     const expertiseOptions = useMemo(() => {
         return metadata.expertise.map(e => {
-            const isDisabled = !form.Dep_Code || e.Dep_Code !== form.Dep_Code;
             const dept = departments.find(d => d.Dep_Code === e.Dep_Code);
             const deptName = dept ? dept.DepartmentName : e.Dep_Code;
 
             return {
                 ...e,
-                isDisabled,
-                tooltip: isDisabled
-                    ? (!form.Dep_Code ? "Please select a department first." : `Only available for ${deptName}`)
-                    : null
+                deptName
             };
         });
-    }, [metadata.expertise, form.Dep_Code, departments]);
+    }, [metadata.expertise, departments]);
 
     const handleChange = (field, value) => {
         setForm((prev) => ({ ...prev, [field]: value }));
@@ -375,18 +352,15 @@ export default function ExternalRegisterForm({ onRegister, isSubmitting }) {
                                     }
                                 }}>
                                     <SelectTrigger className="bg-white">
-                                        <SelectValue placeholder={form.Dep_Code ? "Add expertise specialization..." : "Please select a department first"} />
+                                        <SelectValue placeholder="Add expertise specialization..." />
                                     </SelectTrigger>
                                     <SelectContent className="bg-white max-h-[300px]">
                                         {expertiseOptions.map(e => (
                                             <SelectItem
                                                 key={e.expertise_code}
                                                 value={e.expertise_code}
-                                                disabled={e.isDisabled}
-                                                title={e.tooltip}
-                                                className={cn(e.isDisabled && "opacity-50 cursor-not-allowed")}
                                             >
-                                                {e.expertise_name}
+                                                {e.expertise_name} ({e.deptName})
                                             </SelectItem>
                                         ))}
                                     </SelectContent>

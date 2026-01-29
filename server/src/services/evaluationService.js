@@ -5,25 +5,34 @@ import {
     documents_uploads,
     pgstaffinfo,
     defense_evaluations,
-    milestone_deadlines,
+    milestones,
     role_assignment,
     program_info,
     sequelize
 } from "../config/config.js";
 import notificationService from "./notificationService.js";
 import roleAssignmentService from "./roleAssignmentService.js";
+import milestoneService from "./milestoneService.js";
 
 class EvaluationService {
     // --- Defense Evaluations ---
 
     async createDefenseEvaluation(data) {
-        // Validation: Student exists
-        const student = await pgstudinfo.findByPk(data.pg_student_id);
+        // Validation: Student exists (Supporting both PGID and STU_ID)
+        let student = await pgstudinfo.findByPk(data.pg_student_id);
+
+        if (!student) {
+            student = await pgstudinfo.findOne({ where: { stu_id: data.pg_student_id } });
+        }
+
         if (!student) {
             const error = new Error(`Student with ID "${data.pg_student_id}" does not exist.`);
             error.status = 404;
             throw error;
         }
+
+        // Normalize ID to pgstud_id for subsequent queries and storage
+        data.pg_student_id = student.pgstud_id;
 
         // Validation: If Final Thesis, check if submitted
         if (data.defense_type === 'Final Thesis') {
@@ -124,8 +133,6 @@ class EvaluationService {
             }
         });
 
-        if (!student) return [];
-
         return defense_evaluations.findAll({
             where: { pg_student_id: student.pgstud_id },
             order: [['evaluation_date', 'DESC']]
@@ -138,7 +145,7 @@ class EvaluationService {
                 model: pgstudinfo,
                 as: 'pg_student',
                 required: true,
-                attributes: ['FirstName', 'LastName', 'EmailId']
+                attributes: ['FirstName', 'LastName', 'EmailId', 'stu_id']
             }],
             order: [['evaluation_date', 'DESC']]
         });
@@ -329,11 +336,29 @@ class EvaluationService {
     }
 
     async getStudentDetailViewData(studentId) {
-        const student = await pgstudinfo.findByPk(studentId, {
+        // Resolve student PK first to ensure consistent lookups
+        const studentRecord = await pgstudinfo.findOne({
+            where: {
+                [Op.or]: [
+                    { pgstud_id: studentId },
+                    { stu_id: studentId }
+                ]
+            }
+        });
+
+        if (!studentId || !studentRecord) {
+            const error = new Error("Student not found");
+            error.status = 404;
+            throw error;
+        }
+
+        const pk = studentRecord.pgstud_id;
+
+        const student = await pgstudinfo.findByPk(pk, {
             include: [
                 { model: progress_updates, as: 'progress_updates', order: [['submission_date', 'DESC']] },
                 { model: documents_uploads, as: 'documents_uploads', order: [['uploaded_at', 'DESC']] },
-                { model: milestone_deadlines, as: 'milestone_deadlines', order: [['deadline_date', 'ASC']] },
+                { model: milestones, as: 'milestone_overrides', order: [['deadline_date', 'ASC']] },
                 { model: program_info, as: 'Prog_Code_program_info', attributes: ['prog_name'] }
             ]
         });
@@ -356,34 +381,19 @@ class EvaluationService {
     async updateMilestoneDeadline(data) {
         const { pg_student_id, milestone_name, deadline_date, reason, updated_by } = data;
 
-        // Check if exists
-        let deadline = await milestone_deadlines.findOne({
-            where: { pgstudent_id: pg_student_id, milestone_name }
+        const deadline = await milestoneService.upsertStudentDeadline({
+            milestone_name,
+            pg_student_id,
+            deadline_date,
+            reason,
+            updated_by
         });
 
-        if (deadline) {
-            await deadline.update({
-                deadline_date,
-                reason,
-                updated_by,
-                updated_at: new Date()
-            });
-        } else {
-            deadline = await milestone_deadlines.create({
-                pgstudent_id: pg_student_id,
-                milestone_name,
-                deadline_date,
-                reason,
-                updated_by
-            });
-        }
-
-        // Notify student
         await notificationService.createNotification({
             userId: pg_student_id,
             roleId: 'STU',
             title: 'Deadline Adjusted',
-            message: `Your deadline for "${milestone_name}" has been adjusted to ${new Date(deadline_date).toLocaleDateString()}. Reason: ${reason}`,
+            message: `Your deadline for "${deadline.name}" has been adjusted to ${new Date(deadline_date).toLocaleDateString()}. Reason: ${reason}`,
             type: 'DEADLINE_ADJUSTED'
         });
 
@@ -445,8 +455,8 @@ class EvaluationService {
         );
 
         // Also clear defense evaluations?? Or keep them as history?
-        // "All previous progress is invalidated." -> Reset milestone deadlines?
-        await milestone_deadlines.destroy({ where: { pgstudent_id: studentId } });
+        // "All previous progress is invalidated." -> Reset milestone overrides
+        await milestones.destroy({ where: { pgstudent_id: studentId } });
 
         // Notify
         await notificationService.createNotification({

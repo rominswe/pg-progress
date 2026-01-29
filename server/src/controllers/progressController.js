@@ -1,4 +1,5 @@
 import EvaluationService from "../services/evaluationService.js";
+import MilestoneService from "../services/milestoneService.js";
 import { sendSuccess, sendError } from "../utils/responseHandler.js";
 
 export const createUpdate = async (req, res) => {
@@ -65,7 +66,7 @@ export const getPendingEvaluations = async (req, res) => {
             id: update.update_id,
             student_id: update.pg_student_id,
             fullName: update.pg_student ? `${update.pg_student.FirstName} ${update.pg_student.LastName}` : 'Unknown',
-            studentId: update.pg_student_id,
+            studentId: update.pg_student?.stu_id || update.pg_student_id,
             title: update.title,
             description: update.description,
             achievements: update.achievements,
@@ -109,7 +110,8 @@ export const getMyStudents = async (req, res) => {
         if (!["SUV", "CGSADM", "CGSS", "EXA"].includes(role_id)) return sendError(res, "Access denied", 403);
 
         const students = await EvaluationService.getStudentsForUser(userId, role_id, Dep_Code);
-        sendSuccess(res, "Students fetched successfully", { students: formatStudents(students) });
+        const templates = await MilestoneService.getTemplates();
+        sendSuccess(res, "Students fetched successfully", { students: formatStudents(students, templates) });
     } catch (err) {
         sendError(res, "Failed to fetch students", 500);
     }
@@ -164,15 +166,22 @@ export const manualCompleteMilestone = async (req, res) => {
     }
 };
 
-const formatStudents = (students) => {
+const formatStudents = (students, templates = []) => {
     return students.map(student => {
         const lastUpdate = student.progress_updates?.[0];
         const uploads = student.documents_uploads || [];
-        const milestones = ['Research Proposal', 'Literature Review', 'Methodology', 'Data Analysis', 'Final Thesis'];
 
-        const validUploads = new Set(uploads.filter(u => u.status === 'Approved').map(u => u.document_type));
+        // Define milestones from templates
+        const milestoneTypes = templates.map(t => t.document_type || t.name);
+
+        // Fallback for safety if no templates
+        const finalMilestones = milestoneTypes.length > 0
+            ? milestoneTypes
+            : ['Research Proposal', 'Literature Review', 'Methodology', 'Data Analysis', 'Final Thesis'];
+
+        const validUploads = new Set(uploads.filter(u => u.status === 'Approved' || u.status === 'Completed').map(u => u.document_type));
         let completedCount = 0;
-        milestones.forEach(m => { if (validUploads.has(m)) completedCount++; });
+        finalMilestones.forEach(m => { if (validUploads.has(m)) completedCount++; });
 
         const researchProposal = uploads.find(u => u.document_type === 'Research Proposal');
         const researchTitle = researchProposal ? researchProposal.document_name : "N/A";
@@ -186,10 +195,10 @@ const formatStudents = (students) => {
                 : "N/A");
 
         return {
-            id: student.pgstud_id,
+            id: student.stu_id || student.pgstud_id,
             name: `${student.FirstName} ${student.LastName}`,
             email: student.EmailId,
-            progress: Math.round((completedCount / milestones.length) * 100),
+            progress: Math.round((completedCount / finalMilestones.length) * 100),
             lastSubmissionDate: lastUpdate ? lastUpdate.submission_date : student.RegDate,
             researchTitle: researchTitle,
             program: student.Prog_Code_program_info?.prog_name || student.Prog_Code,

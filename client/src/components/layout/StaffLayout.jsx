@@ -1,7 +1,7 @@
 import Layout from '@/components/layout/Layout';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/components/auth/AuthContext';
-import { LayoutDashboard, UserPlus, Activity, User, CheckCircle, BarChart3 } from 'lucide-react';
+import { LayoutDashboard, UserPlus, Activity, User, CheckCircle, BarChart3, Calendar, FileText } from 'lucide-react';
 
 // Navigation for CGS portal
 const cgsNav = [
@@ -10,6 +10,7 @@ const cgsNav = [
   { name: 'Assignment Overview', href: '/cgs/assignment-overview', icon: BarChart3 },
   { name: 'User Registration', href: '/cgs/register', icon: UserPlus },
   { name: 'Progress Monitoring', href: '/cgs/monitoring', icon: Activity },
+  { name: 'Service Requests', href: '/cgs/service-requests', icon: FileText },
 ];
 
 // Optional notifications (can be dynamic)

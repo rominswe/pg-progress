@@ -36,7 +36,7 @@ api.interceptors.request.use((config) => {
   if (csrfToken && method !== "get") {
     config.headers["X-CSRF-Token"] = csrfToken;
   }
-  
+
   config.headers["X-Source-Port"] = port;
 
   return config;
@@ -196,6 +196,11 @@ export const progressService = {
   manualComplete: async (data) => {
     const res = await api.post("/api/progress/manual-complete", data);
     return res.data;
+  },
+  getStudentMilestones: async (studentId = null) => {
+    const params = studentId ? { student_id: studentId } : undefined;
+    const res = await api.get("/api/milestones/student", { params });
+    return res.data;
   }
 };
 
@@ -208,6 +213,10 @@ export const serviceRequestService = {
   getAll: async (status) => {
     const url = status ? `/api/service-requests?status=${status}` : '/api/service-requests';
     const res = await api.get(url);
+    return res.data;
+  },
+  getById: async (id) => {
+    const res = await api.get(`/api/service-requests/${id}`);
     return res.data;
   },
   updateStatus: async (id, status, comments) => {
@@ -288,6 +297,30 @@ export const notificationService = {
     const res = await api.delete("/api/notifications/all");
     return res.data;
   }
+};
+
+/* ===================== MILESTONE TEMPLATES SERVICE ===================== */
+export const milestoneService = {
+  getTemplates: async () => {
+    const res = await api.get("/api/milestones");
+    return res.data;
+  },
+  getOverrides: async (params) => {
+    const res = await api.get("/api/milestones/overrides", { params });
+    return res.data;
+  },
+  create: async (payload) => {
+    const res = await api.post("/api/milestones", payload);
+    return res.data;
+  },
+  update: async (id, payload) => {
+    const res = await api.put(`/api/milestones/${id}`, payload);
+    return res.data;
+  },
+  delete: async (id) => {
+    const res = await api.delete(`/api/milestones/${id}`);
+    return res.data;
+  },
 };
 
 export default api;

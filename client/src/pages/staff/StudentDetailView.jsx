@@ -21,7 +21,7 @@ import {
     Calendar as CalendarIcon, MessageSquare
 } from 'lucide-react';
 import { motion, AnimatePresence } from "framer-motion";
-import { progressService, notificationService } from '@/services/api';
+import { milestoneService, progressService, notificationService } from '@/services/api';
 import { toast } from "sonner";
 import ConfirmRegisterModal from "@/components/modal/ConfirmRegisterModal";
 
@@ -41,21 +41,17 @@ export default function StudentDetailView() {
     const [isNotifyModalOpen, setIsNotifyModalOpen] = useState(false);
     const [notifyTemplate, setNotifyTemplate] = useState("Reminder: Deadline Approaching");
     const [customMessage, setCustomMessage] = useState("");
-    const [isManualCompleteDialogOpen, setManualCompleteDialogOpen] = useState(false);
-    const [pendingManualMilestone, setPendingManualMilestone] = useState("");
-    const [isManualCompleting, setIsManualCompleting] = useState(false);
-
-    const milestones = [
-        { title: 'Research Proposal', docType: 'Research Proposal' },
-        { title: 'Literature Review', docType: 'Literature Review' },
-        { title: 'Methodology Chapter', docType: 'Methodology' },
-        { title: 'Data Collection & Analysis', docType: 'Data Analysis' },
-        { title: 'Final Thesis', docType: 'Final Thesis' }
-    ];
+    const [milestoneTemplates, setMilestoneTemplates] = useState([]);
+    const [templatesLoading, setTemplatesLoading] = useState(true);
+    const [templatesError, setTemplatesError] = useState(null);
 
     useEffect(() => {
         fetchStudentData();
     }, [id]);
+
+    useEffect(() => {
+        fetchMilestoneTemplates();
+    }, []);
 
     const fetchStudentData = async () => {
         try {
@@ -67,6 +63,25 @@ export default function StudentDetailView() {
             toast.error("Failed to load student data");
         } finally {
             setLoading(false);
+        }
+    };
+
+    const fetchMilestoneTemplates = async () => {
+        setTemplatesLoading(true);
+        setTemplatesError(null);
+        try {
+            const res = await milestoneService.getTemplates();
+            if (res?.success) {
+                setMilestoneTemplates(res.data?.templates || []);
+            } else {
+                throw new Error(res?.message || "Failed to fetch templates");
+            }
+        } catch (err) {
+            console.error("Failed to fetch milestone templates", err);
+            setTemplatesError(err.response?.data?.message || err.message || "Unable to load milestones");
+            toast.error("Unable to load milestone templates right now.");
+        } finally {
+            setTemplatesLoading(false);
         }
     };
 
@@ -85,17 +100,23 @@ export default function StudentDetailView() {
 
     const { student, assignments } = data;
     const docs = student.documents_uploads || [];
-
-    // Calculate Progress
-    const completedMilestones = milestones.filter(m =>
-        docs.some(d => d.document_type === m.docType && (d.status === 'Approved' || d.status === 'Completed'))
+    const milestoneTemplatesList = milestoneTemplates;
+    const overridesByTemplate = new Map(
+        (student.milestone_overrides || []).map((override) => [override.template_id, override])
     );
-    const progressPercent = Math.round((completedMilestones.length / milestones.length) * 100);
+    const getDocTypeForTemplate = (template) => template.document_type || template.name || `Milestone ${template.id}`;
+    const completedMilestones = milestoneTemplatesList.filter((template) => {
+        const docType = getDocTypeForTemplate(template);
+        return docs.some((doc) => doc.document_type === docType && (doc.status === "Approved" || doc.status === "Completed"));
+    });
+    const progressPercent = milestoneTemplatesList.length
+        ? Math.round((completedMilestones.length / milestoneTemplatesList.length) * 100)
+        : 0;
 
     // Derived Status
     const getDerivedStatus = (progress) => {
-        if (progress >= 80) return 'On Track';
-        if (progress >= 50) return 'Delayed';
+        if (progress >= 60) return 'On Track';
+        if (progress >= 30) return 'Delayed';
         return 'At Risk';
     };
     const status = getDerivedStatus(progressPercent);
@@ -119,8 +140,11 @@ export default function StudentDetailView() {
     const handleSendNotification = async () => {
         try {
             const message = notifyTemplate === "Custom Message" ? customMessage : notifyTemplate;
+            // Use authoritative ID from fetched student data (pk) rather than URL param
+            const targetId = student.pgstud_id || student.id;
+
             await notificationService.sendNotification({
-                userId: id,
+                userId: targetId,
                 title: "CGS Administrative Notice",
                 message,
                 type: "ADMIN_ALERT"
@@ -132,29 +156,6 @@ export default function StudentDetailView() {
         }
     };
 
-    const handleManualComplete = (milestoneName) => {
-        setPendingManualMilestone(milestoneName);
-        setManualCompleteDialogOpen(true);
-    };
-
-    const confirmManualComplete = async () => {
-        if (!pendingManualMilestone) return;
-        setManualCompleteDialogOpen(false);
-        setIsManualCompleting(true);
-        try {
-            await progressService.manualComplete({
-                pg_student_id: id,
-                milestone_name: pendingManualMilestone
-            });
-            toast.success("Milestone marked as completed");
-            fetchStudentData();
-        } catch (err) {
-            toast.error("Failed to update milestone");
-        } finally {
-            setIsManualCompleting(false);
-            setPendingManualMilestone("");
-        }
-    };
 
     return (
         <div className="max-w-full px-6 mx-auto pb-12 space-y-8 animate-fade-in">
@@ -183,7 +184,7 @@ export default function StudentDetailView() {
                         </Badge>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
                         <div className="flex items-center gap-3 text-slate-500 font-bold text-sm">
                             <Mail className="w-4 h-4 text-blue-600" />
                             {student.EmailId}
@@ -191,6 +192,10 @@ export default function StudentDetailView() {
                         <div className="flex items-center gap-3 text-slate-500 font-bold text-sm">
                             <BookOpen className="w-4 h-4 text-blue-600" />
                             {student.Prog_Code_program_info?.prog_name || student.Prog_Code}
+                        </div>
+                        <div className="flex items-center gap-3 text-slate-500 font-bold text-sm">
+                            <CalendarIcon className="w-4 h-4 text-blue-600" />
+                            Semester {student.Semester || 1}
                         </div>
                         <div className="flex items-center gap-3 text-slate-500 font-bold text-sm">
                             <User className="w-4 h-4 text-blue-600" />
@@ -241,34 +246,53 @@ export default function StudentDetailView() {
                         <CardContent className="p-8">
                             <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-5 gap-8 relative">
                                 <div className="hidden lg:block absolute top-[50px] left-10 right-10 h-1 bg-slate-100 -z-0"></div>
-                                {milestones.map((m, idx) => {
-                                    const isCompleted = docs.some(d => d.document_type === m.docType && (d.status === 'Approved' || d.status === 'Completed'));
-                                    const isPending = docs.some(d => d.document_type === m.docType && d.status === 'Pending');
+                                {milestoneTemplatesList.length > 0 ? (
+                                    milestoneTemplatesList.map((template, idx) => {
+                                        const docType = getDocTypeForTemplate(template);
+                                        const isCompleted = docs.some(
+                                            (d) => d.document_type === docType && (d.status === "Approved" || d.status === "Completed")
+                                        );
+                                        const isPending = docs.some((d) => d.document_type === docType && d.status === "Pending");
 
-                                    return (
-                                        <div key={idx} className="flex flex-col items-center text-center gap-4 relative z-10">
-                                            <div className={`w-20 h-20 rounded-full border-4 flex items-center justify-center bg-white transition-all shadow-md
-                        ${isCompleted ? 'border-blue-100 text-blue-600' : isPending ? 'border-blue-200 text-blue-600' : 'border-slate-100 text-slate-300'}
-                      `}>
-                                                {isCompleted ? <CheckCircle className="w-10 h-10" /> : isPending ? <Clock className="w-10 h-10 animate-pulse" /> : <Circle className="w-10 h-10" />}
-                                            </div>
-                                            <div>
-                                                <h3 className="font-bold text-slate-800 text-sm leading-tight mb-1">{m.title}</h3>
-                                                <p className={`text-[10px] font-black uppercase tracking-widest ${isCompleted ? 'text-blue-600' : isPending ? 'text-blue-400' : 'text-slate-400'}`}>
-                                                    {isCompleted ? 'Completed' : isPending ? 'Pending Review' : 'Locked'}
-                                                </p>
-                                            </div>
-                                            {!isCompleted && (
-                                                <button
-                                                    onClick={() => handleManualComplete(m.docType)}
-                                                    className="text-[10px] font-black text-blue-600 hover:text-blue-700 underline"
+                                        return (
+                                            <div key={idx} className="flex flex-col items-center text-center gap-4 relative z-10">
+                                                <div
+                                                    className={`w-20 h-20 rounded-full border-4 flex items-center justify-center bg-white transition-all shadow-md
+                        ${isCompleted ? "border-blue-100 text-blue-600" : isPending ? "border-blue-200 text-blue-600" : "border-slate-100 text-slate-300"}
+                      `}
                                                 >
-                                                    Manual Complete
-                                                </button>
-                                            )}
-                                        </div>
-                                    )
-                                })}
+                                                    {isCompleted ? (
+                                                        <CheckCircle className="w-10 h-10" />
+                                                    ) : isPending ? (
+                                                        <Clock className="w-10 h-10 animate-pulse" />
+                                                    ) : (
+                                                        <Circle className="w-10 h-10" />
+                                                    )}
+                                                </div>
+                                                <div>
+                                                    <h3 className="font-bold text-slate-800 text-sm leading-tight mb-1">{template.name}</h3>
+                                                    <p
+                                                        className={`text-[10px] font-black uppercase tracking-widest ${isCompleted ? "text-blue-600" : isPending ? "text-blue-400" : "text-slate-400"
+                                                            }`}
+                                                    >
+                                                        {isCompleted ? "Completed" : isPending ? "Pending Review" : "Locked"}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        );
+                                    })
+                                ) : (
+                                    <div className="col-span-full flex flex-col items-center justify-center text-center gap-2 px-4 py-8 text-sm text-slate-500">
+                                        {templatesLoading ? (
+                                            <div className="flex items-center gap-2">
+                                                <Loader2 className="h-4 w-4 animate-spin" />
+                                                <span>Loading milestone templates...</span>
+                                            </div>
+                                        ) : (
+                                            <span>{templatesError || "No milestone templates available yet."}</span>
+                                        )}
+                                    </div>
+                                )}
                             </div>
                         </CardContent>
                     </Card>
@@ -361,37 +385,57 @@ export default function StudentDetailView() {
                                         </TableRow>
                                     </TableHeader>
                                     <TableBody>
-                                        {milestones.map((m, idx) => {
-                                            const customDeadline = student.milestone_deadlines?.find(d => d.milestone_name === m.docType);
-                                            const isCompleted = docs.some(d => d.document_type === m.docType && (d.status === 'Approved' || d.status === 'Completed'));
+                                        {milestoneTemplatesList.length > 0 ? (
+                                            milestoneTemplatesList.map((template, idx) => {
+                                                const customDeadline = overridesByTemplate.get(template.id);
+                                                const docType = getDocTypeForTemplate(template);
+                                                const isCompleted = docs.some(
+                                                    (d) => d.document_type === docType && (d.status === "Approved" || d.status === "Completed")
+                                                );
 
-                                            return (
-                                                <TableRow key={idx} className="hover:bg-slate-50/50 transition-all">
-                                                    <TableCell className="py-5 px-6 font-bold text-slate-900">{m.title}</TableCell>
-                                                    <TableCell className="font-bold text-slate-500 text-sm">
-                                                        {customDeadline ? new Date(customDeadline.deadline_date).toLocaleDateString() : 'System Default'}
-                                                    </TableCell>
-                                                    <TableCell className="italic text-slate-400 text-xs">
-                                                        {customDeadline?.reason || 'N/A'}
-                                                    </TableCell>
-                                                    <TableCell className="text-right">
-                                                        {!isCompleted && (
-                                                            <button
-                                                                onClick={() => {
-                                                                    setSelectedMilestone(m.docType);
-                                                                    setNewDeadline(customDeadline ? customDeadline.deadline_date.split('T')[0] : "");
-                                                                    setExtensionReason(customDeadline?.reason || "");
-                                                                    setIsDeadlineModalOpen(true);
-                                                                }}
-                                                                className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
-                                                            >
-                                                                <Edit2 className="w-4 h-4" />
-                                                            </button>
-                                                        )}
-                                                    </TableCell>
-                                                </TableRow>
-                                            )
-                                        })}
+                                                return (
+                                                    <TableRow key={idx} className="hover:bg-slate-50/50 transition-all">
+                                                        <TableCell className="py-5 px-6 font-bold text-slate-900">{template.name}</TableCell>
+                                                        <TableCell className="font-bold text-slate-500 text-sm">
+                                                            {customDeadline
+                                                                ? new Date(customDeadline.deadline_date).toLocaleDateString()
+                                                                : "System Default"}
+                                                        </TableCell>
+                                                        <TableCell className="italic text-slate-400 text-xs">
+                                                            {customDeadline?.reason || "N/A"}
+                                                        </TableCell>
+                                                        <TableCell className="text-right">
+                                                            {!isCompleted && (
+                                                                <button
+                                                                    onClick={() => {
+                                                                        setSelectedMilestone(template.name);
+                                                                        setNewDeadline(customDeadline ? customDeadline.deadline_date.split("T")[0] : "");
+                                                                        setExtensionReason(customDeadline?.reason || "");
+                                                                        setIsDeadlineModalOpen(true);
+                                                                    }}
+                                                                    className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
+                                                                >
+                                                                    <Edit2 className="w-4 h-4" />
+                                                                </button>
+                                                            )}
+                                                        </TableCell>
+                                                    </TableRow>
+                                                );
+                                            })
+                                        ) : (
+                                            <TableRow>
+                                                <TableCell colSpan={4} className="text-center py-12 text-slate-400 font-bold">
+                                                    {templatesLoading ? (
+                                                        <div className="flex items-center justify-center gap-2">
+                                                            <Loader2 className="h-4 w-4 animate-spin text-blue-600" />
+                                                            <span>Loading milestone templates...</span>
+                                                        </div>
+                                                    ) : (
+                                                        templatesError || "No milestone templates have been created yet."
+                                                    )}
+                                                </TableCell>
+                                            </TableRow>
+                                        )}
                                     </TableBody>
                                 </Table>
                             </CardContent>
@@ -570,20 +614,6 @@ export default function StudentDetailView() {
                     </div>
                 )}
             </AnimatePresence>
-            <ConfirmRegisterModal
-                open={isManualCompleteDialogOpen}
-                onOpenChange={(open) => {
-                    setManualCompleteDialogOpen(open);
-                    if (!open) {
-                        setPendingManualMilestone("");
-                    }
-                }}
-                title="Manual Completion"
-                description={`Are you sure you want to manually mark "${pendingManualMilestone}" as completed?`}
-                confirmText={isManualCompleting ? "Marking..." : "Confirm"}
-                cancelText="Cancel"
-                onConfirm={confirmManualComplete}
-            />
         </div>
     );
 }

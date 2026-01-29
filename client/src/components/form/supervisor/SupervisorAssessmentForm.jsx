@@ -27,7 +27,11 @@ const SupervisorAssessmentForm = ({ studentData, onBack }) => {
     // Handle standard inputs/textareas
     const handleChange = (e) => {
         const { name, value } = e.target;
-        setFormData(prev => ({ ...prev, [name]: value }));
+        let newValue = value;
+        if (name === 'signature') {
+            newValue = value.toUpperCase();
+        }
+        setFormData(prev => ({ ...prev, [name]: newValue }));
     };
 
     // Handle Rating Matrix (1-5)
@@ -75,7 +79,7 @@ const SupervisorAssessmentForm = ({ studentData, onBack }) => {
             <div className="bg-gradient-to-r from-blue-700 to-blue-600 rounded-3xl p-6 text-white shadow-xl relative overflow-hidden">
                 <button
                     onClick={onBack}
-                    className="absolute top-6 right-6 flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-xl transition-all font-medium text-sm backdrop-blur-sm"
+                    className="absolute top-6 right-6 z-20 flex items-center gap-2 bg-white/10 hover:bg-white/20 text-white px-4 py-2 rounded-xl transition-all font-medium text-sm backdrop-blur-sm"
                 >
                     <ChevronLeft size={16} /> Back to List
                 </button>

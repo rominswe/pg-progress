@@ -51,6 +51,11 @@ export default class pgstudinfo extends Model {
         type: DataTypes.STRING(100),
         allowNull: false
       },
+      Semester: {
+        type: DataTypes.INTEGER,
+        allowNull: false,
+        defaultValue: 1
+      },
       Address: {
         type: DataTypes.STRING(100),
         allowNull: false

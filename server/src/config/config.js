@@ -48,7 +48,8 @@ export const {
   progress_updates,
   service_requests,
   defense_evaluations,
-  milestone_deadlines
+  milestones,
+  milestone_templates
 } = models;
 
 export { sequelize };

@@ -100,6 +100,10 @@ export default function ThesisEvaluationForm({ studentData, existingData, onSubm
                                 <label className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1">Student ID</label>
                                 <p className="text-slate-800 font-bold">{studentData.studentId}</p>
                             </div>
+                            <div className="bg-slate-50 p-4 rounded-2xl">
+                                <label className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1">Semester</label>
+                                <p className="text-slate-800 font-bold">{studentData.semester || "N/A"}</p>
+                            </div>
                             <div className="bg-slate-50 p-4 rounded-2xl md:col-span-2">
                                 <label className="text-xs font-bold text-slate-400 uppercase tracking-wider block mb-1">Research Title</label>
                                 <p className="text-slate-800 font-bold leading-snug">{studentData.thesisTitle}</p>

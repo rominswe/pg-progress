@@ -44,23 +44,23 @@ router.put("/read-all", protect, requireRole("STU", "SUV", "EXA", "CGSADM", "CGS
     }
 });
 
-// Dismiss a single notification (Hide from UI)
-router.delete("/:id", protect, requireRole("STU", "SUV", "EXA", "CGSADM", "CGSS"), async (req, res, next) => {
-    try {
-        const userId = req.session.user.id;
-        await notificationService.dismiss(req.params.id, userId);
-        res.json({ success: true, message: "Notification dismissed" });
-    } catch (err) {
-        next(err);
-    }
-});
-
 // Dismiss all notifications
 router.delete("/all", protect, requireRole("STU", "SUV", "EXA", "CGSADM", "CGSS"), async (req, res, next) => {
     try {
         const userId = req.session.user.id;
         await notificationService.dismissAll(userId);
         res.json({ success: true, message: "All notifications dismissed" });
+    } catch (err) {
+        next(err);
+    }
+});
+
+// Dismiss a single notification (Hide from UI)
+router.delete("/:id(\\d+)", protect, requireRole("STU", "SUV", "EXA", "CGSADM", "CGSS"), async (req, res, next) => {
+    try {
+        const userId = req.session.user.id;
+        await notificationService.dismiss(req.params.id, userId);
+        res.json({ success: true, message: "Notification dismissed" });
     } catch (err) {
         next(err);
     }

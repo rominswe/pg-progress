@@ -2,6 +2,14 @@ import { useState, useRef, useEffect } from 'react'
 import { motion } from 'framer-motion'
 import { authService, evaluationService } from '../../../services/api'
 import { Loader2, CheckCircle } from 'lucide-react'
+import { cn } from "@/lib/utils"
+import {
+    Select,
+    SelectContent,
+    SelectItem,
+    SelectTrigger,
+    SelectValue,
+} from "@/components/ui/select"
 
 // --- HELPER COMPONENTS (Moved Outside) ---
 
@@ -32,26 +40,28 @@ const SelectField = ({ label, name, value, onChange, error, options, required })
         <label className="block text-sm font-semibold text-slate-700 mb-2">
             {label} {required && <span className="text-red-500">*</span>}
         </label>
-        <div className="relative">
-            <select
-                name={name}
-                value={value}
-                onChange={onChange}
-                className={`w-full px-4 py-3 rounded-xl border-2 appearance-none transition-all duration-200 outline-none
-                    ${error
-                        ? 'border-red-400 bg-red-50 focus:border-red-500'
-                        : 'border-slate-200 bg-slate-50 focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10'
-                    }`}
+        <Select
+            value={value}
+            onValueChange={(val) => onChange({ target: { name, value: val } })}
+        >
+            <SelectTrigger
+                className={cn(
+                    "w-full h-[52px] px-4 py-3 rounded-xl border-2 transition-all duration-200 outline-none text-base",
+                    error
+                        ? "border-red-400 bg-red-50 focus:border-red-500"
+                        : "border-slate-200 bg-slate-50 focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10"
+                )}
             >
-                <option value="">Select an option</option>
-                {options.map(opt => (
-                    <option key={opt.value} value={opt.value}>{opt.label}</option>
+                <SelectValue placeholder="Select an option" />
+            </SelectTrigger>
+            <SelectContent className="bg-white">
+                {options.map((opt) => (
+                    <SelectItem key={opt.value} value={opt.value}>
+                        {opt.label}
+                    </SelectItem>
                 ))}
-            </select>
-            <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-slate-400">
-                ▼
-            </div>
-        </div>
+            </SelectContent>
+        </Select>
         {error && <p className="mt-1 text-sm text-red-500 font-medium">⚠ {error}</p>}
     </div>
 )
@@ -109,9 +119,10 @@ function StudentForm({ onSubmit }) {
                     const student = res.data;
                     setFormData(prev => ({
                         ...prev,
-                        fullName: `${student.FirstName} ${student.LastName}`,
-                        studentId: student.id || student.stu_id || student.pgstud_id || '',
-                        program: student.program || student.Prog_Code || ''
+                        fullName: student.name || `${student.FirstName} ${student.LastName}`,
+                        studentId: student.stu_id || student.id || '',
+                        program: student.program_name || student.program || '',
+                        currentSemester: student.Semester || student.current_semester || ''
                     }));
                 }
             } catch (err) {
@@ -121,28 +132,8 @@ function StudentForm({ onSubmit }) {
         prefillData();
     }, []);
 
-    // 2. Auto-fill name when ID is manually typed/changed
-    useEffect(() => {
-        const lookupStudent = async () => {
-            if (formData.studentId && formData.studentId.trim().length >= 3) {
-                try {
-                    setIsSearching(true)
-                    const data = await evaluationService.getStudentById(formData.studentId)
-                    if (data && data.name) {
-                        setFormData(prev => ({ ...prev, fullName: data.name }))
-                        setErrors(prev => ({ ...prev, studentId: '' }))
-                    }
-                } catch (error) {
-                    // Fail silently as user might be typing
-                } finally {
-                    setIsSearching(false)
-                }
-            }
-        }
-
-        const timer = setTimeout(lookupStudent, 600)
-        return () => clearTimeout(timer)
-    }, [formData.studentId])
+    // 2. Field locking logic for auto-populated data
+    const isPrefilled = !!formData.fullName && !!formData.studentId;
 
     const steps = [
         { number: 1, label: 'Student Info' },
@@ -181,13 +172,26 @@ function StudentForm({ onSubmit }) {
                 [name]: files[0]
             }))
         } else {
+            let newValue = value;
+            if (name === 'currentSemester') {
+                const numValue = parseInt(value, 10);
+                if (numValue > 10) {
+                    setErrors(prev => ({ ...prev, currentSemester: 'Semester cannot exceed 10' }));
+                } else if (errors.currentSemester === 'Semester cannot exceed 10') {
+                    setErrors(prev => ({ ...prev, currentSemester: '' }));
+                }
+            }
+
+            if (name === 'signature') {
+                newValue = value.toUpperCase();
+            }
             setFormData(prev => ({
                 ...prev,
-                [name]: value
+                [name]: newValue
             }))
         }
 
-        if (errors[name]) {
+        if (errors[name] && name !== 'currentSemester') {
             setErrors(prev => ({ ...prev, [name]: '' }))
         }
     }
@@ -199,7 +203,11 @@ function StudentForm({ onSubmit }) {
             if (!formData.fullName.trim()) newErrors.fullName = 'Full name is required'
             if (!formData.studentId.trim()) newErrors.studentId = 'Student ID is required'
             if (!formData.program) newErrors.program = 'Program is required'
-            if (!formData.currentSemester) newErrors.currentSemester = 'Current semester is required'
+            if (!formData.currentSemester) {
+                newErrors.currentSemester = 'Current semester is required'
+            } else if (parseInt(formData.currentSemester, 10) > 10) {
+                newErrors.currentSemester = 'Semester cannot exceed 10'
+            }
         }
 
         if (step === 2) {
@@ -323,14 +331,12 @@ function StudentForm({ onSubmit }) {
                     value={formData.studentId}
                     onChange={handleInputChange}
                     error={errors.studentId}
-                    placeholder="Enter Student ID"
+                    placeholder="Student ID"
                     required
+                    readOnly={isPrefilled}
+                    className={`w-full px-4 py-3 rounded-xl border-2 transition-all duration-200 outline-none shadow-sm
+                        ${isPrefilled ? 'border-slate-100 bg-slate-50 text-slate-500 font-bold' : 'border-slate-200 bg-slate-50'}`}
                 />
-                {isSearching && (
-                    <div className="absolute right-4 top-[42px]">
-                        <Loader2 className="w-5 h-5 text-blue-600 animate-spin" />
-                    </div>
-                )}
             </div>
 
             <div className="relative">
@@ -340,38 +346,33 @@ function StudentForm({ onSubmit }) {
                     value={formData.fullName}
                     onChange={handleInputChange}
                     error={errors.fullName}
-                    placeholder={isSearching ? "Searching..." : "Enter your full name"}
+                    placeholder="Full Name"
                     required
-                    readOnly={!!formData.fullName && formData.studentId?.length >= 3}
-                    className={`w-full px-4 py-3 rounded-xl border-2 transition-all duration-200 outline-none
-                        ${errors.fullName
-                            ? 'border-red-400 bg-red-50 focus:border-red-500'
-                            : formData.fullName && formData.studentId?.length >= 3
-                                ? 'border-green-100 bg-green-50/20'
-                                : 'border-slate-200 bg-slate-50 focus:bg-white focus:border-blue-500 focus:ring-4 focus:ring-blue-500/10'}`}
+                    readOnly={isPrefilled}
+                    className={`w-full px-4 py-3 rounded-xl border-2 transition-all duration-200 outline-none shadow-sm
+                        ${isPrefilled ? 'border-green-100 bg-green-50/20 text-green-700 font-bold' : 'border-slate-200 bg-slate-50'}`}
                 />
-                {formData.fullName && formData.studentId?.length >= 3 && (
-                    <div className="absolute right-4 top-[42px] text-green-600 flex items-center gap-1 font-bold text-xs">
+                {isPrefilled && (
+                    <div className="absolute right-4 top-[42px] text-green-600 flex items-center gap-1 font-bold text-xs bg-white/50 px-2 py-1 rounded-lg backdrop-blur-sm">
                         <CheckCircle className="w-4 h-4" /> Verified
                     </div>
                 )}
             </div>
 
-            <SelectField
-                label="Program"
-                name="program"
-                value={formData.program}
-                onChange={handleInputChange}
-                error={errors.program}
-                required
-                options={[
-                    { value: "Master of Business Management (by Research)", label: "Master of Business Management (by Research)" },
-                    { value: "Master of Education (by Research)", label: "Master of Education (by Research)" },
-                    { value: "Master in Social Business - (by Coursework)", label: "Master in Social Business - (by Coursework)" },
-                    { value: "Doctor of Philosophy (Education)", label: "Doctor of Philosophy (Education)" },
-                    { value: "Doctor of Philosophy (Business Management)", label: "Doctor of Philosophy (Business Management)" }
-                ]}
-            />
+            <div className="relative">
+                <InputField
+                    label="Program"
+                    name="program"
+                    value={formData.program}
+                    onChange={handleInputChange}
+                    error={errors.program}
+                    placeholder="Program Information"
+                    required
+                    readOnly={isPrefilled}
+                    className={`w-full px-4 py-3 rounded-xl border-2 transition-all duration-200 outline-none shadow-sm
+                        ${isPrefilled ? 'border-slate-100 bg-slate-50 text-slate-500 font-bold' : 'border-slate-200 bg-slate-50'}`}
+                />
+            </div>
             <InputField
                 label="Current Semester"
                 name="currentSemester"
@@ -382,6 +383,7 @@ function StudentForm({ onSubmit }) {
                 placeholder="e.g., 3"
                 required
                 min="1"
+                max="10"
             />
         </div>
     )

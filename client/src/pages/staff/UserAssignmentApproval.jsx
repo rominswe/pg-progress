@@ -272,7 +272,7 @@ export default function UserAssignmentApproval() {
                                 placeholder="e.g., Staff is currently over capacity for this semester..."
                                 value={rejectionRemark}
                                 onChange={(e) => setRejectionRemark(e.target.value)}
-                                className="min-h-[100px]"
+                                className="min-h-[140px] rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm text-slate-900 shadow-sm placeholder:text-slate-400 focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-0"
                             />
                             <p className="text-[10px] text-muted-foreground text-right">
                                 {rejectionRemark.length} / 10 characters minimum

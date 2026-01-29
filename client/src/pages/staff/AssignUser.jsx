@@ -303,17 +303,27 @@ export default function AssignUser() {
                         )}
 
                         <div className="space-y-2">
-                            <Label>Search User (ID or Email)</Label>
-                            <div className="flex gap-2">
-                                <Input
-                                    placeholder="Enter identifier..."
-                                    value={searchQuery}
-                                    onChange={(e) => setSearchQuery(e.target.value)}
-                                />
-                                <Button onClick={handleSearch} disabled={searching}>
-                                    {searching ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
-                                </Button>
-                            </div>
+                        <Label>Search User (ID or Email)</Label>
+                        <div className="flex gap-2">
+                            <Input
+                                placeholder={assignRole ? "Enter identifier..." : "Select a role first"}
+                                value={searchQuery}
+                                onChange={(e) => setSearchQuery(e.target.value)}
+                                disabled={!assignRole || searching}
+                                className={!assignRole ? "bg-slate-100 cursor-not-allowed" : ""}
+                            />
+                            <Button
+                                onClick={handleSearch}
+                                disabled={!assignRole || searching || !searchQuery.trim()}
+                            >
+                                {searching ? <Loader2 className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
+                            </Button>
+                        </div>
+                        {!assignRole && (
+                            <p className="text-[11px] text-slate-400 mt-1">
+                                Choose a role before searching for staff to assign.
+                            </p>
+                        )}
                         </div>
 
                         {searchResult && (

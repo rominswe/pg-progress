@@ -51,6 +51,19 @@ export const getRequests = async (req, res) => {
     }
 };
 
+export const getRequestById = async (req, res) => {
+    try {
+        const { id } = req.params;
+        const userId = (req.user.pgstud_id || req.user.id).toString().trim();
+        const roleId = req.user.role_id;
+
+        const request = await ServiceRequestService.getById(id, userId, roleId);
+        sendSuccess(res, "Request fetched", { request });
+    } catch (error) {
+        sendError(res, error.message, error.status || 500);
+    }
+};
+
 export const updateRequestStatus = async (req, res) => {
     try {
         const { id } = req.params;

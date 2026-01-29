@@ -114,7 +114,7 @@ export default function Dashboard() {
       link: '/cgs/users'
     },
     {
-      title: 'Total Account Pending Verifications',
+      title: 'Total Roles Assignments Pending',
       value: statsData.totalPending,
       change: 'Active',
       icon: Clock,

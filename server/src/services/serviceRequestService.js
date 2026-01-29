@@ -53,15 +53,74 @@ class ServiceRequestService {
             where.pg_student_id = { [Op.in]: assignedIds };
         }
 
-        return service_requests.findAll({
+        const requests = await service_requests.findAll({
             where,
             order: [['submission_date', 'DESC']],
             include: [{
                 model: pgstudinfo,
                 as: 'pg_student',
-                attributes: ['FirstName', 'LastName', 'EmailId']
+                attributes: ['FirstName', 'LastName', 'EmailId', 'stu_id'],
+                include: [{
+                    model: pgstudinfo.sequelize.models.program_info,
+                    as: 'Prog_Code_program_info',
+                    attributes: ['prog_name']
+                }]
             }]
         });
+
+        // Flatten data for frontend
+        return requests.map(r => {
+            const student = r.pg_student;
+            const programInfo = student?.Prog_Code_program_info;
+
+            return {
+                ...r.toJSON(),
+                full_name: student ? `${student.FirstName} ${student.LastName}` : 'N/A',
+                student_id_display: student?.stu_id || 'N/A',
+                program: programInfo?.prog_name || 'N/A'
+            };
+        });
+    }
+
+    async getById(id, userId, roleId) {
+        const where = { request_id: id };
+        if (roleId === 'STU') where.pg_student_id = userId;
+
+        // Filter for Supervisors/Examiners
+        if (['SUV', 'EXA'].includes(roleId)) {
+            const assignedIds = await roleAssignmentService.getAssignedStudentIds(userId);
+            where.pg_student_id = { [Op.in]: assignedIds };
+        }
+
+        const request = await service_requests.findOne({
+            where,
+            include: [{
+                model: pgstudinfo,
+                as: 'pg_student',
+                attributes: ['FirstName', 'LastName', 'EmailId', 'stu_id'],
+                include: [{
+                    model: pgstudinfo.sequelize.models.program_info,
+                    as: 'Prog_Code_program_info',
+                    attributes: ['prog_name']
+                }]
+            }]
+        });
+
+        if (!request) {
+            const error = new Error("Request not found or access denied");
+            error.status = 404;
+            throw error;
+        }
+
+        const student = request.pg_student;
+        const programInfo = student?.Prog_Code_program_info;
+
+        return {
+            ...request.toJSON(),
+            full_name: student ? `${student.FirstName} ${student.LastName}` : 'N/A',
+            student_id_display: student?.stu_id || 'N/A',
+            program: programInfo?.prog_name || 'N/A'
+        };
     }
 
     async updateRequestStatus(id, { status, comments, userId, roleId }) {

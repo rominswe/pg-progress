@@ -19,7 +19,8 @@ import _service_requests from "./service_requests.js";
 import _notifications from "./notifications.js";
 import _studinfo from "./studinfo.js";
 import _tbldepartments from "./tbldepartments.js";
-import _milestone_deadlines from "./milestone_deadlines.js";
+import _milestones from "./milestones.js";
+import _milestone_templates from "./milestone_templates.js";
 
 export default function initModels(sequelize) {
   const defense_evaluations = _defense_evaluations.init(sequelize, DataTypes);
@@ -41,7 +42,8 @@ export default function initModels(sequelize) {
   const notifications = _notifications.init(sequelize, DataTypes);
   const studinfo = _studinfo.init(sequelize, DataTypes);
   const tbldepartments = _tbldepartments.init(sequelize, DataTypes);
-  const milestone_deadlines = _milestone_deadlines.init(sequelize, DataTypes);
+  const milestones = _milestones.init(sequelize, DataTypes);
+  const milestone_templates = _milestone_templates.init(sequelize, DataTypes);
 
   // Document Reviews & Uploads
   documents_reviews.belongsTo(documents_uploads, { as: "doc_up", foreignKey: "doc_up_id" });
@@ -85,10 +87,14 @@ export default function initModels(sequelize) {
   pgstudinfo.hasMany(role_assignment, { as: "role_assignments", foreignKey: "pg_student_id" });
 
   // Milestone Deadlines
-  milestone_deadlines.belongsTo(pgstudinfo, { as: "pg_student", foreignKey: "pgstudent_id" });
-  pgstudinfo.hasMany(milestone_deadlines, { as: "milestone_deadlines", foreignKey: "pgstudent_id" });
-  milestone_deadlines.belongsTo(pgstaffinfo, { as: "staff", foreignKey: "updated_by" });
-  pgstaffinfo.hasMany(milestone_deadlines, { as: "milestone_deadlines", foreignKey: "updated_by" });
+  milestones.belongsTo(pgstudinfo, { as: "pg_student", foreignKey: "pgstudent_id" });
+  pgstudinfo.hasMany(milestones, { as: "milestone_overrides", foreignKey: "pgstudent_id" });
+  milestones.belongsTo(pgstaffinfo, { as: "staff", foreignKey: "updated_by" });
+  pgstaffinfo.hasMany(milestones, { as: "milestone_updates", foreignKey: "updated_by" });
+
+  // Milestone Templates
+  milestones.belongsTo(milestone_templates, { as: "template", foreignKey: "template_id" });
+  milestone_templates.hasMany(milestones, { as: "student_overrides", foreignKey: "template_id" });
 
   // Add association for requester (staff who requested the assignment)
   role_assignment.belongsTo(pgstaffinfo, { as: "requester", foreignKey: "requested_by" });
@@ -147,6 +153,7 @@ export default function initModels(sequelize) {
     notifications,
     studinfo,
     tbldepartments,
-    milestone_deadlines,
+    milestones,
+    milestone_templates,
   };
 }

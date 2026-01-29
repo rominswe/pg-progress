@@ -168,8 +168,13 @@ const ExaminerDashboard = () => {
                                         <td className="px-8 py-6">
                                             <div className="font-bold text-slate-800 group-hover:text-blue-600 transition-colors">{student.fullName}</div>
                                             <div className="text-xs text-slate-400 mt-0.5">{student.studentId}</div>
-                                            <div className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-blue-50 text-blue-600 mt-2 uppercase">
-                                                {student.programme}
+                                            <div className="flex gap-2 mt-2">
+                                                <div className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-blue-50 text-blue-600 uppercase">
+                                                    {student.programme}
+                                                </div>
+                                                <div className="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-600 uppercase">
+                                                    Sem {student.semester || 'N/A'}
+                                                </div>
                                             </div>
                                         </td>
                                         <td className="px-8 py-6 max-w-md">

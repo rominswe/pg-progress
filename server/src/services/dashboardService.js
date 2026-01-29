@@ -1,4 +1,4 @@
-import { defense_evaluations, progress_updates, pgstudinfo, documents_uploads, studinfo, program_info, role_assignment, pgstaffinfo, notifications, milestone_deadlines } from '../config/config.js';
+import { defense_evaluations, progress_updates, pgstudinfo, documents_uploads, studinfo, program_info, role_assignment, pgstaffinfo, notifications, milestones } from '../config/config.js';
 import { Op } from 'sequelize';
 import roleAssignmentService from './roleAssignmentService.js';
 
@@ -174,7 +174,7 @@ class DashboardService {
             return {
                 id: `${student.pgstud_id}-${doc.document_type}-${doc.doc_up_id}`,
                 fullName: stuInfo ? `${stuInfo.FirstName} ${stuInfo.LastName}` : 'Unknown Student',
-                studentId: student.pgstud_id,
+                studentId: student.stu_id,
                 programme: program ? program.Prog_Name : 'N/A',
                 thesisTitle: doc.document_name,
                 defenseType: doc.document_type === 'Research Proposal' ? 'Proposal Defense' : 'Final Thesis',

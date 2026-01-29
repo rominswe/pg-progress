@@ -162,5 +162,4 @@ async function seedEmpInfo() {
     process.exit();
   }
 }
-
 seedEmpInfo();

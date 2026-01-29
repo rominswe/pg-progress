@@ -201,8 +201,8 @@ export default function SupervisorDashboard() {
                         initial={{ width: 0 }}
                         animate={{ width: `${student.progress}%` }}
                         transition={{ duration: 0.8, delay: 0.2 }}
-                        className={`h-full rounded-full shadow-sm ${student.progress >= 80 ? "bg-blue-600" :
-                          student.progress >= 50 ? "bg-blue-400" : "bg-blue-300"
+                        className={`h-full rounded-full shadow-sm ${student.progress >= 60 ? "bg-blue-600" :
+                          student.progress >= 30 ? "bg-blue-400" : "bg-blue-300"
                           }`}
                       />
                     </div>
@@ -225,11 +225,11 @@ export default function SupervisorDashboard() {
                 </div>
                 <div className="text-center border-l border-slate-200">
                   <p className="text-xs text-slate-500 uppercase font-bold mb-1">On Track</p>
-                  <p className="text-xl font-extrabold text-blue-600">{students.filter(s => s.progress >= 80).length}</p>
+                  <p className="text-xl font-extrabold text-blue-600">{students.filter(s => s.progress >= 60).length}</p>
                 </div>
                 <div className="text-center border-l border-slate-200">
                   <p className="text-xs text-slate-500 uppercase font-bold mb-1">Need Attention</p>
-                  <p className="text-xl font-extrabold text-blue-400">{students.filter(s => s.progress < 50).length}</p>
+                  <p className="text-xl font-extrabold text-blue-400">{students.filter(s => s.progress < 60).length}</p>
                 </div>
               </div>
             </div>

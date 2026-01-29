@@ -2,45 +2,25 @@ import { useState, useEffect, useMemo } from "react";
 import { useAuth } from "@/components/auth/AuthContext";
 import api, { API_BASE_URL } from "@/services/api";
 import { toast } from "sonner";
-import {
-  User, Mail, Phone, Shield, Save,
-  Lock, Building2, Award, Camera,
-  MapPin, Globe, Briefcase, Calendar,
-  UserCircle, Fingerprint, ChevronRight, Check, ChevronsUpDown
-} from "lucide-react";
+import { User, Mail, Phone, Shield, Save, Lock, Building2, Camera, Trash2, MapPin, Globe, Briefcase, Calendar, UserCircle, Fingerprint, ChevronRight, Check, ChevronsUpDown } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardHeader, CardTitle, CardContent, CardDescription } from "@/components/ui/card";
 import { Separator } from "@/components/ui/separator";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
-  Command,
-  CommandEmpty,
-  CommandGroup,
-  CommandInput,
-  CommandItem,
-  CommandList
-} from "@/components/ui/command";
-import {
-  Popover,
-  PopoverContent,
-  PopoverTrigger,
-} from "@/components/ui/popover";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Command, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { cn } from "@/lib/utils";
+import { normalizePhoneValue } from "@/lib/phoneUtils";
 import countries from "i18n-iso-countries";
 import enLocale from "i18n-iso-countries/langs/en.json";
-import 'react-phone-number-input/style.css';
 import PhoneInput from 'react-phone-number-input';
-import UniversitySearch from "../users/UniversitySearch";
-import { normalizePhoneValue } from "@/lib/phoneUtils";
+import 'react-phone-number-input/style.css';
+import StudentAcademicInfo from "@/components/profile/StudentAcademicInfo";
+import StaffProfessionalInfo from "@/components/profile/StaffProfessionalInfo";
+import ProfileField from "@/components/profile/ProfileField";
 
 countries.registerLocale(enLocale);
 
@@ -77,6 +57,8 @@ export default function Profile() {
     Expertise: "",
     Honorific_Titles: "",
     Academic_Rank: "",
+    qualification_codes: [],
+    expertise_codes: [],
     Password: "",
     ConfirmPassword: ""
   });
@@ -107,7 +89,9 @@ export default function Profile() {
         univ_domain: user.Univ_Domain || "",
         Expertise: user.Expertise || "",
         Honorific_Titles: user.Honorific_Titles || "",
-        Academic_Rank: user.Academic_Rank || ""
+        Academic_Rank: user.Academic_Rank || "",
+        qualification_codes: user.qualifications ? user.qualifications.map(q => q.code) : [],
+        expertise_codes: user.expertises ? user.expertises.map(e => e.code) : []
       }));
     }
   }, [user]);
@@ -159,6 +143,20 @@ export default function Profile() {
     }
   };
 
+  const handleDeleteImage = async () => {
+    if (!window.confirm("Are you sure you want to delete your profile picture?")) return;
+
+    try {
+      const res = await api.delete("/api/profile/delete-image");
+      if (res.data.success) {
+        updateUser({ Profile_Image: null });
+        toast.success("Profile picture deleted");
+      }
+    } catch (err) {
+      toast.error("Failed to delete image");
+    }
+  };
+
   if (!user) return (
     <div className="flex items-center justify-center min-h-[400px]">
       <div className="animate-pulse text-muted-foreground font-medium">Loading profile...</div>
@@ -186,7 +184,23 @@ export default function Profile() {
                 <User className="h-16 w-16 text-white" />
               )}
               <label className="absolute inset-0 flex items-center justify-center bg-black/40 opacity-0 group-hover/avatar:opacity-100 transition-opacity cursor-pointer text-white text-xs font-bold uppercase tracking-tighter">
-                <Camera className="h-6 w-6 mb-1" />
+                <div className="flex flex-col items-center gap-2">
+                  <div className="flex items-center gap-4">
+                    <Camera className="h-6 w-6" />
+                    {user.Profile_Image && (
+                      <div
+                        onClick={(e) => {
+                          e.preventDefault();
+                          handleDeleteImage();
+                        }}
+                        className="p-1 hover:text-red-400 transition-colors"
+                      >
+                        <Trash2 className="h-6 w-6" />
+                      </div>
+                    )}
+                  </div>
+                  <span>Change Photo</span>
+                </div>
                 <input type="file" className="hidden" onChange={handleImageUpload} accept="image/*" />
               </label>
             </div>
@@ -206,10 +220,13 @@ export default function Profile() {
                 {user.EmailId}
               </div>
               {user.department_name && (
-                <div className="flex items-center gap-2">
-                  <Building2 className="h-4 w-4 text-blue-200" />
-                  {user.department_name}
-                </div>
+                <>
+                  <span className="hidden md:block h-1 w-1 rounded-full bg-blue-300/50"></span>
+                  <div className="flex items-center gap-2">
+                    <Building2 className="h-4 w-4 text-blue-200" />
+                    {user.department_name}
+                  </div>
+                </>
               )}
             </div>
           </div>
@@ -289,91 +306,118 @@ export default function Profile() {
           <div className="lg:col-span-2">
             {/* PERSONAL TAB */}
             <TabsContent value="personal" className="m-0 focus-visible:outline-none">
-              <Card className="rounded-3xl border-none shadow-xl shadow-slate-200/50 bg-white">
+              <Card className="rounded-2xl border-none shadow-xl shadow-slate-200/50 bg-white">
                 <CardHeader className="p-8 pb-4">
                   <CardTitle className="text-2xl font-black tracking-tight text-slate-800">Basic Background</CardTitle>
                   <CardDescription>Update your essential personal information for university records.</CardDescription>
                 </CardHeader>
-                <CardContent className="p-8 pt-4 space-y-6">
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <div className="space-y-2">
-                      <Label className="text-xs font-bold text-slate-500 ml-1">First Name</Label>
-                      <div className="relative">
-                        <UserCircle className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-400" />
-                        <Input
-                          className="pl-11 rounded-xl border-slate-100 bg-slate-50/50 h-11 focus-visible:ring-blue-500/20"
-                          value={formData.FirstName}
-                          readOnly={user.role_id !== "CGSADM"}
-                          onChange={(e) => setFormData({ ...formData, FirstName: e.target.value })}
-                        />
-                      </div>
+                <CardContent className="p-8 pt-4 space-y-8">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-6">
+                    <div className="space-y-1.5">
+                      <Label className="text-[13px] font-semibold text-slate-500 ml-1">First Name</Label>
+                      <ProfileField
+                        value={formData.FirstName}
+                        icon={UserCircle}
+                        readOnly={user.role_id !== "CGSADM"}
+                      >
+                        {user.role_id === "CGSADM" && (
+                          <input
+                            className="bg-transparent border-none p-0 w-full focus:ring-0 focus:outline-none font-bold text-slate-700"
+                            value={formData.FirstName}
+                            placeholder="First Name"
+                            onChange={(e) => setFormData({ ...formData, FirstName: e.target.value })}
+                          />
+                        )}
+                      </ProfileField>
                     </div>
-                    <div className="space-y-2">
-                      <Label className="text-xs font-bold text-slate-500 ml-1">Last Name</Label>
-                      <div className="relative">
-                        <UserCircle className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-400" />
-                        <Input
-                          className="pl-11 rounded-xl border-slate-100 bg-slate-50/50 h-11 focus-visible:ring-blue-500/20"
-                          value={formData.LastName}
-                          readOnly={user.role_id !== "CGSADM"}
-                          onChange={(e) => setFormData({ ...formData, LastName: e.target.value })}
-                        />
-                      </div>
+
+                    <div className="space-y-1.5">
+                      <Label className="text-[13px] font-semibold text-slate-500 ml-1">Last Name</Label>
+                      <ProfileField
+                        value={formData.LastName}
+                        icon={UserCircle}
+                        readOnly={user.role_id !== "CGSADM"}
+                      >
+                        {user.role_id === "CGSADM" && (
+                          <input
+                            className="bg-transparent border-none p-0 w-full focus:ring-0 focus:outline-none font-bold text-slate-700"
+                            value={formData.LastName}
+                            placeholder="Last Name"
+                            onChange={(e) => setFormData({ ...formData, LastName: e.target.value })}
+                          />
+                        )}
+                      </ProfileField>
                     </div>
-                    <div className="space-y-2">
-                      <Label className="text-xs font-bold text-slate-500 ml-1">Gender</Label>
-                      <Select value={formData.Gender} onValueChange={(val) => setFormData({ ...formData, Gender: val })}>
-                        <SelectTrigger className="rounded-xl border-slate-100 bg-slate-50/50 transition-colors focus:ring-offset-0 focus:ring-blue-500/10 h-11">
-                          <SelectValue placeholder="Select Gender" />
+
+                    <div className="space-y-1.5">
+                      <Label className="text-[13px] font-semibold text-slate-500 ml-1">
+                        Gender
+                      </Label>
+
+                      <Select
+                        value={formData.Gender || ""}
+                        onValueChange={(val) => setFormData({ ...formData, Gender: val })}
+                      >
+                        <SelectTrigger
+                          className="h-[44px] rounded-xl border border-slate-100 bg-slate-50/50
+                                     font-bold hover:bg-slate-100/50 transition-colors shadow-none
+                                     focus-visible:ring-0 focus-visible:ring-offset-0"
+                        >
+                          <div className="flex items-center gap-3">
+                            <UserCircle className="h-4 w-4 text-slate-400" />
+                            <span className={formData.Gender ? "" : "text-slate-400"}>
+                              {formData.Gender || "Select gender"}
+                            </span>
+                          </div>
                         </SelectTrigger>
-                        <SelectContent className="rounded-xl border-slate-100 shadow-xl">
+
+                        <SelectContent className="rounded-xl border-slate-100 shadow-xl bg-white">
                           <SelectItem value="Male">Male</SelectItem>
                           <SelectItem value="Female">Female</SelectItem>
                         </SelectContent>
                       </Select>
                     </div>
-                    <div className="space-y-2">
-                      <Label className="text-xs font-bold text-slate-500 ml-1">Date of Birth</Label>
-                      <Input
-                        type="date"
-                        className="rounded-xl border-slate-100 bg-slate-50/50 h-11"
-                        value={formData.Dob}
-                        onChange={(e) => setFormData({ ...formData, Dob: e.target.value })}
-                      />
+
+                    <div className="space-y-1.5">
+                      <Label className="text-[13px] font-semibold text-slate-500 ml-1">Date of Birth</Label>
+                      <ProfileField value={formData.Dob} icon={Calendar}>
+                        <input
+                          type="date"
+                          className="bg-transparent border-0 p-0 w-full focus:ring-0 focus:outline-none font-bold text-slate-700 cursor-pointer [&::-webkit-calendar-picker-indicator]:hidden"
+                          value={formData.Dob}
+                          onChange={(e) => setFormData({ ...formData, Dob: e.target.value })}
+                        />
+                      </ProfileField>
                     </div>
-                    <div className="space-y-2">
-                      <Label className="text-xs font-bold text-slate-500 ml-1">Phone Number</Label>
-                      <PhoneInput
-                        international
-                        defaultCountry="MY"
-                        value={formData.Phonenumber ?? undefined}
-                        onChange={(val) => setFormData({ ...formData, Phonenumber: val })}
-                        className={cn("flex h-11 w-full rounded-xl border bg-slate-50/50 px-3 py-2 text-sm transition-all focus-within:ring-2 focus-within:ring-blue-500/20",
-                          "border-slate-100")}
-                        numberInputProps={{ className: "border-none focus:ring-0 focus:outline-none bg-transparent w-full ml-2" }}
-                      />
+
+                    <div className="space-y-1.5">
+                      <Label className="text-[13px] font-semibold text-slate-500 ml-1">Phone Number</Label>
+                      <ProfileField value={formData.Phonenumber}>
+                        <PhoneInput
+                          international
+                          defaultCountry="MY"
+                          value={formData.Phonenumber ?? undefined}
+                          onChange={(val) => setFormData({ ...formData, Phonenumber: val })}
+                          className="w-full flex"
+                          numberInputProps={{ className: "border-none focus:ring-0 focus:outline-none bg-transparent w-full text-[14px] font-bold text-slate-700" }}
+                        />
+                      </ProfileField>
                     </div>
-                    <div className="space-y-2">
-                      <Label className="text-xs font-bold text-slate-500 ml-1">Country</Label>
+
+                    <div className="space-y-1.5">
+                      <Label className="text-[13px] font-semibold text-slate-500 ml-1">Country</Label>
                       <Popover open={openCountry} onOpenChange={setOpenCountry}>
                         <PopoverTrigger asChild>
-                          <Button
-                            variant="outline"
-                          className={cn("w-full justify-between font-normal rounded-xl border-slate-100 bg-slate-50/50 h-11 text-slate-700", !formData.Country && "text-slate-400")}
-                          >
-                            <div className="flex items-center gap-2">
-                              <Globe className="h-4 w-4 text-slate-400" />
-                              {formData.Country || "Select country"}
-                            </div>
-                            <ChevronsUpDown className="ml-2 h-4 w-4 shrink-0 opacity-50" />
-                          </Button>
+                          <div className="cursor-pointer">
+                            <ProfileField value={formData.Country} icon={Globe} />
+                          </div>
                         </PopoverTrigger>
-                        <PopoverContent className="p-0 w-[var(--radix-popover-trigger-width)] bg-white shadow-xl border" align="start">
+                        <PopoverContent className="p-0 w-[var(--radix-popover-trigger-width)] bg-white shadow-xl border rounded-2xl" align="start" sideOffset={8}>
                           <Command>
                             <CommandInput placeholder="Search country..." />
-                            <CommandList className="max-h-[200px]">
+                            <CommandList className="max-h-[300px]">
                               <CommandEmpty>No country found.</CommandEmpty>
-                              <CommandGroup>
+                              <CommandGroup title="Countries">
                                 {countryList.map((country) => (
                                   <CommandItem
                                     key={country}
@@ -381,8 +425,9 @@ export default function Profile() {
                                       setFormData({ ...formData, Country: country });
                                       setOpenCountry(false);
                                     }}
+                                    className="py-3 px-4 cursor-pointer"
                                   >
-                                    <Check className={cn("mr-2 h-4 w-4", formData.Country === country ? "opacity-100" : "opacity-0")} />
+                                    <Check className={cn("mr-2 h-4 w-4 text-primary", formData.Country === country ? "opacity-100" : "opacity-0")} />
                                     {country}
                                   </CommandItem>
                                 ))}
@@ -392,27 +437,29 @@ export default function Profile() {
                         </PopoverContent>
                       </Popover>
                     </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="text-xs font-bold text-slate-500 ml-1">Passport / National ID</Label>
-                    <div className="relative">
-                      <Fingerprint className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-400" />
-                      <Input
-                        className="pl-11 rounded-xl border-slate-100 bg-slate-50/50 h-11"
-                        value={formData.Passport}
-                        onChange={(e) => setFormData({ ...formData, Passport: e.target.value })}
-                      />
+
+                    <div className="space-y-1.5 md:col-span-2">
+                      <Label className="text-[13px] font-semibold text-slate-500 ml-1">Passport / National ID</Label>
+                      <ProfileField value={formData.Passport} icon={Fingerprint}>
+                        <input
+                          className="bg-transparent border-none p-0 w-full focus:ring-0 focus:outline-none font-bold text-slate-700 placeholder:text-slate-300"
+                          value={formData.Passport}
+                          placeholder="Not Provided"
+                          onChange={(e) => setFormData({ ...formData, Passport: e.target.value })}
+                        />
+                      </ProfileField>
                     </div>
-                  </div>
-                  <div className="space-y-2">
-                    <Label className="text-xs font-bold text-slate-500 ml-1">Mailing Address</Label>
-                    <div className="relative">
-                      <MapPin className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-400" />
-                      <Input
-                        className="pl-11 rounded-xl border-slate-100 bg-slate-50/50 h-11"
-                        value={formData.Address}
-                        onChange={(e) => setFormData({ ...formData, Address: e.target.value })}
-                      />
+
+                    <div className="space-y-1.5 md:col-span-2">
+                      <Label className="text-[13px] font-semibold text-slate-500 ml-1">Mailing Address</Label>
+                      <ProfileField value={formData.Address} icon={MapPin}>
+                        <input
+                          className="bg-transparent border-none p-0 w-full focus:ring-0 focus:outline-none font-bold text-slate-700 placeholder:text-slate-300"
+                          value={formData.Address}
+                          placeholder="Street name, City, Postcode"
+                          onChange={(e) => setFormData({ ...formData, Address: e.target.value })}
+                        />
+                      </ProfileField>
                     </div>
                   </div>
                 </CardContent>
@@ -421,89 +468,11 @@ export default function Profile() {
 
             {/* PROFESSIONAL TAB */}
             <TabsContent value="professional" className="m-0 focus-visible:outline-none">
-              <Card className="rounded-3xl border-none shadow-xl shadow-slate-200/50 bg-white">
-                <CardHeader className="p-8 pb-4">
-                  <CardTitle className="text-2xl font-black tracking-tight text-slate-800">
-                    {isStudent ? "Academic Status" : "Professional Portfolio"}
-                  </CardTitle>
-                  <CardDescription>Professional and academic records registered in the CGSS database.</CardDescription>
-                </CardHeader>
-                <CardContent className="p-8 pt-4 space-y-6">
-                  {isStaff ? (
-                    <div className="space-y-6">
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <div className="space-y-2">
-                          <Label className="text-xs font-bold text-slate-500 ml-1">Honorific Title</Label>
-                          <Select value={formData.Honorific_Titles} onValueChange={(val) => setFormData({ ...formData, Honorific_Titles: val })}>
-                            <SelectTrigger className="rounded-xl border-slate-100 bg-slate-50/50 h-11">
-                              <SelectValue placeholder="Select Title" />
-                            </SelectTrigger>
-                            <SelectContent className="rounded-xl border-slate-100 shadow-xl">
-                              {['Prof.', 'Assoc. Prof.', 'Dr.', 'Ir.', 'Ts.', 'Grs.', 'Sr.', 'Ar.', 'Tuan', 'Puan', 'Cik'].map(title => (
-                                <SelectItem key={title} value={title}>{title}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        <div className="space-y-2">
-                          <Label className="text-xs font-bold text-slate-500 ml-1">Academic Rank</Label>
-                          <Select value={formData.Academic_Rank} onValueChange={(val) => setFormData({ ...formData, Academic_Rank: val })}>
-                            <SelectTrigger className="rounded-xl border-slate-100 bg-slate-50/50 h-11">
-                              <SelectValue placeholder="Select Rank" />
-                            </SelectTrigger>
-                            <SelectContent className="rounded-xl border-slate-100 shadow-xl">
-                              {['Associate Professor', 'Professor', 'Senior Lecturer', 'Lecturer', 'Assistant Lecturer', 'Research Fellow', 'Adjunct Professor', 'Visiting Professor'].map(rank => (
-                                <SelectItem key={rank} value={rank}>{rank}</SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                        </div>
-                      </div>
-                      <div className="space-y-2">
-                        <Label className="text-xs font-bold text-slate-500 ml-1">Affiliated Institution</Label>
-                        <UniversitySearch
-                          value={formData.Affiliation}
-                          onSelect={(name, domain) => {
-                            setFormData(prev => ({ ...prev, Affiliation: name, univ_domain: domain }));
-                          }}
-                        />
-                        {formData.univ_domain && (
-                          <p className="text-[10px] text-primary font-bold uppercase tracking-widest mt-1">
-                            Verified Domain: {formData.univ_domain}
-                          </p>
-                        )}
-                      </div>
-                      <div className="space-y-2">
-                        <Label className="text-xs font-bold text-slate-500 ml-1">Research Expertise (Comma Separated)</Label>
-                        <div className="relative">
-                          <Award className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-400" />
-                          <Input
-                            className="pl-11 rounded-xl border-slate-100 bg-slate-50/50 h-11"
-                            value={formData.Expertise}
-                            onChange={(e) => setFormData({ ...formData, Expertise: e.target.value })}
-                            placeholder="Machine Learning, Renewable Energy, etc."
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100">
-                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">CGS Research Level</p>
-                        <p className="text-md font-bold text-slate-700">{user.role_level}</p>
-                      </div>
-                      <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100">
-                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Academic Year</p>
-                        <p className="text-md font-bold text-slate-700">{user.Acad_Year || '2023/2024'}</p>
-                      </div>
-                      <div className="p-4 rounded-2xl bg-slate-50 border border-slate-100 md:col-span-2">
-                        <p className="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Enrolled Program</p>
-                        <p className="text-md font-bold text-slate-700">{user.Prog_Code_program_info?.prog_name || user.department_name}</p>
-                      </div>
-                    </div>
-                  )}
-                </CardContent>
-              </Card>
+              {isStudent ? (
+                <StudentAcademicInfo user={user} />
+              ) : (
+                <StaffProfessionalInfo formData={formData} setFormData={setFormData} />
+              )}
             </TabsContent>
 
             {/* SECURITY TAB */}

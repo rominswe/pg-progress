@@ -25,6 +25,7 @@ export default function InternalRegisterForm({ onRegister, isSubmitting }) {
         expertise: "",
         acadYearStart: "",
         acadYearEnd: "",
+        Semester: "1",
         Exp_GraduatedYear: "",
         Prog_Code: "",
         selectedDepCode: "",
@@ -75,41 +76,18 @@ export default function InternalRegisterForm({ onRegister, isSubmitting }) {
         loadData();
     }, []);
 
-    // Reset expertise selection if department changes to an incompatible one
-    useEffect(() => {
-        if (!form.selectedDepCode) {
-            if (form.expertise_codes.length > 0) {
-                setForm(p => ({ ...p, expertise_codes: [] }));
-            }
-            return;
-        }
-
-        const validCodes = form.expertise_codes.filter(code => {
-            const exp = metadata.expertise.find(e => e.expertise_code === code);
-            return !exp || exp.Dep_Code === form.selectedDepCode;
-        });
-
-        if (validCodes.length !== form.expertise_codes.length) {
-            setForm(p => ({ ...p, expertise_codes: validCodes }));
-            toast.error("Some selected expertise areas were removed as they are not valid for the new department.");
-        }
-    }, [form.selectedDepCode]);
 
     const expertiseOptions = useMemo(() => {
         return metadata.expertise.map(e => {
-            const isDisabled = !form.selectedDepCode || e.Dep_Code !== form.selectedDepCode;
             const dept = departments.find(d => d.Dep_Code === e.Dep_Code);
             const deptName = dept ? dept.DepartmentName : e.Dep_Code;
 
             return {
                 ...e,
-                isDisabled,
-                tooltip: isDisabled
-                    ? (!form.selectedDepCode ? "Please select a department first." : `Only available for ${deptName}`)
-                    : null
+                deptName
             };
         });
-    }, [metadata.expertise, form.selectedDepCode, departments]);
+    }, [metadata.expertise, departments]);
 
     useEffect(() => {
         if (searchResult) {
@@ -219,6 +197,7 @@ export default function InternalRegisterForm({ onRegister, isSubmitting }) {
             roleType: form.roleId === 'CGSS' ? form.roleType : undefined,
             expertise: form.expertise,
             Acad_Year: form.userType === 'student' ? `${form.acadYearStart}/${form.acadYearEnd}` : undefined,
+            Semester: form.Semester,
             Exp_GraduatedYear: form.Exp_GraduatedYear,
             Prog_Code: form.Prog_Code,
             EmailId: searchResult.email,
@@ -245,6 +224,7 @@ export default function InternalRegisterForm({ onRegister, isSubmitting }) {
                 expertise: "",
                 acadYearStart: "",
                 acadYearEnd: "",
+                Semester: "1",
                 Exp_GraduatedYear: "",
                 Prog_Code: "",
                 selectedDepCode: "",
@@ -362,36 +342,44 @@ export default function InternalRegisterForm({ onRegister, isSubmitting }) {
                     {/* Right Column */}
                     <div className="space-y-6">
                         {searchResult ? (
-                            <form onSubmit={handleSubmit} className="bg-slate-50 p-6 rounded-lg border space-y-6 h-full shadow-inner animate-in slide-in-from-right-2">
-                                <h3 className="font-semibold text-lg flex items-center gap-2">
-                                    <UserPlus className="h-5 w-5 text-primary" />
-                                    Step 3: Registration Details
-                                </h3>
+                            <>
+                                <form onSubmit={handleSubmit} className="bg-slate-50 p-6 rounded-lg border space-y-6 h-full shadow-inner animate-in slide-in-from-right-2">
+                                    <h3 className="font-semibold text-lg flex items-center gap-2">
+                                        <UserPlus className="h-5 w-5 text-primary" />
+                                        Step 3: Registration Details
+                                    </h3>
 
-                                {form.userType === 'student' ? (
-                                    <>
-                                        <div className="space-y-3">
-                                            <Label className="flex items-center gap-2"><BookOpen className="h-4 w-4" /> Select Program *</Label>
-                                            <Select value={form.Prog_Code} onValueChange={(val) => setForm(p => ({ ...p, Prog_Code: val }))}>
-                                                <SelectTrigger className="h-11 bg-white"><SelectValue placeholder="Choose program..." /></SelectTrigger>
-                                                <SelectContent className="bg-white">
-                                                    {programs.map(p => <SelectItem key={p.Prog_Code} value={p.Prog_Code}>{p.prog_name}</SelectItem>)}
-                                                </SelectContent>
-                                            </Select>
-                                        </div>
-                                        <div className="grid grid-cols-2 gap-4">
+                                    {form.userType === 'student' ? (
+                                        <>
                                             <div className="space-y-3">
-                                                <Label className="flex items-center gap-2"><Calendar className="h-4 w-4" /> Academic Intake Year *</Label>
-                                                <div className="flex items-center gap-2">
-                                                    <Select value={form.acadYearStart} onValueChange={(v) => setForm(p => ({ ...p, acadYearStart: v }))}>
-                                                        <SelectTrigger className="bg-white"><SelectValue placeholder="Start" /></SelectTrigger>
-                                                        <SelectContent className="bg-white">{yearRange.map(y => <SelectItem key={y} value={y}>{y}</SelectItem>)}</SelectContent>
-                                                    </Select>
-                                                    <Select value={form.acadYearEnd} onValueChange={(v) => setForm(p => ({ ...p, acadYearEnd: v }))}>
-                                                        <SelectTrigger className="bg-white"><SelectValue placeholder="End" /></SelectTrigger>
-                                                        <SelectContent className="bg-white">{yearRange.map(y => <SelectItem key={y} value={y}>{y}</SelectItem>)}</SelectContent>
-                                                    </Select>
+                                                <Label className="flex items-center gap-2"><BookOpen className="h-4 w-4" /> Select Program *</Label>
+                                                <Select value={form.Prog_Code} onValueChange={(val) => setForm(p => ({ ...p, Prog_Code: val }))}>
+                                                    <SelectTrigger className="h-11 bg-white"><SelectValue placeholder="Choose program..." /></SelectTrigger>
+                                                    <SelectContent className="bg-white">
+                                                        {programs.map(p => <SelectItem key={p.Prog_Code} value={p.Prog_Code}>{p.prog_name}</SelectItem>)}
+                                                    </SelectContent>
+                                                </Select>
+                                            </div>
+                                            <div className="grid grid-cols-2 gap-4">
+                                                <div className="space-y-3">
+                                                    <Label className="flex items-center gap-2"><Calendar className="h-4 w-4" /> Academic Intake Year *</Label>
+                                                    <div className="flex items-center gap-2">
+                                                        <Select value={form.acadYearStart} onValueChange={(v) => setForm(p => ({ ...p, acadYearStart: v }))}>
+                                                            <SelectTrigger className="bg-white"><SelectValue placeholder="Start" /></SelectTrigger>
+                                                            <SelectContent className="bg-white">{yearRange.map(y => <SelectItem key={y} value={y}>{y}</SelectItem>)}</SelectContent>
+                                                        </Select>
+                                                        <Select value={form.acadYearEnd} onValueChange={(v) => setForm(p => ({ ...p, acadYearEnd: v }))}>
+                                                            <SelectTrigger className="bg-white"><SelectValue placeholder="End" /></SelectTrigger>
+                                                            <SelectContent className="bg-white">{yearRange.map(y => <SelectItem key={y} value={y}>{y}</SelectItem>)}</SelectContent>
+                                                        </Select>
+                                                    </div>
                                                 </div>
+                                                <div className="space-y-3">
+                                                    <Label className="flex items-center gap-2"><BookOpen className="h-4 w-4" /> Current Semester (1-10) *</Label>
+                                                    <Input type="number" min="1" max="10" value={form.Semester} onChange={(e) => setForm(p => ({ ...p, Semester: e.target.value }))} className="bg-white" placeholder="1" />
+                                                </div>
+                                            </div>
+                                            <div className="space-y-3">
                                                 <Label className="flex items-center gap-2"><GraduationCap className="h-4 w-4" /> Expected Graduation Year *</Label>
                                                 <div className="flex items-center gap-2">
                                                     <Select value={form.Exp_GraduatedYear || ""} onValueChange={(v) => setForm(p => ({ ...p, Exp_GraduatedYear: v }))}>
@@ -400,184 +388,180 @@ export default function InternalRegisterForm({ onRegister, isSubmitting }) {
                                                     </Select>
                                                 </div>
                                             </div>
-                                        </div>
-                                    </>
-                                ) : (
-                                    <>
-                                        <div className="space-y-3">
-                                            <Label>Select Role *</Label>
-                                            <Select value={form.roleId} onValueChange={(val) => setForm(p => ({ ...p, roleId: val }))}>
-                                                <SelectTrigger className="h-11 bg-white"><SelectValue placeholder="Choose a role..." /></SelectTrigger>
-                                                <SelectContent className="bg-white">
-                                                    {roles.map(r => <SelectItem key={r.id} value={r.id}>{r.label}</SelectItem>)}
-                                                </SelectContent>
-                                            </Select>
-                                        </div>
-
-                                        <div className="grid grid-cols-2 gap-4">
+                                        </>
+                                    ) : (
+                                        <>
                                             <div className="space-y-3">
-                                                <Label>Honorific Title (Optional)</Label>
-                                                <Select value={form.Honorific_Titles} onValueChange={(val) => setForm(p => ({ ...p, Honorific_Titles: val }))}>
-                                                    <SelectTrigger className="h-11 bg-white"><SelectValue placeholder="Select title" /></SelectTrigger>
+                                                <Label>Select Role *</Label>
+                                                <Select value={form.roleId} onValueChange={(val) => setForm(p => ({ ...p, roleId: val }))}>
+                                                    <SelectTrigger className="h-11 bg-white"><SelectValue placeholder="Choose a role..." /></SelectTrigger>
                                                     <SelectContent className="bg-white">
-                                                        {metadata.staffMetadata.honorificTitles.map(t => (
-                                                            <SelectItem key={t} value={t}>{t}</SelectItem>
-                                                        ))}
+                                                        {roles.map(r => <SelectItem key={r.id} value={r.id}>{r.label}</SelectItem>)}
                                                     </SelectContent>
                                                 </Select>
                                             </div>
-                                            <div className="space-y-3">
-                                                <Label>Academic Rank (Optional)</Label>
-                                                <Select value={form.Academic_Rank} onValueChange={(val) => setForm(p => ({ ...p, Academic_Rank: val }))}>
-                                                    <SelectTrigger className="h-11 bg-white"><SelectValue placeholder="Select rank" /></SelectTrigger>
-                                                    <SelectContent className="bg-white">
-                                                        {metadata.staffMetadata.academicRanks.map(r => (
-                                                            <SelectItem key={r} value={r}>{r}</SelectItem>
-                                                        ))}
-                                                    </SelectContent>
-                                                </Select>
-                                            </div>
-                                        </div>
 
-                                        <div className="space-y-3">
-                                            <Label>Assigned Department *</Label>
-                                            <Select value={form.selectedDepCode} onValueChange={(val) => setForm(p => ({ ...p, selectedDepCode: val }))}>
-                                                <SelectTrigger className="h-11 bg-white"><SelectValue placeholder="Select Department" /></SelectTrigger>
-                                                <SelectContent className="bg-white">
-                                                    {departments.map(d => (
-                                                        <SelectItem key={d.Dep_Code} value={d.Dep_Code}>{d.DepartmentName} ({d.Dep_Code})</SelectItem>
-                                                    ))}
-                                                </SelectContent>
-                                            </Select>
-                                        </div>
-
-                                        {(form.roleId === 'CGSS' || roles.find(r => r.id === form.roleId)?.label === 'Centre for Graduate Studies Staff') && (
-                                            <div className="space-y-3 animate-in fade-in slide-in-from-top-1">
-                                                <Label>CGS Role Type *</Label>
-                                                <Select
-                                                    value={form.roleType}
-                                                    defaultValue="Executive"
-                                                    onValueChange={(val) => setForm(p => ({ ...p, roleType: val }))}
-                                                >
-                                                    <SelectTrigger className="h-11 bg-white"><SelectValue /></SelectTrigger>
-                                                    <SelectContent>
-                                                        <SelectItem value="Executive">Executive</SelectItem>
-                                                        <SelectItem value="Director">Director</SelectItem>
-                                                    </SelectContent>
-                                                </Select>
-                                            </div>
-                                        )}
-
-                                        {(form.roleId === 'EXA' || form.roleId === 'SUV') && (
-                                            <>
-                                                <div className="space-y-3 animate-in fade-in slide-in-from-top-1">
-                                                    <Label className="flex items-center gap-2"><GraduationCap className="h-4 w-4" /> Academic Qualifications</Label>
-                                                    <div className="flex flex-wrap gap-2 mb-1">
-                                                        {form.qualification_codes.map(code => {
-                                                            const qual = metadata.qualifications.find(q => q.qualification_code === code);
-                                                            return (
-                                                                <Badge key={code} variant="secondary" className="pl-2 pr-1 py-1 flex items-center gap-1">
-                                                                    {qual?.qualification_name || code}
-                                                                    <X className="h-3 w-3 cursor-pointer hover:text-destructive" onClick={() => {
-                                                                        setForm(prev => ({ ...prev, qualification_codes: prev.qualification_codes.filter(c => c !== code) }));
-                                                                    }} />
-                                                                </Badge>
-                                                            );
-                                                        })}
-                                                    </div>
-                                                    <Select onValueChange={(v) => {
-                                                        if (!form.qualification_codes.includes(v)) {
-                                                            setForm(p => ({ ...p, qualification_codes: [...p.qualification_codes, v] }));
-                                                        }
-                                                    }}>
-                                                        <SelectTrigger className="h-10 bg-white"><SelectValue placeholder="Add qualification..." /></SelectTrigger>
+                                            <div className="grid grid-cols-2 gap-4">
+                                                <div className="space-y-3">
+                                                    <Label>Honorific Title (Optional)</Label>
+                                                    <Select value={form.Honorific_Titles} onValueChange={(val) => setForm(p => ({ ...p, Honorific_Titles: val }))}>
+                                                        <SelectTrigger className="h-11 bg-white"><SelectValue placeholder="Select title" /></SelectTrigger>
                                                         <SelectContent className="bg-white">
-                                                            {metadata.qualifications.map(q => (
-                                                                <SelectItem key={q.qualification_code} value={q.qualification_code}>{q.qualification_name}</SelectItem>
+                                                            {metadata.staffMetadata.honorificTitles.map(t => (
+                                                                <SelectItem key={t} value={t}>{t}</SelectItem>
                                                             ))}
                                                         </SelectContent>
                                                     </Select>
                                                 </div>
+                                                <div className="space-y-3">
+                                                    <Label>Academic Rank (Optional)</Label>
+                                                    <Select value={form.Academic_Rank} onValueChange={(val) => setForm(p => ({ ...p, Academic_Rank: val }))}>
+                                                        <SelectTrigger className="h-11 bg-white"><SelectValue placeholder="Select rank" /></SelectTrigger>
+                                                        <SelectContent className="bg-white">
+                                                            {metadata.staffMetadata.academicRanks.map(r => (
+                                                                <SelectItem key={r} value={r}>{r}</SelectItem>
+                                                            ))}
+                                                        </SelectContent>
+                                                    </Select>
+                                                </div>
+                                            </div>
 
+                                            <div className="space-y-3">
+                                                <Label>Assigned Department *</Label>
+                                                <Select value={form.selectedDepCode} onValueChange={(val) => setForm(p => ({ ...p, selectedDepCode: val }))}>
+                                                    <SelectTrigger className="h-11 bg-white"><SelectValue placeholder="Select Department" /></SelectTrigger>
+                                                    <SelectContent className="bg-white">
+                                                        {departments.map(d => (
+                                                            <SelectItem key={d.Dep_Code} value={d.Dep_Code}>{d.DepartmentName} ({d.Dep_Code})</SelectItem>
+                                                        ))}
+                                                    </SelectContent>
+                                                </Select>
+                                            </div>
+
+                                            {(form.roleId === 'CGSS' || roles.find(r => r.id === form.roleId)?.label === 'Centre for Graduate Studies Staff') && (
                                                 <div className="space-y-3 animate-in fade-in slide-in-from-top-1">
-                                                    <Label className="flex items-center gap-2"><BookOpen className="h-4 w-4" /> Expertise Specialization</Label>
-                                                    <div className="flex flex-wrap gap-2 mb-1">
-                                                        {form.expertise_codes.map(code => {
-                                                            const exp = metadata.expertise.find(e => e.expertise_code === code);
-                                                            return (
-                                                                <Badge key={code} variant="outline" className="pl-2 pr-1 py-1 flex items-center gap-1 border-primary/30">
-                                                                    {exp?.expertise_name || code}
-                                                                    <X className="h-3 w-3 cursor-pointer hover:text-destructive" onClick={() => {
-                                                                        setForm(prev => ({ ...prev, expertise_codes: prev.expertise_codes.filter(c => c !== code) }));
-                                                                    }} />
-                                                                </Badge>
-                                                            );
-                                                        })}
+                                                    <Label>CGS Role Type *</Label>
+                                                    <Select
+                                                        value={form.roleType}
+                                                        defaultValue="Executive"
+                                                        onValueChange={(val) => setForm(p => ({ ...p, roleType: val }))}
+                                                    >
+                                                        <SelectTrigger className="h-11 bg-white"><SelectValue /></SelectTrigger>
+                                                        <SelectContent>
+                                                            <SelectItem value="Executive">Executive</SelectItem>
+                                                            <SelectItem value="Director">Director</SelectItem>
+                                                        </SelectContent>
+                                                    </Select>
+                                                </div>
+                                            )}
+
+                                            {(form.roleId === 'EXA' || form.roleId === 'SUV') && (
+                                                <>
+                                                    <div className="space-y-3 animate-in fade-in slide-in-from-top-1">
+                                                        <Label className="flex items-center gap-2"><GraduationCap className="h-4 w-4" /> Academic Qualifications</Label>
+                                                        <div className="flex flex-wrap gap-2 mb-1">
+                                                            {form.qualification_codes.map(code => {
+                                                                const qual = metadata.qualifications.find(q => q.qualification_code === code);
+                                                                return (
+                                                                    <Badge key={code} variant="secondary" className="pl-2 pr-1 py-1 flex items-center gap-1">
+                                                                        {qual?.qualification_name || code}
+                                                                        <X className="h-3 w-3 cursor-pointer hover:text-destructive" onClick={() => {
+                                                                            setForm(prev => ({ ...prev, qualification_codes: prev.qualification_codes.filter(c => c !== code) }));
+                                                                        }} />
+                                                                    </Badge>
+                                                                );
+                                                            })}
+                                                        </div>
+                                                        <Select onValueChange={(v) => {
+                                                            if (!form.qualification_codes.includes(v)) {
+                                                                setForm(p => ({ ...p, qualification_codes: [...p.qualification_codes, v] }));
+                                                            }
+                                                        }}>
+                                                            <SelectTrigger className="h-10 bg-white"><SelectValue placeholder="Add qualification..." /></SelectTrigger>
+                                                            <SelectContent className="bg-white">
+                                                                {metadata.qualifications.map(q => (
+                                                                    <SelectItem key={q.qualification_code} value={q.qualification_code}>{q.qualification_name}</SelectItem>
+                                                                ))}
+                                                            </SelectContent>
+                                                        </Select>
                                                     </div>
-                                                    <Select onValueChange={(v) => {
-                                                        const opt = expertiseOptions.find(o => o.expertise_code === v);
-                                                        if (opt?.isDisabled) return;
-                                                        if (!form.expertise_codes.includes(v)) {
-                                                            setForm(p => ({ ...p, expertise_codes: [...p.expertise_codes, v] }));
-                                                        }
-                                                    }}>
-                                                        <SelectTrigger className="h-10 bg-white"><SelectValue placeholder={!form.selectedDepCode ? "Select department first..." : "Add expertise..."} /></SelectTrigger>
-                                                        <SelectContent className="bg-white max-h-[300px]">
-                                                            {expertiseOptions.map(e => (
-                                                                <SelectItem
-                                                                    key={e.expertise_code}
-                                                                    value={e.expertise_code}
-                                                                    disabled={e.isDisabled}
-                                                                    title={e.tooltip}
-                                                                    className={cn(e.isDisabled && "opacity-50 cursor-not-allowed")}
-                                                                >
-                                                                    {e.expertise_name}
-                                                                </SelectItem>
-                                                            ))}
-                                                        </SelectContent>
-                                                    </Select>
-                                                </div>
 
-                                                <div className="space-y-3 animate-in fade-in slide-in-from-top-1">
-                                                    <Label>Other Expertise (Manual)</Label>
-                                                    <Input
-                                                        placeholder="e.g. Machine Learning"
-                                                        className="h-11 bg-white"
-                                                        value={form.expertise}
-                                                        onChange={(e) => setForm(p => ({ ...p, expertise: e.target.value }))}
-                                                    />
-                                                </div>
-                                            </>
-                                        )}
-                                    </>
-                                )}
-                                <div className="pt-4">
-                                    <Button
-                                        type="submit"
-                                        className={cn(
-                                            "w-full h-11 text-base shadow-md",
-                                            (isSubmitting ||
+                                                    <div className="space-y-3 animate-in fade-in slide-in-from-top-1">
+                                                        <Label className="flex items-center gap-2"><BookOpen className="h-4 w-4" /> Expertise Specialization</Label>
+                                                        <div className="flex flex-wrap gap-2 mb-1">
+                                                            {form.expertise_codes.map(code => {
+                                                                const exp = metadata.expertise.find(e => e.expertise_code === code);
+                                                                return (
+                                                                    <Badge key={code} variant="outline" className="pl-2 pr-1 py-1 flex items-center gap-1 border-primary/30">
+                                                                        {exp?.expertise_name || code}
+                                                                        <X className="h-3 w-3 cursor-pointer hover:text-destructive" onClick={() => {
+                                                                            setForm(prev => ({ ...prev, expertise_codes: prev.expertise_codes.filter(c => c !== code) }));
+                                                                        }} />
+                                                                    </Badge>
+                                                                );
+                                                            })}
+                                                        </div>
+                                                        <Select onValueChange={(v) => {
+                                                            const opt = expertiseOptions.find(o => o.expertise_code === v);
+                                                            if (opt?.isDisabled) return;
+                                                            if (!form.expertise_codes.includes(v)) {
+                                                                setForm(p => ({ ...p, expertise_codes: [...p.expertise_codes, v] }));
+                                                            }
+                                                        }}>
+                                                            <SelectTrigger className="h-10 bg-white"><SelectValue placeholder="Add expertise..." /></SelectTrigger>
+                                                            <SelectContent className="bg-white">
+                                                                {expertiseOptions.map(e => (
+                                                                    <SelectItem
+                                                                        key={e.expertise_code}
+                                                                        value={e.expertise_code}
+                                                                    >
+                                                                        {e.expertise_name}({e.deptName})
+                                                                    </SelectItem>
+                                                                ))}
+                                                            </SelectContent>
+                                                        </Select>
+                                                    </div>
+                                                    <div className="space-y-3 animate-in fade-in slide-in-from-top-1">
+                                                        <Label>Other Expertise (Manual)</Label>
+                                                        <Input
+                                                            placeholder="e.g. Machine Learning"
+                                                            className="h-11 bg-white"
+                                                            value={form.expertise}
+                                                            onChange={(e) => setForm(p => ({ ...p, expertise: e.target.value }))}
+                                                        />
+                                                    </div>
+                                                </>
+                                            )}
+                                        </>
+                                    )}
+                                    <div className="pt-4">
+                                        <Button
+                                            type="submit"
+                                            className={cn(
+                                                "w-full h-11 text-base shadow-md",
+                                                (isSubmitting ||
+                                                    (searchResult.status !== "Unregistered" && form.userType === 'student') ||
+                                                    (form.userType === 'staff' && (!form.roleId || !form.selectedDepCode)) ||
+                                                    (form.userType === 'staff' && form.roleId === 'CGSS' && !form.roleType) ||
+                                                    (form.userType === 'staff' && (form.roleId === 'EXA' || form.roleId === 'SUV') && (!form.qualification_codes.length))
+                                                ) && "bg-slate-200 text-slate-500 hover:bg-slate-200 cursor-not-allowed border-none shadow-none"
+                                            )}
+                                            disabled={
+                                                isSubmitting ||
                                                 (searchResult.status !== "Unregistered" && form.userType === 'student') ||
+                                                (form.userType === 'student' && (!form.Prog_Code || !form.acadYearStart || !form.acadYearEnd || !form.Exp_GraduatedYear)) ||
                                                 (form.userType === 'staff' && (!form.roleId || !form.selectedDepCode)) ||
                                                 (form.userType === 'staff' && form.roleId === 'CGSS' && !form.roleType) ||
                                                 (form.userType === 'staff' && (form.roleId === 'EXA' || form.roleId === 'SUV') && (!form.qualification_codes.length))
-                                            ) && "bg-slate-200 text-slate-500 hover:bg-slate-200 cursor-not-allowed border-none shadow-none"
-                                        )}
-                                        disabled={
-                                            isSubmitting ||
-                                            (searchResult.status !== "Unregistered" && form.userType === 'student') ||
-                                            (form.userType === 'student' && (!form.Prog_Code || !form.acadYearStart || !form.acadYearEnd || !form.Exp_GraduatedYear)) ||
-                                            (form.userType === 'staff' && (!form.roleId || !form.selectedDepCode)) ||
-                                            (form.userType === 'staff' && form.roleId === 'CGSS' && !form.roleType) ||
-                                            (form.userType === 'staff' && (form.roleId === 'EXA' || form.roleId === 'SUV') && (!form.qualification_codes.length))
-                                        }
-                                    >
-                                        {isSubmitting ? "Processing..." :
-                                            (searchResult.status !== "Unregistered" && form.userType === 'student') ? "Already Registered" :
-                                                (searchResult.status !== "Unregistered" ? "Add Role" : "Complete Registration")}
-                                    </Button>
-                                </div>
-                            </form>) : (
+                                            }
+                                        >
+                                            {isSubmitting ? "Processing..." :
+                                                (searchResult.status !== "Unregistered" && form.userType === 'student') ? "Already Registered" :
+                                                    (searchResult.status !== "Unregistered" ? "Add Role" : "Complete Registration")}
+                                        </Button>
+                                    </div>
+                                </form>
+                            </>) : (
                             <div className="bg-slate-50 p-6 rounded-lg border border-dashed flex flex-col items-center justify-center h-full text-center space-y-4 opacity-70">
                                 <Search className="h-8 w-8 text-slate-400" />
                                 <p className="text-slate-500 text-sm">Search for a user to begin registration.</p>
@@ -585,7 +569,7 @@ export default function InternalRegisterForm({ onRegister, isSubmitting }) {
                         )}
                     </div>
                 </div>
-            </CardContent>
-        </Card>
+            </CardContent >
+        </Card >
     );
 }

@@ -1,4 +1,4 @@
-import { defense_evaluations, progress_updates, documents_uploads, pgstudinfo, tbldepartments, program_info, studinfo, role_assignment, milestone_deadlines } from '../config/config.js';
+import { defense_evaluations, progress_updates, documents_uploads, pgstudinfo, tbldepartments, program_info, studinfo, role_assignment, milestones } from '../config/config.js';
 import { Op } from 'sequelize';
 import notificationService from './notificationService.js';
 
@@ -14,7 +14,10 @@ class CalendarService {
             defense_evaluations.findAll({ where: { pg_student_id: pgstud_id } }),
             progress_updates.findAll({ where: { pg_student_id: pgstud_id } }),
             documents_uploads.findAll({ where: { pg_student_id: pgstud_id } }),
-            milestone_deadlines.findAll({ where: { pgstudent_id: pgstud_id } })
+            milestones.findAll({
+                where: { pgstudent_id: pgstud_id },
+                attributes: ['name', 'deadline_date', 'reason']
+            })
         ]);
 
         const events = [];
@@ -63,7 +66,10 @@ class CalendarService {
 
         systemDeadlines.forEach(sdl => {
             // Check if we have a custom override for this milestone
-            const custom = customDeadlines.find(cd => cd.milestone_name === sdl.docType);
+            const custom = customDeadlines.find(cd => {
+                if (!cd.name || !sdl.milestoneName) return false;
+                return cd.name.toLowerCase() === sdl.milestoneName.toLowerCase();
+            });
             const dateToUse = custom ? custom.deadline_date : sdl.date;
             const isOverridden = !!custom;
 
@@ -111,7 +117,10 @@ class CalendarService {
                 where: { pg_student_id: { [Op.in]: studentIds } },
                 include: [{ model: pgstudinfo, as: 'pg_student', include: [{ model: studinfo, as: 'stu' }] }]
             }),
-            milestone_deadlines.findAll({ where: { pgstudent_id: { [Op.in]: studentIds } } })
+            milestones.findAll({
+                where: { pgstudent_id: { [Op.in]: studentIds } },
+                attributes: ['name', 'pgstudent_id', 'deadline_date']
+            })
         ]);
 
         const events = [];
@@ -137,7 +146,10 @@ class CalendarService {
             const systemDeadlines = this.calculateStudentDeadlines(student);
 
             systemDeadlines.forEach(sdl => {
-                const custom = stuCustoms.find(cd => cd.milestone_name === sdl.docType);
+                const custom = stuCustoms.find(cd => {
+                    if (!cd.name || !sdl.milestoneName) return false;
+                    return cd.name.toLowerCase() === sdl.milestoneName.toLowerCase();
+                });
                 const dateToUse = custom ? custom.deadline_date : sdl.date;
                 const isOverridden = !!custom;
 
@@ -171,8 +183,9 @@ class CalendarService {
         ]);
 
         const studentIds = students.map(s => s.pgstud_id);
-        const customDeadlines = await milestone_deadlines.findAll({
-            where: { pgstudent_id: { [Op.in]: studentIds } }
+        const customDeadlines = await milestones.findAll({
+            where: { pgstudent_id: { [Op.in]: studentIds } },
+            attributes: ['name', 'pgstudent_id', 'deadline_date']
         });
 
         const events = [];
@@ -197,7 +210,10 @@ class CalendarService {
             const systemDeadlines = this.calculateStudentDeadlines(student);
 
             systemDeadlines.forEach(sdl => {
-                const custom = stuCustoms.find(cd => cd.milestone_name === sdl.docType);
+                const custom = stuCustoms.find(cd => {
+                    if (!cd.name || !sdl.milestoneName) return false;
+                    return cd.name.toLowerCase() === sdl.milestoneName.toLowerCase();
+                });
                 const dateToUse = custom ? custom.deadline_date : sdl.date;
                 const isOverridden = !!custom;
 
@@ -225,29 +241,29 @@ class CalendarService {
         const isDoctoral = student.role_level === 'Doctoral Student';
 
         const deadlines = [
-            { id: 'grad-deadline', title: 'Expected Graduation', date: endDate, docType: 'Final Thesis' }
+            { id: 'grad-deadline', title: 'Expected Graduation', date: endDate, docType: 'Final Thesis', milestoneName: 'Final Thesis' }
         ];
 
         // 1. Research Proposal
         const proposalMonths = isDoctoral ? 12 : 6;
         const proposalDate = new Date(regDate);
         proposalDate.setMonth(proposalDate.getMonth() + proposalMonths);
-        deadlines.push({ id: 'proposal-deadline', title: 'Research Proposal', date: proposalDate, docType: 'Research Proposal' });
+        deadlines.push({ id: 'proposal-deadline', title: 'Research Proposal', date: proposalDate, docType: 'Research Proposal', milestoneName: 'Research Proposal' });
 
         // 2. Literature Review
         const litDate = new Date(proposalDate);
         litDate.setMonth(litDate.getMonth() + 4);
-        deadlines.push({ id: 'lit-review-deadline', title: 'Literature Review', date: litDate, docType: 'Literature Review' });
+        deadlines.push({ id: 'lit-review-deadline', title: 'Literature Review', date: litDate, docType: 'Literature Review', milestoneName: 'Literature Review' });
 
         // 3. Methodology Chapter
         const methDate = new Date(litDate);
         methDate.setMonth(methDate.getMonth() + 4);
-        deadlines.push({ id: 'methodology-deadline', title: 'Methodology Chapter', date: methDate, docType: 'Methodology Chapter' });
+        deadlines.push({ id: 'methodology-deadline', title: 'Methodology Chapter', date: methDate, docType: 'Methodology Chapter', milestoneName: 'Methodology Chapter' });
 
         // 4. Data Collection & Analysis
         const dataDate = new Date(methDate);
         dataDate.setMonth(dataDate.getMonth() + 6);
-        deadlines.push({ id: 'data-collection-deadline', title: 'Data Collection & Analysis', date: dataDate, docType: 'Data Collection & Analysis' });
+        deadlines.push({ id: 'data-collection-deadline', title: 'Data Collection & Analysis', date: dataDate, docType: 'Data Collection & Analysis', milestoneName: 'Data Collection & Analysis' });
 
         return deadlines;
     }
@@ -262,11 +278,17 @@ class CalendarService {
 
         for (const student of students) {
             // Fetch custom deadlines for this student
-            const customDeadlines = await milestone_deadlines.findAll({ where: { pgstudent_id: student.pgstud_id } });
+            const customDeadlines = await milestones.findAll({
+                where: { pgstudent_id: student.pgstud_id },
+                attributes: ['name', 'deadline_date']
+            });
             const systemDeadlines = this.calculateStudentDeadlines(student);
 
             for (const sdl of systemDeadlines) {
-                const custom = customDeadlines.find(cd => cd.milestone_name === sdl.docType);
+                const custom = customDeadlines.find(cd => {
+                    if (!cd.name || !sdl.milestoneName) return false;
+                    return cd.name.toLowerCase() === sdl.milestoneName.toLowerCase();
+                });
                 const dlDate = new Date(custom ? custom.deadline_date : sdl.date);
 
                 // Simple date match for "7 days before"
