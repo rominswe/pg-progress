@@ -1,5 +1,6 @@
 import dotenv from "dotenv";
 import path from "node:path";
+import crypto from "node:crypto";
 import { sequelize, empinfo } from "../config/config.js";
 
 dotenv.config({ path: path.resolve(process.cwd(), "../.env") });
@@ -135,7 +136,7 @@ async function seedEmpInfo() {
         Dob: "1992-01-01",
         Dep_Code: dep,
         Address: `${dep} Building`,
-        Phonenumber: `01${Math.floor(100000000 + Math.random() * 900000000)}`,
+        Phonenumber: `01${crypto.randomInt(100000000, 1000000000)}`,
         Status: 1,
         role: role.code,
         location: "Main Campus",
