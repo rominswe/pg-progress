@@ -13,6 +13,12 @@ const viewDocumentLimiter = rateLimit({
     max: 100, // limit each IP to 100 view requests per windowMs
 });
 
+// Rate limiter for downloading documents to mitigate DoS via repeated file system access
+const downloadDocumentLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000, // 15 minutes
+    max: 100, // limit each IP to 100 download requests per windowMs
+});
+
 // Supervisors / Examiners review documents - MOVED TO TOP to avoid overlap with /:id
 router.post("/review", protect, requireRole("SUV", "EXA", "CGSS", "CGSADM"), reviewDocument);
 
@@ -31,7 +37,7 @@ router.get("/student/stats", protect, requireRole("STU"), getStudentDashboardSta
 router.get("/:id/download", protect, (req, res, next) => {
     if (req.user.role_id === 'EXA') return res.status(403).json({ error: "Download restricted for Examiners" });
     next();
-}, downloadDocument);
+}, downloadDocumentLimiter, downloadDocument);
 router.get("/:id/view", protect, viewDocumentLimiter, viewDocument);
 router.delete("/:id", protect, requireRole("STU"), deleteDocument);
 
