@@ -8,6 +8,7 @@ import initModels from "../models/init-models.js";
 dotenv.config({ path: path.resolve(process.cwd(), "../.env") });
 
 /* ========================= SEQUELIZE INSTANCE ========================= */
+const appTimezone = process.env.APP_TIMEZONE || "+08:00";
 const sequelize = new Sequelize(
   process.env.DB_NAME,
   process.env.DB_USER,
@@ -16,7 +17,10 @@ const sequelize = new Sequelize(
     host: process.env.DB_HOST,
     port: process.env.DB_PORT,
     dialect: "mysql",
-    timezone: "+00:00",
+    timezone: appTimezone,
+    dialectOptions: {
+      timezone: appTimezone,
+    },
     define: {
       timestamps: false,
     },

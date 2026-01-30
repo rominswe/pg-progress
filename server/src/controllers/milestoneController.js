@@ -12,7 +12,7 @@ export const listTemplates = async (req, res) => {
 
 export const createTemplate = async (req, res) => {
   try {
-    const { name, description, type, sort_order, default_due_days } = req.body;
+    const { name, description, type, sort_order, default_due_days, alert_lead_days } = req.body;
     if (!name) return sendError(res, "Name is required", 400);
     const template = await milestoneService.createTemplate({
       name,
@@ -20,6 +20,7 @@ export const createTemplate = async (req, res) => {
       type,
       sort_order,
       default_due_days,
+      alert_lead_days,
     });
     sendSuccess(res, "Milestone template created", { template }, 201);
   } catch (err) {
@@ -30,13 +31,14 @@ export const createTemplate = async (req, res) => {
 export const updateTemplate = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, description, type, sort_order, default_due_days } = req.body;
+    const { name, description, type, sort_order, default_due_days, alert_lead_days } = req.body;
     const template = await milestoneService.updateTemplate(id, {
       name,
       description,
       type,
       sort_order,
       default_due_days,
+      alert_lead_days,
     });
     sendSuccess(res, "Milestone template updated", { template });
   } catch (err) {

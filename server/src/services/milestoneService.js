@@ -71,13 +71,16 @@ class MilestoneService {
     });
   }
 
-  async upsertStudentDeadline({ milestone_name, pg_student_id, deadline_date, reason, updated_by }) {
+  async upsertStudentDeadline({ milestone_name, pg_student_id, deadline_date, reason, updated_by, alert_lead_days }) {
     const template = await this.findTemplateByName(milestone_name);
     if (!template) {
       const err = new Error(`Milestone template "${milestone_name}" not found`);
       err.status = 404;
       throw err;
     }
+
+    const templateAlertLeadDays = template.alert_lead_days ?? 7;
+    const overrideLead = alert_lead_days ?? templateAlertLeadDays;
 
     const [override, created] = await milestones.findOrCreate({
       where: {
@@ -95,6 +98,7 @@ class MilestoneService {
         deadline_date,
         reason,
         updated_by,
+        alert_lead_days: overrideLead,
       },
     });
 
@@ -103,6 +107,7 @@ class MilestoneService {
         deadline_date,
         reason,
         updated_by,
+        alert_lead_days: overrideLead,
       });
     }
 
@@ -186,6 +191,7 @@ class MilestoneService {
             deadline_date: override.deadline_date,
             reason: override.reason,
             updated_by: override.updated_by,
+            alert_lead_days: override.alert_lead_days,
           }
           : null,
       };

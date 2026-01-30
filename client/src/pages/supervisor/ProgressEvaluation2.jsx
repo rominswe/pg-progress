@@ -113,11 +113,12 @@ const ProgressEvaluation2 = () => {
 
     const validateForm = () => {
         const newErrors = {};
+        const semesterValue = String(formData.semester ?? '');
 
         if (!formData.studentName.trim()) newErrors.studentName = 'Student name is required';
         if (!formData.studentId.trim()) newErrors.studentId = 'Student ID is required';
         if (!formData.defenseType) newErrors.defenseType = 'Defense type is required';
-        if (!formData.semester.trim()) newErrors.semester = 'Semester is required';
+        if (!semesterValue.trim()) newErrors.semester = 'Semester is required';
 
         // Validate ratings
         const ratings = ['knowledgeRating', 'presentationRating', 'responseRating', 'organizationRating', 'overallRating'];

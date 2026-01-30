@@ -36,6 +36,8 @@ export default function StudentDetailView() {
     const [selectedMilestone, setSelectedMilestone] = useState(null);
     const [newDeadline, setNewDeadline] = useState("");
     const [extensionReason, setExtensionReason] = useState("");
+    const [deadlineTime, setDeadlineTime] = useState("17:00");
+    const [deadlineAlertLeadDays, setDeadlineAlertLeadDays] = useState("");
 
     // Notify Modal State
     const [isNotifyModalOpen, setIsNotifyModalOpen] = useState(false);
@@ -121,16 +123,42 @@ export default function StudentDetailView() {
     };
     const status = getDerivedStatus(progressPercent);
 
+    const formatTimeForInput = (value, fallback = "17:00") => {
+        if (!value) return fallback;
+        const dateObj = new Date(value);
+        if (Number.isNaN(dateObj)) return fallback;
+        const pad = (num) => num.toString().padStart(2, "0");
+        return `${pad(dateObj.getHours())}:${pad(dateObj.getMinutes())}`;
+    };
+
     const handleUpdateDeadline = async () => {
         try {
+            const leadDays =
+                deadlineAlertLeadDays !== ""
+                    ? Number(deadlineAlertLeadDays)
+                    : undefined;
+            if (leadDays !== undefined && (Number.isNaN(leadDays) || leadDays < 0)) {
+                toast.error("Reminder lead days must be a non-negative number.");
+                return;
+            }
+            if (!newDeadline) {
+                toast.error("Please choose a new deadline date.");
+                return;
+            }
+            if (!deadlineTime) {
+                toast.error("Please provide a time for the deadline.");
+                return;
+            }
             await progressService.updateDeadline({
                 pg_student_id: id,
                 milestone_name: selectedMilestone,
-                deadline_date: newDeadline,
-                reason: extensionReason
+                deadline_date: `${newDeadline} ${deadlineTime || "00:00"}:00`,
+                reason: extensionReason,
+                alert_lead_days: leadDays
             });
             toast.success("Deadline updated and student notified");
             setIsDeadlineModalOpen(false);
+            setDeadlineTime("17:00");
             fetchStudentData();
         } catch (err) {
             toast.error("Failed to update deadline");
@@ -406,19 +434,28 @@ export default function StudentDetailView() {
                                                         </TableCell>
                                                         <TableCell className="text-right">
                                                             {!isCompleted && (
-                                                                <button
-                                                                    onClick={() => {
-                                                                        setSelectedMilestone(template.name);
-                                                                        setNewDeadline(customDeadline ? customDeadline.deadline_date.split("T")[0] : "");
-                                                                        setExtensionReason(customDeadline?.reason || "");
-                                                                        setIsDeadlineModalOpen(true);
-                                                                    }}
-                                                                    className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
-                                                                >
-                                                                    <Edit2 className="w-4 h-4" />
-                                                                </button>
-                                                            )}
-                                                        </TableCell>
+                                                                    <button
+                                                                        onClick={() => {
+                                                                            setSelectedMilestone(template.name);
+                                                                            setNewDeadline(customDeadline ? customDeadline.deadline_date.split("T")[0] : "");
+                                                                            setExtensionReason(customDeadline?.reason || "");
+                                                                            setDeadlineAlertLeadDays(
+                                                                                customDeadline?.alert_lead_days?.toString() ??
+                                                                                    (template.alert_lead_days?.toString() || "7")
+                                                                            );
+                                                                            setDeadlineTime(
+                                                                                customDeadline?.deadline_date
+                                                                                    ? formatTimeForInput(customDeadline.deadline_date)
+                                                                                    : "17:00"
+                                                                            );
+                                                                            setIsDeadlineModalOpen(true);
+                                                                        }}
+                                                                        className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-all"
+                                                                    >
+                                                                        <Edit2 className="w-4 h-4" />
+                                                                    </button>
+                                                                )}
+                                                            </TableCell>
                                                     </TableRow>
                                                 );
                                             })
@@ -516,6 +553,15 @@ export default function StudentDetailView() {
                                         className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 font-bold text-slate-900 focus:ring-4 focus:ring-blue-600/10 outline-none transition-all"
                                     />
                                 </div>
+                                <div>
+                                    <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">Time</label>
+                                    <input
+                                        type="time"
+                                        value={deadlineTime}
+                                        onChange={(e) => setDeadlineTime(e.target.value)}
+                                        className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 font-bold text-slate-900 focus:ring-4 focus:ring-blue-600/10 outline-none transition-all"
+                                    />
+                                </div>
 
                                 <div>
                                     <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">Reason for Extension</label>
@@ -524,6 +570,17 @@ export default function StudentDetailView() {
                                         onChange={(e) => setExtensionReason(e.target.value)}
                                         placeholder="Provide a justification for documenting this change..."
                                         className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 font-bold text-slate-900 focus:ring-4 focus:ring-blue-600/10 outline-none transition-all min-h-[120px]"
+                                    />
+                                </div>
+                                <div>
+                                    <label className="block text-xs font-black text-slate-400 uppercase tracking-widest mb-2">Reminder Lead (days)</label>
+                                    <input
+                                        type="number"
+                                        min="0"
+                                        value={deadlineAlertLeadDays}
+                                        onChange={(e) => setDeadlineAlertLeadDays(e.target.value)}
+                                        className="w-full bg-slate-50 border border-slate-200 rounded-2xl px-5 py-4 font-bold text-slate-900 focus:ring-4 focus:ring-blue-600/10 outline-none transition-all"
+                                        placeholder="e.g., 7"
                                     />
                                 </div>
 

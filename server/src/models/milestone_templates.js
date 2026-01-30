@@ -38,6 +38,12 @@ export default class milestone_templates extends Model {
                 allowNull: true,
                 comment: "Default number of days from enrollment"
             },
+            alert_lead_days: {
+                type: DataTypes.INTEGER,
+                allowNull: true,
+                defaultValue: 7,
+                comment: "Days before deadline to trigger reminder"
+            },
             program_id: {
                 type: DataTypes.STRING(20),
                 allowNull: true,

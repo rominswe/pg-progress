@@ -1,4 +1,4 @@
-import { defense_evaluations, progress_updates, documents_uploads, pgstudinfo, tbldepartments, program_info, studinfo, role_assignment, milestones } from '../config/config.js';
+import { defense_evaluations, progress_updates, documents_uploads, pgstudinfo, tbldepartments, program_info, studinfo, role_assignment, milestones, milestone_templates } from '../config/config.js';
 import { Op } from 'sequelize';
 import notificationService from './notificationService.js';
 
@@ -273,14 +273,20 @@ class CalendarService {
      */
     async checkUpcomingDeadlines() {
         const students = await pgstudinfo.findAll({ where: { Status: 'Active' } });
-        const sevenDaysLater = new Date();
-        sevenDaysLater.setDate(sevenDaysLater.getDate() + 7);
+        const templateRecords = await milestone_templates.findAll({
+            attributes: ['name', 'alert_lead_days']
+        });
+        const templateLeadMap = new Map(
+            templateRecords.map((t) => [t.name?.toLowerCase(), Number.isFinite(t.alert_lead_days) ? t.alert_lead_days : 7])
+        );
+        const today = new Date();
+        const normalizedToday = new Date(today.getFullYear(), today.getMonth(), today.getDate());
 
         for (const student of students) {
             // Fetch custom deadlines for this student
             const customDeadlines = await milestones.findAll({
                 where: { pgstudent_id: student.pgstud_id },
-                attributes: ['name', 'deadline_date']
+                attributes: ['name', 'deadline_date', 'alert_lead_days']
             });
             const systemDeadlines = this.calculateStudentDeadlines(student);
 
@@ -290,9 +296,20 @@ class CalendarService {
                     return cd.name.toLowerCase() === sdl.milestoneName.toLowerCase();
                 });
                 const dlDate = new Date(custom ? custom.deadline_date : sdl.date);
+                if (Number.isNaN(dlDate)) continue;
 
-                // Simple date match for "7 days before"
-                if (dlDate.toDateString() === sevenDaysLater.toDateString()) {
+                const templateKey = sdl.milestoneName?.toLowerCase();
+                const templateLeadDays = templateLeadMap.get(templateKey) ?? 7;
+                const overrideLeadDays = custom?.alert_lead_days;
+                const leadDays =
+                    typeof overrideLeadDays === 'number' && overrideLeadDays >= 0
+                        ? overrideLeadDays
+                        : templateLeadDays;
+
+                const alertDate = new Date(dlDate);
+                alertDate.setDate(alertDate.getDate() - Math.max(0, leadDays));
+
+                if (alertDate.toDateString() === normalizedToday.toDateString()) {
                     await notificationService.createNotification({
                         userId: student.pgstud_id,
                         roleId: 'STU',

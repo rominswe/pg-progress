@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { Lock, CheckCircle } from "lucide-react";
+import { Lock, CheckCircle, Eye, EyeOff } from "lucide-react";
 import { useAuth } from "@/components/auth/AuthContext";
 
 export default function AdminLogin() {
@@ -10,6 +10,7 @@ export default function AdminLogin() {
   const [role, setRole] = useState("CGSS"); // CGS Admin | CGS Staff
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [showPassword, setShowPassword] = useState(false);
 
   const navigate = useNavigate();
   const { login } = useAuth();
@@ -126,15 +127,29 @@ export default function AdminLogin() {
               <label className="block mb-2 text-sm font-medium text-gray-700">
                 Password
               </label>
-              <input
-                type="password"
-                required
-                value={password}
-                disabled={loading}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Enter your password"
-                className="w-full border border-gray-300 rounded-lg px-4 py-3 focus:ring-blue-500 focus:border-blue-500 outline-none transition duration-150"
-              />
+              <div className="relative">
+                <input
+                  type={showPassword ? "text" : "password"}
+                  required
+                  value={password}
+                  disabled={loading}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="Enter your password"
+                  className="w-full border border-gray-300 rounded-lg px-4 py-3 pr-10 focus:ring-blue-500 focus:border-blue-500 outline-none transition duration-150"
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword((prev) => !prev)}
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-blue-600 focus-visible:outline-none"
+                  aria-label={showPassword ? "Hide password" : "Show password"}
+                >
+                  {showPassword ? (
+                    <EyeOff className="w-5 h-5" />
+                  ) : (
+                    <Eye className="w-5 h-5" />
+                  )}
+                </button>
+              </div>
             </div>
 
             <motion.button

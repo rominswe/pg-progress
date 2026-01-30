@@ -370,7 +370,7 @@ class EvaluationService {
         }
 
         // Get assigned supervisors
-        const assignments = await roleAssignmentService.getAssignedStaff(studentId);
+        const assignments = await roleAssignmentService.getAssignedStaff(pk);
 
         return {
             student,
@@ -379,14 +379,15 @@ class EvaluationService {
     }
 
     async updateMilestoneDeadline(data) {
-        const { pg_student_id, milestone_name, deadline_date, reason, updated_by } = data;
+        const { pg_student_id, milestone_name, deadline_date, reason, updated_by, alert_lead_days } = data;
 
         const deadline = await milestoneService.upsertStudentDeadline({
             milestone_name,
             pg_student_id,
             deadline_date,
             reason,
-            updated_by
+            updated_by,
+            alert_lead_days
         });
 
         await notificationService.createNotification({

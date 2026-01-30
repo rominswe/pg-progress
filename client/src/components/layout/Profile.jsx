@@ -2,7 +2,7 @@ import { useState, useEffect, useMemo } from "react";
 import { useAuth } from "@/components/auth/AuthContext";
 import api, { API_BASE_URL } from "@/services/api";
 import { toast } from "sonner";
-import { User, Mail, Phone, Shield, Save, Lock, Building2, Camera, Trash2, MapPin, Globe, Briefcase, Calendar, UserCircle, Fingerprint, ChevronRight, Check, ChevronsUpDown } from "lucide-react";
+import { User, Mail, Phone, Shield, Save, Lock, Building2, Camera, Trash2, MapPin, Globe, Briefcase, Calendar, UserCircle, Fingerprint, ChevronRight, Check, ChevronsUpDown, Eye, EyeOff } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -62,6 +62,8 @@ export default function Profile() {
     Password: "",
     ConfirmPassword: ""
   });
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
 
   // Helper to normalize phone numbers to E.164 for the library (e.g. 017 -> +6017)
   const normalizePhone = (num) => {
@@ -494,12 +496,20 @@ export default function Profile() {
                       <div className="relative">
                         <Lock className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-400" />
                         <Input
-                          type="password"
-                          className="pl-11 rounded-xl border-slate-100 bg-slate-50/50 h-11"
+                          type={showPassword ? "text" : "password"}
+                          className="pl-11 pr-12 rounded-xl border-slate-100 bg-slate-50/50 h-11"
                           placeholder="Leave blank to keep current"
                           value={formData.Password}
                           onChange={(e) => setFormData({ ...formData, Password: e.target.value })}
                         />
+                        <button
+                          type="button"
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-700 focus-visible:outline-none"
+                          onClick={() => setShowPassword((prev) => !prev)}
+                          aria-label={showPassword ? "Hide password" : "Show password"}
+                        >
+                          {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        </button>
                       </div>
                     </div>
                     <div className="space-y-2">
@@ -507,12 +517,20 @@ export default function Profile() {
                       <div className="relative">
                         <Lock className="absolute left-3.5 top-3.5 h-4 w-4 text-slate-400" />
                         <Input
-                          type="password"
-                          className="pl-11 rounded-xl border-slate-100 bg-slate-50/50 h-11"
+                          type={showConfirmPassword ? "text" : "password"}
+                          className="pl-11 pr-12 rounded-xl border-slate-100 bg-slate-50/50 h-11"
                           placeholder="Re-type new password"
                           value={formData.ConfirmPassword}
                           onChange={(e) => setFormData({ ...formData, ConfirmPassword: e.target.value })}
                         />
+                        <button
+                          type="button"
+                          className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-500 hover:text-slate-700 focus-visible:outline-none"
+                          onClick={() => setShowConfirmPassword((prev) => !prev)}
+                          aria-label={showConfirmPassword ? "Hide confirmation password" : "Show confirmation password"}
+                        >
+                          {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                        </button>
                       </div>
                     </div>
                   </div>

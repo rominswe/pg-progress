@@ -25,7 +25,7 @@ class NotificationService {
 
         // --- Automatic Email Sending ---
         // We trigger emails for high-importance administrative actions or custom notices
-        const criticalTypes = ['SYSTEM_ALERT', 'ADMIN_ALERT', 'DEADLINE_ADJUSTED', 'MILESTONE_COMPLETED', 'EVALUATION_SUBMITTED'];
+        const criticalTypes = ['SYSTEM_ALERT', 'ADMIN_ALERT', 'DEADLINE_ADJUSTED', 'MILESTONE_COMPLETED', 'EVALUATION_SUBMITTED', 'CALENDAR_ALERT'];
 
         if (criticalTypes.includes(type)) {
             try {
