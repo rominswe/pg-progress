@@ -37,6 +37,11 @@ export default class milestones extends Model {
         type: DataTypes.INTEGER,
         allowNull: true
       },
+      alert_lead_days: {
+        type: DataTypes.INTEGER,
+        allowNull: true,
+        comment: "Custom reminder lead time in days for this override"
+      },
       pgstudent_id: {
         type: DataTypes.STRING(20),
         allowNull: true,

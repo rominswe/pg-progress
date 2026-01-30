@@ -18,6 +18,7 @@ export default function MilestonesManagement() {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedOverride, setSelectedOverride] = useState(null);
   const [adjustedDate, setAdjustedDate] = useState("");
+  const [adjustedTime, setAdjustedTime] = useState("17:00");
   const [adjustedReason, setAdjustedReason] = useState("");
   const [isDialogOpen, setDialogOpen] = useState(false);
 
@@ -28,9 +29,16 @@ export default function MilestonesManagement() {
     studentId: "",
     milestoneName: "",
     date: "",
-    reason: ""
+    time: "17:00",
+    reason: "",
+    alertLeadDays: "7"
   });
   const [isSaving, setIsSaving] = useState(false);
+  const [overrideAlertDays, setOverrideAlertDays] = useState("");
+  const [selectedTemplateForAlert, setSelectedTemplateForAlert] = useState(null);
+  const [templateAlertDays, setTemplateAlertDays] = useState("");
+  const [isTemplateAlertDialogOpen, setTemplateAlertDialogOpen] = useState(false);
+  const [isTemplateAlertSaving, setTemplateAlertSaving] = useState(false);
 
   const fetchData = async () => {
     setLoading(true);
@@ -82,6 +90,15 @@ export default function MilestonesManagement() {
     setSelectedOverride(override);
     setAdjustedDate(override.deadline_date ? override.deadline_date.split("T")[0] : "");
     setAdjustedReason(override.reason || "");
+    setAdjustedTime(
+      override.deadline_date
+        ? `${new Date(override.deadline_date).getHours().toString().padStart(2, "0")}:${new Date(override.deadline_date)
+            .getMinutes()
+            .toString()
+            .padStart(2, "0")}`
+        : "17:00"
+    );
+    setOverrideAlertDays(override.alert_lead_days?.toString() ?? "7");
     setDialogOpen(true);
   };
 
@@ -89,6 +106,8 @@ export default function MilestonesManagement() {
     setSelectedOverride(null);
     setAdjustedDate("");
     setAdjustedReason("");
+    setAdjustedTime("17:00");
+    setOverrideAlertDays("");
   };
 
   const handleDialogClose = () => {
@@ -96,15 +115,34 @@ export default function MilestonesManagement() {
     resetDialogState();
   };
 
+  const buildDateTimeValue = (date, time) => `${date} ${time || "00:00"}:00`;
+
   const handleSaveOverride = async () => {
     if (!selectedOverride) return;
     try {
       setIsSaving(true);
+      const leadDays =
+        overrideAlertDays !== ""
+          ? Number(overrideAlertDays)
+          : undefined;
+      if (leadDays !== undefined && (Number.isNaN(leadDays) || leadDays < 0)) {
+        toast.error("Reminder lead days must be a non-negative number.");
+        return;
+      }
+      if (!adjustedDate) {
+        toast.error("Please provide a due date.");
+        return;
+      }
+      if (!adjustedTime) {
+        toast.error("Please provide a due time.");
+        return;
+      }
       await progressService.updateDeadline({
         pg_student_id: selectedOverride.pgstudent_id,
         milestone_name: selectedOverride.name,
-        deadline_date: adjustedDate,
+        deadline_date: buildDateTimeValue(adjustedDate, adjustedTime),
         reason: adjustedReason,
+        alert_lead_days: leadDays,
       });
       toast.success("Milestone deadline updated.");
       handleDialogClose();
@@ -125,15 +163,28 @@ export default function MilestonesManagement() {
 
     try {
       setIsSaving(true);
+      const leadDays =
+        newOverride.alertLeadDays !== ""
+          ? Number(newOverride.alertLeadDays)
+          : undefined;
+      if (leadDays !== undefined && (Number.isNaN(leadDays) || leadDays < 0)) {
+        toast.error("Reminder lead days must be a non-negative number.");
+        return;
+      }
+      if (!newOverride.time) {
+        toast.error("Please provide a time for the override.");
+        return;
+      }
       await progressService.updateDeadline({
         pg_student_id: newOverride.studentId,
         milestone_name: newOverride.milestoneName,
-        deadline_date: newOverride.date,
+        deadline_date: buildDateTimeValue(newOverride.date, newOverride.time),
         reason: newOverride.reason,
+        alert_lead_days: leadDays,
       });
       toast.success("New milestone override created.");
       setCreateDialogOpen(false);
-      setNewOverride({ studentId: "", milestoneName: "", date: "", reason: "" });
+      setNewOverride({ studentId: "", milestoneName: "", date: "", reason: "", alertLeadDays: "7" });
       fetchData();
     } catch (err) {
       console.error("Failed to create override", err);
@@ -141,6 +192,47 @@ export default function MilestonesManagement() {
     } finally {
       setIsSaving(false);
     }
+  };
+
+  const handleTemplateDialogClose = () => {
+    setTemplateAlertDialogOpen(false);
+    setSelectedTemplateForAlert(null);
+    setTemplateAlertDays("");
+  };
+
+  const handleSaveTemplateAlert = async () => {
+    if (!selectedTemplateForAlert) return;
+
+    const leadDays =
+      templateAlertDays !== ""
+        ? Number(templateAlertDays)
+        : undefined;
+
+    if (leadDays === undefined || Number.isNaN(leadDays) || leadDays < 0) {
+      toast.error("Reminder lead days must be a non-negative number.");
+      return;
+    }
+
+    try {
+      setTemplateAlertSaving(true);
+      await milestoneService.update(selectedTemplateForAlert.id, {
+        alert_lead_days: leadDays,
+      });
+      toast.success("Template reminder lead updated.");
+      handleTemplateDialogClose();
+      fetchData();
+    } catch (err) {
+      console.error("Failed to update template reminder lead", err);
+      toast.error("Unable to save reminder lead days.");
+    } finally {
+      setTemplateAlertSaving(false);
+    }
+  };
+
+  const openTemplateAlertDialog = (template) => {
+    setSelectedTemplateForAlert(template);
+    setTemplateAlertDays((template.alert_lead_days ?? 7).toString());
+    setTemplateAlertDialogOpen(true);
   };
 
   const renderHeaderBadge = (label, value, description) => (
@@ -195,18 +287,33 @@ export default function MilestonesManagement() {
                 <TableHead>Type</TableHead>
                 <TableHead>Document Type</TableHead>
                 <TableHead>Default Due (days)</TableHead>
+                <TableHead>Reminder Lead (days)</TableHead>
                 <TableHead>Sort Order</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {templates.map((template) => (
-                <TableRow key={template.id} className="hover:bg-slate-50 transition-colors">
-                  <TableCell className="py-3 px-4 font-semibold text-slate-800">{template.name}</TableCell>
-                  <TableCell className="text-sm text-slate-500">{template.type}</TableCell>
-                  <TableCell className="text-sm text-slate-500">{template.document_type || "-"}</TableCell>
-                  <TableCell className="text-sm text-slate-500">{template.default_due_days ?? "Auto"}</TableCell>
-                  <TableCell className="text-sm text-slate-500">{template.sort_order}</TableCell>
-                </TableRow>
+              <TableRow key={template.id} className="hover:bg-slate-50 transition-colors">
+                <TableCell className="py-3 px-4 font-semibold text-slate-800">{template.name}</TableCell>
+                <TableCell className="text-sm text-slate-500">{template.type}</TableCell>
+                <TableCell className="text-sm text-slate-500">{template.document_type || "-"}</TableCell>
+                <TableCell className="text-sm text-slate-500">{template.default_due_days ?? "Auto"}</TableCell>
+                <TableCell className="text-sm text-slate-500">
+                  <div className="flex items-center justify-between gap-3">
+                    <span>{template.alert_lead_days ?? 7}</span>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="gap-1 text-[11px] text-blue-600 hover:text-blue-700"
+                      onClick={() => openTemplateAlertDialog(template)}
+                    >
+                      <Edit2 className="h-4 w-4" />
+                      Set
+                    </Button>
+                  </div>
+                </TableCell>
+                <TableCell className="text-sm text-slate-500">{template.sort_order}</TableCell>
+              </TableRow>
               ))}
             </TableBody>
           </Table>
@@ -343,6 +450,15 @@ export default function MilestonesManagement() {
               />
             </div>
             <div>
+              <label className="block text-xs font-bold uppercase tracking-widest text-slate-400 mb-2">Time</label>
+              <input
+                type="time"
+                value={adjustedTime}
+                onChange={(e) => setAdjustedTime(e.target.value)}
+                className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none"
+              />
+            </div>
+            <div>
               <label className="block text-xs font-bold uppercase tracking-widest text-slate-400 mb-2">Reason</label>
               <textarea
                 value={adjustedReason}
@@ -352,6 +468,17 @@ export default function MilestonesManagement() {
                 placeholder="Why is this deadline different?"
               />
             </div>
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-widest text-slate-400 mb-2">Reminder Lead (days)</label>
+              <input
+                type="number"
+                min="0"
+                value={overrideAlertDays}
+                onChange={(e) => setOverrideAlertDays(e.target.value)}
+                className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none"
+                placeholder="e.g., 7"
+              />
+            </div>
           </div>
           <DialogFooter className="mt-4 flex flex-wrap gap-2 justify-end">
             <Button variant="outline" onClick={handleDialogClose}>
@@ -359,6 +486,40 @@ export default function MilestonesManagement() {
             </Button>
             <Button onClick={handleSaveOverride} disabled={!adjustedDate}>
               Save Override
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={isTemplateAlertDialogOpen} onOpenChange={(open) => (open ? null : handleTemplateDialogClose())}>
+        <DialogContent className="max-w-md">
+          <DialogHeader>
+            <DialogTitle>Set Reminder Lead</DialogTitle>
+            <DialogDescription>
+              Adjust when students receive reminder emails before the{" "}
+              <span className="font-semibold">{selectedTemplateForAlert?.name}</span> milestone.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-widest text-slate-400 mb-2">Lead Days</label>
+              <input
+                type="number"
+                min="0"
+                value={templateAlertDays}
+                onChange={(e) => setTemplateAlertDays(e.target.value)}
+                className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none"
+                placeholder="e.g., 7"
+              />
+            </div>
+          </div>
+          <DialogFooter className="mt-4 flex flex-wrap gap-2 justify-end">
+            <Button variant="outline" onClick={handleTemplateDialogClose}>
+              Cancel
+            </Button>
+            <Button onClick={handleSaveTemplateAlert} disabled={isTemplateAlertSaving}>
+              {isTemplateAlertSaving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : null}
+              Save Reminder Lead
             </Button>
           </DialogFooter>
         </DialogContent>
@@ -385,7 +546,7 @@ export default function MilestonesManagement() {
                 </SelectTrigger>
                 <SelectContent>
                   {students.map((student) => (
-                    <SelectItem key={student.id || student.pgstud_id} value={(student.id || student.pgstud_id).toString()}>
+                <SelectItem key={student.pgstud_id || student.id} value={(student.pgstud_id || student.id).toString()}>
                       {student.name} ({student.id || student.pgstud_id})
                     </SelectItem>
                   ))}
@@ -421,6 +582,15 @@ export default function MilestonesManagement() {
                 className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none bg-slate-50"
               />
             </div>
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-widest text-slate-400 mb-2">Time</label>
+              <input
+                type="time"
+                value={newOverride.time}
+                onChange={(e) => setNewOverride(prev => ({ ...prev, time: e.target.value }))}
+                className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm font-semibold text-slate-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none bg-slate-50"
+              />
+            </div>
 
             <div>
               <label className="block text-xs font-bold uppercase tracking-widest text-slate-400 mb-2">Reason</label>
@@ -430,6 +600,17 @@ export default function MilestonesManagement() {
                 rows={3}
                 className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none bg-slate-50"
                 placeholder="Why is this deadline different?"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-widest text-slate-400 mb-2">Reminder Lead (days)</label>
+              <input
+                type="number"
+                min="0"
+                value={newOverride.alertLeadDays}
+                onChange={(e) => setNewOverride(prev => ({ ...prev, alertLeadDays: e.target.value }))}
+                className="w-full rounded-2xl border border-slate-200 px-4 py-3 text-sm text-slate-900 focus:border-blue-500 focus:ring-2 focus:ring-blue-100 outline-none bg-slate-50"
+                placeholder="e.g., 7"
               />
             </div>
           </div>

@@ -129,7 +129,7 @@ export const getStudentDetailView = async (req, res) => {
 
 export const updateMilestoneDeadline = async (req, res) => {
     try {
-        const { pg_student_id, milestone_name, deadline_date, reason } = req.body;
+        const { pg_student_id, milestone_name, deadline_date, reason, alert_lead_days } = req.body;
         const updated_by = req.user.id;
 
         if (!pg_student_id || !milestone_name || !deadline_date) {
@@ -141,6 +141,7 @@ export const updateMilestoneDeadline = async (req, res) => {
             milestone_name,
             deadline_date,
             reason,
+            alert_lead_days,
             updated_by
         });
 
@@ -196,6 +197,7 @@ const formatStudents = (students, templates = []) => {
 
         return {
             id: student.stu_id || student.pgstud_id,
+            pgstud_id: student.pgstud_id,
             name: `${student.FirstName} ${student.LastName}`,
             email: student.EmailId,
             progress: Math.round((completedCount / finalMilestones.length) * 100),

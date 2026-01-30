@@ -171,13 +171,17 @@ class DashboardService {
 
             if (!listType) return null;
 
+            const docDefenseType = doc.document_type === 'Research Proposal' ? 'Proposal Defense' : 'Final Thesis';
+            const evaluationDefenseType = mostRelevantEval?.defense_type || myEval?.defense_type || docDefenseType;
+
             return {
                 id: `${student.pgstud_id}-${doc.document_type}-${doc.doc_up_id}`,
                 fullName: stuInfo ? `${stuInfo.FirstName} ${stuInfo.LastName}` : 'Unknown Student',
                 studentId: student.stu_id,
+                semester: student.Semester,
                 programme: program ? program.Prog_Name : 'N/A',
                 thesisTitle: doc.document_name,
-                defenseType: doc.document_type === 'Research Proposal' ? 'Proposal Defense' : 'Final Thesis',
+                defenseType: evaluationDefenseType,
                 status: doc.status,
                 documentId: doc.doc_up_id,
                 documentPath: doc.file_path,

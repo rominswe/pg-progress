@@ -58,7 +58,7 @@ const ExaminerDashboard = () => {
             const payload = {
                 student_id: data.studentId,
                 student_name: selectedStudent.fullName,
-                defense_type: selectedStudent.defenseType || 'Research Proposal',
+                defense_type: selectedStudent.defenseType || 'Final Thesis',
                 semester: selectedStudent.semester || '2023/2024',
                 knowledge_rating: originality,
                 organization_rating: methodology,
